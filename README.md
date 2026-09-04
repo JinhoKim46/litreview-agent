@@ -89,7 +89,8 @@ Need an institutional source (Scopus, Web of Science)? Run `/prisma-add-source` 
 
 ```
 prisma-review/
-├── CLAUDE.md               # persona, reviewer profile, workflow pointer
+├── CLAUDE.md               # persona, workflow pointer
+├── CLAUDE.local.md.example # reviewer-profile template (copy to CLAUDE.local.md, gitignored)
 ├── AGENTS.md               # thin pointer for non-Claude runtimes
 ├── .claude/
 │   ├── commands/           # the 9 slash commands

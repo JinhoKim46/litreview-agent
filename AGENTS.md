@@ -11,7 +11,7 @@ This workspace runs a PRISMA 2020-conformant systematic review and meta-analysis
 To prevent duplication and drift across different AI agent runtimes (Claude Code, Codex, Antigravity, Gemini CLI, etc.), this workspace uses a unified thin-pointer design. All agent runtimes should load the canonical specifications and reviewer profile from the files and directories below — never copy their content elsewhere, since a second copy drifts from the first the moment either changes.
 
 1. **Reviewer profile and persona:**
-   - The reviewer's field of research, prior work, target journals, and citation style are defined in [CLAUDE.md](CLAUDE.md).
+   - The reviewer's field of research, prior work, target journals, and citation style are defined in `CLAUDE.local.md` (gitignored; template at [CLAUDE.local.md.example](CLAUDE.local.md.example)), pulled into [CLAUDE.md](CLAUDE.md) via an `@CLAUDE.local.md` import.
 2. **Canonical workflow specifications:**
    - The step-by-step instructions and triggers for every pipeline stage (init, search, screen, extract, synthesize, report, status, add-source, reset) are defined under [.claude/commands/](.claude/commands/) and [.claude/skills/](.claude/skills/). Treat these as the single source of truth — do not duplicate their rules elsewhere.
 3. **Search connector pointers:**

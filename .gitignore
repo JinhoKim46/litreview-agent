@@ -10,6 +10,10 @@ results/**
 .env
 .env.*
 
+# Reviewer profile (name, institution, prior work) -- personal, not for a public fork's git history.
+# CLAUDE.local.md.example (the template) stays tracked.
+CLAUDE.local.md
+
 # Python
 __pycache__/
 *.pyc
