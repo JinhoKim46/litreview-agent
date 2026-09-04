@@ -1,0 +1,42 @@
+MIT License
+Copyright (c) 2026 the prisma-review contributors
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+---
+
+Note: Two categories of file under `.claude/skills/prisma-manuscript/` are
+carried over from other sources and are **not** covered by the MIT license
+above. Their own headers/paths are the authoritative record; this note is a
+pointer, not a substitute.
+
+1. `.claude/skills/prisma-manuscript/references/prisma-2020-checklist.md` and
+   `.claude/skills/prisma-manuscript/references/flow-diagram.md` are sourced
+   from Page et al. (2021), "The PRISMA 2020 statement: an updated guideline
+   for reporting systematic reviews," and are licensed under the Creative
+   Commons Attribution 4.0 International Licence (CC BY 4.0). See
+   https://creativecommons.org/licenses/by/4.0/. These files are reproduced
+   verbatim; the CC BY 4.0 attribution notice in each file's own header must
+   be preserved in any copy or redistribution.
+
+2. `.claude/skills/prisma-manuscript/SKILL.md` is adapted from `slr-prisma`
+   by Chuah Kee Man, itself MIT-licensed. It remains available under the MIT
+   license above, on the condition that the attribution to the original
+   author preserved in that file's own header is kept intact in any copy,
+   modification, or redistribution.
