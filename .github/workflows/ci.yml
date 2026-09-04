@@ -1,0 +1,83 @@
+# CI for the PRISMA review framework itself: skill/command lint, the
+# connector contract shape, the fixture-based test suite, security-posture
+# guards, and (upstream only) methodology-version drift.
+#
+# Deliberately NOT here: live calls to OpenAlex/Crossref/Semantic
+# Scholar/PubMed/Europe PMC/arXiv. connector-checks runs only against the
+# checked-in fixtures under tests/fixtures/ - a connector making a real HTTP
+# request in CI is a bug in that connector's test, not a feature. Live
+# connector runs stay a local, on-demand step (see /prisma-add-source's
+# "mandatory live test run" instead, which captures the fixture by hand).
+#
+# Security posture: this framework ships pre-approved Claude Code permissions
+# (.claude/settings.json's Bash allowlist) and a per-reviewer results/<TOPIC>/
+# gitignore rule every fork relies on, so security-guards fails PRs that widen
+# the allowlist or weaken the results/**-ignore rule. framework-version fails
+# PRs that change the bundled PRISMA methodology files without bumping their
+# declared version, so a silent drift from the checklist this framework
+# audits against can't slip in unnoticed.
+
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    name: Lint skills, commands, settings
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - run: python3 tools/lint_skills.py
+
+  connector-checks:
+    name: Connector + synthesis tests (fixture-based, no live network)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - run: python3 -m unittest discover -s tests -v
+
+  contract-check:
+    name: Connector output contract
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - run: python3 tools/check_connector_contract.py
+
+  security-guards:
+    name: Security guards (permissions, gitignore, manifests)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - run: python3 tools/security_guards.py
+
+  framework-version:
+    name: Framework version guard
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - run: python3 tools/check_framework_version.py
