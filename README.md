@@ -9,25 +9,36 @@ Most "AI systematic review" tools are reporting assistants: you search, screen, 
 ## Pipeline
 
 ```mermaid
-flowchart TD
-    Scope["<b>1. Scope</b><br/>PICO / PICo / SPIDER, global vs. national"]
-    Field["<b>2. Field &amp; Topic</b><br/>eligibility criteria"]
-    Keywords["<b>3. Keywords</b><br/>synonym + MeSH/related-term expansion"]
-    Search["<b>4. Search</b><br/>6 free connector CLIs, same query per source"]
-    Dedup["<b>5. Dedup</b><br/>DOI / PMID / title-hash key, audit trail"]
-    Screen["<b>6. Screen</b><br/>export/import sheets, never re-elicited"]
-    Extract["<b>7. Extract</b><br/>characteristics, effect data, RoB2 fields"]
-    Synthesize["<b>8. Synthesize</b><br/>pool effect sizes, RoB2, GRADE, plots"]
-    Report["<b>9. Report</b><br/>manuscript + flow diagram + checklist audit"]
+flowchart LR
+    subgraph s1["1 · Define"]
+        direction TB
+        Scope["<b>Scope</b><br/>PICO / PICo / SPIDER, global vs. national"]
+        Field["<b>Field &amp; Topic</b><br/>eligibility criteria"]
+        Keywords["<b>Keywords</b><br/>synonym + MeSH/related-term expansion"]
+        Scope --> Field
+        Field -- "protocol.json" --> Keywords
+    end
 
-    Scope --> Field
-    Field -- "protocol.json" --> Keywords
+    subgraph s2["2 · Acquire"]
+        direction TB
+        Search["<b>Search</b><br/>6 free connector CLIs, same query per source"]
+        Dedup["<b>Dedup</b><br/>DOI / PMID / title-hash key, audit trail"]
+        Screen["<b>Screen</b><br/>export/import sheets, never re-elicited"]
+        Search -- "raw/*.json" --> Dedup
+        Dedup -- "records.jsonl" --> Screen
+    end
+
+    subgraph s3["3 · Evidence"]
+        direction TB
+        Extract["<b>Extract</b><br/>characteristics, effect data, RoB2 fields"]
+        Synthesize["<b>Synthesize</b><br/>pool effect sizes, RoB2, GRADE, plots"]
+        Report["<b>Report</b><br/>manuscript + flow diagram + checklist audit"]
+        Extract -- "extraction_table.json" --> Synthesize
+        Synthesize -- "synthesis/*.json + plots" --> Report
+    end
+
     Keywords -- "search_plan.json + rerun_search.sh" --> Search
-    Search -- "raw/*.json" --> Dedup
-    Dedup -- "records.jsonl" --> Screen
     Screen -- "screening_decisions.jsonl" --> Extract
-    Extract -- "extraction_table.json" --> Synthesize
-    Synthesize -- "synthesis/*.json + plots" --> Report
 
     classDef stage fill:#eef3ff,stroke:#3b5bdb,stroke-width:2px,color:#1a1a1a,font-size:16px;
     class Scope,Field,Keywords,Search,Dedup,Screen,Extract,Synthesize,Report stage;
