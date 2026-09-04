@@ -10,7 +10,7 @@ Most "AI systematic review" tools are reporting assistants: you search, screen, 
 
 ```mermaid
 flowchart LR
-    subgraph s1["1 · Define"]
+    subgraph s1["1 Define"]
         direction TB
         Scope["<b>Scope</b><br/>PICO / PICo / SPIDER, global vs. national"]
         Field["<b>Field &amp; Topic</b><br/>eligibility criteria"]
@@ -19,7 +19,7 @@ flowchart LR
         Field -- "protocol.json" --> Keywords
     end
 
-    subgraph s2["2 · Acquire"]
+    subgraph s2["2 Acquire"]
         direction TB
         Search["<b>Search</b><br/>6 free connector CLIs, same query per source"]
         Dedup["<b>Dedup</b><br/>DOI / PMID / title-hash key, audit trail"]
@@ -28,7 +28,7 @@ flowchart LR
         Dedup -- "records.jsonl" --> Screen
     end
 
-    subgraph s3["3 · Evidence"]
+    subgraph s3["3 Evidence"]
         direction TB
         Extract["<b>Extract</b><br/>characteristics, effect data, RoB2 fields"]
         Synthesize["<b>Synthesize</b><br/>pool effect sizes, RoB2, GRADE, plots"]
