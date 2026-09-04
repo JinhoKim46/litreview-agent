@@ -28,13 +28,13 @@ Natural language:
 - "I've marked up the sheet, import my decisions"
 - "Apply the screening decisions I just edited"
 
-Slash command passthrough: `/prisma-screen export [--stage title_abstract|full_text] [--group-by theme|source|year]` and `/prisma-screen import [--stage title_abstract|full_text]`. This skill *is* the body of that command - `prisma-screen.md` just routes here with the topic in context. If no topic is obvious from context, ask which `results/<TOPIC>/` the reviewer means before touching any files.
+Slash command passthrough: `/prisma-screen export [--stage title_abstract|full_text] [--group-by theme|source|year|ai_suggestion]` and `/prisma-screen import [--stage title_abstract|full_text]`. This skill *is* the body of that command - `prisma-screen.md` just routes here with the topic in context. If no topic is obvious from context, ask which `results/<TOPIC>/` the reviewer means before touching any files.
 
 ## Mode: export
 
 1. Determine `<TOPIC>` and `--stage` (default `title_abstract`) and `--group-by` (default `source`).
-2. Follow **"Export algorithm"** in `01-screening-sheet-workflow.md` exactly: read `records.jsonl` + `screening_decisions.jsonl`, compute the undecided candidate set for the stage, compute a per-record `ai_suggestion` against `protocol.json`'s eligibility criteria (a suggestion only - never a decision), group and sort, truncate abstracts, write `results/<TOPIC>/screening/<stage>_sheet.md` and the `.csv` twin.
-3. Reply with **only**: total candidates, per-group counts, the two file paths, and one line reminding the reviewer that full-text excludes need a reason. Nothing from the sheet's content appears in the reply.
+2. Follow **"Export algorithm"** in `01-screening-sheet-workflow.md` exactly: read `records.jsonl` + `screening_decisions.jsonl`, compute the undecided candidate set for the stage, compute a per-record `ai_suggestion` and `ai_keywords` against `protocol.json`'s eligibility criteria and a fixed keyword taxonomy (both advisory only - never a decision), group and sort, truncate abstracts, write `results/<TOPIC>/screening/<stage>_sheet.md` and the `.csv` twin.
+3. Reply with **only**: total candidates, per-group counts, the include/exclude/unclear/none `ai_suggestion` breakdown, the corpus keyword-frequency overview (§4a), the two file paths, and one line reminding the reviewer that full-text excludes need a reason. Nothing from the sheet's per-record content (titles, abstracts, individual `ai_keywords`) appears in the reply - only these aggregate counts, which are computed inside the same subprocess and never require reading a record's text back into the conversation.
 
 ## Mode: import
 

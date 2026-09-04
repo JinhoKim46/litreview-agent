@@ -11,13 +11,13 @@ Follow these steps **in order**. Do not skip a step, and do not reorder validati
 `$ARGUMENTS` must begin with exactly one subcommand: `export` or `import`. Everything after it is flags.
 
 1. Split `$ARGUMENTS` on whitespace. The first token is the subcommand.
-   - Not `export` and not `import` (including empty `$ARGUMENTS`) -> **stop** and reply: `"Usage: /prisma-screen export [--stage title_abstract|full_text] [--group-by theme|source|year]"` followed by `"       /prisma-screen import [--stage title_abstract|full_text]"`. Do not guess which subcommand was meant.
+   - Not `export` and not `import` (including empty `$ARGUMENTS`) -> **stop** and reply: `"Usage: /prisma-screen export [--stage title_abstract|full_text] [--group-by theme|source|year|ai_suggestion]"` followed by `"       /prisma-screen import [--stage title_abstract|full_text]"`. Do not guess which subcommand was meant.
 2. Parse remaining flags for that subcommand only:
    - **`export`** accepts `--stage <value>` (default `title_abstract` if omitted) and `--group-by <value>` (default `source` if omitted).
    - **`import`** accepts `--stage <value>` (default `title_abstract` if omitted) only. If `--group-by` is passed to `import`, **stop** and reply that `--group-by` only applies to `export` - don't silently ignore an argument the user typed on purpose.
 3. Validate flag values before anything else runs:
    - `--stage` must be exactly `title_abstract` or `full_text`. Anything else (typos like `fulltext`, `abstract`, case variants) -> **stop**, name the invalid value, list the two valid ones, do not auto-correct a guess.
-   - `--group-by` (export only) must be exactly `theme`, `source`, or `year`. Same stop-and-name rule on anything else.
+   - `--group-by` (export only) must be exactly `theme`, `source`, `year`, or `ai_suggestion`. Same stop-and-name rule on anything else.
 4. State back, in one line, what you parsed (e.g. `"prisma-screen export --stage title_abstract --group-by source"`) so the user can catch a misparse before any file work starts.
 
 ---

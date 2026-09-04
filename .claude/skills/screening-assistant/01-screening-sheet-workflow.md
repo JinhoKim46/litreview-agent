@@ -124,13 +124,24 @@ Write a one-line rationale alongside the label (e.g. `"exclude — animal study,
 
 ---
 
+## 4a. Keyword tagging and corpus overview (advisory only, never a decision or a finding)
+
+Two additional pieces of advisory output, both computed the same way as `ai_suggestion` - case-insensitive substring matching against a **fixed keyword taxonomy**, run inside the same export subprocess, never an LLM re-reading each abstract. This is a deliberate choice, not a shortcut taken for lack of a better option: matching every one of a review's candidate abstracts with real semantic judgment would mean reading all of them back into the conversation, which is exactly the context-blowup this skill's "one rule" exists to prevent. A keyword match is honest about being a keyword match - it never claims to report a study's actual finding (a specific result value), only which topics/metrics/methods the title or abstract *mentions*. Never let `ai_keywords` or the corpus overview be read by a reviewer (or by `/prisma-report` later) as a substitute for `/prisma-extract`'s actual data extraction from full text.
+
+**Per-record `ai_keywords`:** maintain a small taxonomy of terms relevant to the review's domain (method-family terms and outcome/metric terms - for an imaging/reconstruction review, e.g. `cnn`, `gan`, `u-net`, `transformer`, `diffusion`, `unrolled`, `self-supervised`, `ssim`, `psnr`, `diagnostic accuracy`, `reader study`, `scan time`, `acceleration factor`; adapt the list to the review's actual PICO/PICo/SPIDER concepts rather than hardcoding an imaging-specific list for every topic). For each candidate, `ai_keywords` is the comma-joined list of taxonomy terms found (case-insensitive substring match) in `title + " " + abstract`, in taxonomy order, deduplicated. Empty string if none matched - never fabricate a keyword that isn't a literal substring match.
+
+**Corpus overview (export-time only, printed as part of §8's summary, never written into the sheet itself):** across all candidates being exported this run, count how many records matched each taxonomy term, and report the top terms by frequency (e.g. top 10) as a `term: count` list. This is a frequency count over already-computed `ai_keywords` matches - it costs nothing extra to compute and never requires reading any record's raw text back into the conversation, only the counts. Do not editorialize the counts into a prose "finding" ("this shows GANs are becoming more popular") - report the counts and let the reviewer draw conclusions; a claim like that would need actual publication-year trend analysis and citation, not a hunch from one export's keyword tally.
+
+---
+
 ## 5. Grouping and sorting
 
 - **`--group-by source`** (default): one group per `source` value (`openalex`, `pubmed`, ...). Always available since every connector's output shape guarantees `source`.
 - **`--group-by year`**: one group per `year` value, records with `year: null` collected into a trailing `"Year unknown"` group.
 - **`--group-by theme`**: one group per `theme` field **if the record carries one** (records don't get a `theme` by default - nothing in the pipeline before this stage assigns it; a reviewer or a later `/prisma-extract` pass may tag one manually). If **no** candidate has a `theme` field, don't fabricate groups: emit a single group named `"Ungrouped (no theme tags yet)"` holding everything, and say so in the export summary so the reviewer knows `--group-by theme` had nothing to key on this run rather than silently behaving like `--group-by source`.
+- **`--group-by ai_suggestion`**: one group per `ai_suggestion` label computed in §4 (`include`, `exclude`, `unclear`, `none`). Lets a reviewer triage the easy `include`/`exclude` calls first and spend their attention on the `unclear` group. Group order is fixed as `include, exclude, unclear, none` (not alphabetical - alphabetical order would scatter the one group reviewers most want to see last, `unclear`, in the middle) and is never reordered even when a label has zero records that run (just omit the empty group rather than showing a "(0 records)" heading).
 
-Group order: alphabetical by group name, except the `theme` fallback group and the `year` unknown group always sort last.
+Group order (all other modes): alphabetical by group name, except the `theme` fallback group and the `year` unknown group always sort last.
 
 ---
 
@@ -158,13 +169,13 @@ def truncate_abstract(abstract, limit=500):
 Exact header, in this order (edit columns first so a reviewer in a spreadsheet doesn't have to scroll):
 
 ```
-record_id,decision,reason,ai_suggestion,ai_rationale,title,year,authors,source,doi,url,abstract_truncated,possible_duplicate
+record_id,decision,reason,ai_suggestion,ai_rationale,ai_keywords,title,year,authors,source,doi,url,abstract_truncated,possible_duplicate
 ```
 
 `possible_duplicate` is empty unless `possible_duplicates.jsonl` flagged this record, in which case it holds `"<other_id> (similarity 0.93)"` - read-only/advisory, import never looks at this column.
 
 - `decision` and `reason` start **empty** - the reviewer fills them in. `decision` accepts `include` or `exclude` (case-insensitive; normalized to lowercase on import). `reason` is optional except for a full-text `exclude`.
-- `ai_suggestion` / `ai_rationale` are pre-filled, read-only in spirit (the reviewer can ignore them; they're not re-derived or checked against on import).
+- `ai_suggestion` / `ai_rationale` / `ai_keywords` are pre-filled, read-only in spirit (the reviewer can ignore them; they're not re-derived, checked against, or written to `screening_decisions.jsonl` on import - `ai_keywords` is a sheet-only convenience column, never part of the ledger schema in §1).
 - `authors` is `; `-joined so a single CSV field survives round-tripping through a spreadsheet app without being split into extra columns.
 
 Write with the stdlib `csv` module (`csv.DictWriter`, `quoting=csv.QUOTE_MINIMAL`) so commas/quotes inside titles and abstracts are escaped correctly - never hand-join columns with a plain `join(",")`, that breaks the instant an abstract contains a comma.
@@ -185,6 +196,7 @@ REASON line for any full-text exclude.
 - **Link:** https://doi.org/10.1234/abcd
 - **Possible duplicate of:** crossref:10.9999/wxyz (similarity 0.93) — *only shown when flagged; advisory, does not affect screening*
 - **AI suggestion:** include — plausible population/design match, no gate tripped
+- **Keywords:** cnn, ssim, image quality *(omitted when no taxonomy term matched; a keyword-match tag, not a reported finding)*
 - **Abstract (truncated to 500 chars):** Background: ... [truncated, 612 chars remaining]
 
 - [ ] Include
@@ -209,6 +221,11 @@ Exported 45 undecided title_abstract records for <TOPIC>, grouped by source:
   crossref: 12
   pubmed: 5
 
+AI suggestion breakdown: include 19, exclude 14, unclear 12, none 0
+
+Corpus keyword overview (top matches across these 45 records):
+  deep learning: 31, cnn: 18, ssim: 15, gan: 9, diagnostic accuracy: 7, unrolled: 4
+
 Files:
   results/<TOPIC>/screening/title_abstract_sheet.csv  (preferred - edit this one)
   results/<TOPIC>/screening/title_abstract_sheet.md
@@ -217,7 +234,7 @@ Edit the decision/reason columns (or checkboxes in the .md), then run
 `/prisma-screen import --stage title_abstract`. Full-text excludes will need a reason.
 ```
 
-Adjust counts/grouping line/paths to match the actual run; if `--group-by theme` fell back per §5, replace the "grouped by ..." line with a note that no theme tags were found.
+Adjust counts/grouping line/paths to match the actual run; if `--group-by theme` fell back per §5, replace the "grouped by ..." line with a note that no theme tags were found. The "AI suggestion breakdown" line is always shown regardless of `--group-by` value (it's an independent count, not tied to the grouping choice). The "Corpus keyword overview" line is omitted only if `protocol.json` has no eligibility criteria to derive a taxonomy from (matches §4's `none`/no-protocol case) - state that plainly rather than printing an empty list.
 
 ---
 
