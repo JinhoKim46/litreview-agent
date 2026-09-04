@@ -3,19 +3,9 @@
 *A PRISMA 2020-conformant systematic review and meta-analysis pipeline that
 actually runs, built on [Claude Code](https://claude.com/claude-code).*
 
-> Note: This is an independent open-source project and is not affiliated
-> with, endorsed by, or sponsored by Anthropic. Anthropic and Claude Code
-> are referenced only to describe the toolchain this workflow uses.
+> Note: This is an independent open-source project and is not affiliated with, endorsed by, or sponsored by Anthropic. Anthropic and Claude Code are referenced only to describe the toolchain this workflow uses.
 
-Most "AI systematic review" tools are reporting assistants: you search,
-screen, and extract data elsewhere (Rayyan, RevMan, Excel), then interview a
-model into narrating what you already did. This repo instead runs the whole
-pipeline — real database search, real deduplication, a real screening
-workflow, real data extraction, and real statistical meta-analysis (pooled
-effect sizes, heterogeneity, forest/funnel plots, GRADE certainty) — with
-the human judgment calls PRISMA itself requires (screening decisions,
-section approval) left to the reviewer, and everything else automated and
-auditable.
+Most "AI systematic review" tools are reporting assistants: you search, screen, and extract data elsewhere (Rayyan, RevMan, Excel), then interview a model into narrating what you already did. This repo instead runs the whole pipeline — real database search, real deduplication, a real screening workflow, real data extraction, and real statistical meta-analysis (pooled effect sizes, heterogeneity, forest/funnel plots, GRADE certainty) — with the human judgment calls PRISMA itself requires (screening decisions, section approval) left to the reviewer, and everything else automated and auditable.
 
 ## Pipeline
 
@@ -30,12 +20,7 @@ record    national       term expansion the same  audit       (never    RoB2 fie
                                                                                        not poolable)
 ```
 
-Every arrow above is a `results/<TOPIC>/` file, not a conversation the
-reviewer has to re-have: `protocol.json` -> `search_plan.json` +
-`rerun_search.sh` -> `records.jsonl` -> `screening_decisions.jsonl` ->
-`extraction_table.json` -> `synthesis/*.json` + plots -> `manuscript/`.
-Nothing downstream is ever re-elicited from memory — the report drafts
-straight from what the pipeline actually recorded.
+Every arrow above is a `results/<TOPIC>/` file, not a conversation the reviewer has to re-have: `protocol.json` -> `search_plan.json` + `rerun_search.sh` -> `records.jsonl` -> `screening_decisions.jsonl` -> `extraction_table.json` -> `synthesis/*.json` + plots -> `manuscript/`. Nothing downstream is ever re-elicited from memory — the report drafts straight from what the pipeline actually recorded.
 
 ## Quickstart
 
@@ -52,15 +37,11 @@ claude
 /prisma-report                        # draft the manuscript, flow diagram, and checklist audit
 ```
 
-`/prisma-status "your review topic"` works at any point and reconstructs
-exactly where a review stands, since every stage's state is either
-append-only or fully re-derivable — close your laptop mid-screening for
-weeks and pick back up with nothing lost.
+`/prisma-status "your review topic"` works at any point and reconstructs exactly where a review stands, since every stage's state is either append-only or fully re-derivable — close your laptop mid-screening for weeks and pick back up with nothing lost.
 
 ## Free, multi-disciplinary sources
 
-Six connectors ship out of the box, chosen to cover most disciplines with no
-paid access required:
+Six connectors ship out of the box, chosen to cover most disciplines with no paid access required:
 
 | Source | Coverage |
 |---|---|
@@ -71,23 +52,11 @@ paid access required:
 | **Europe PMC** | Biomedical + preprints + patents, broader than PubMed |
 | **arXiv** | STEM preprints (flagged as not-yet-peer-reviewed in extraction) |
 
-Need an institutional source (Scopus, Web of Science)? Run
-`/prisma-add-source` — it scaffolds a new connector against the same fixed
-`{meta, results}` JSON contract the six above already use, with credentials
-read only from an environment variable, never a flag or a tracked file.
+Need an institutional source (Scopus, Web of Science)? Run `/prisma-add-source` — it scaffolds a new connector against the same fixed `{meta, results}` JSON contract the six above already use, with credentials read only from an environment variable, never a flag or a tracked file.
 
 ## Fork this and adapt
 
-**This repo is a universal template.** The connectors, PRISMA methodology,
-screening workflow, and synthesis math are topic-agnostic and
-reviewer-agnostic — fork it, run `/prisma-init "your topic"`, and everything
-your specific review produces lands under `results/<your-topic>/`, which is
-gitignored by default. Upstream improvements to the pipeline (new
-connectors, dedup fixes, better pooling logic) stay mergeable back into your
-fork precisely because your review's own data was never committed to it in
-the first place. See [CONTRIBUTING.md](CONTRIBUTING.md) for what's
-universal-pipeline vs. instance-specific, and [AGENTS.md](AGENTS.md) if
-you're driving this from a non-Claude agent runtime.
+**This repo is a universal template.** The connectors, PRISMA methodology, screening workflow, and synthesis math are topic-agnostic and reviewer-agnostic — fork it, run `/prisma-init "your topic"`, and everything your specific review produces lands under `results/<your-topic>/`, which is gitignored by default. Upstream improvements to the pipeline (new connectors, dedup fixes, better pooling logic) stay mergeable back into your fork precisely because your review's own data was never committed to it in the first place. See [CONTRIBUTING.md](CONTRIBUTING.md) for what's universal-pipeline vs. instance-specific, and [AGENTS.md](AGENTS.md) if you're driving this from a non-Claude agent runtime.
 
 ## Repo structure
 
@@ -116,6 +85,4 @@ prisma-review/
 
 ## License
 
-MIT for all framework code and prompts, with an explicit carve-out for two
-CC BY 4.0 reference documents and one file adapted from another MIT project
-with attribution preserved — see [LICENSE](LICENSE) for the exact terms.
+MIT for all framework code and prompts, with an explicit carve-out for two CC BY 4.0 reference documents and one file adapted from another MIT project with attribution preserved — see [LICENSE](LICENSE) for the exact terms.
