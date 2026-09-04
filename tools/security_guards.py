@@ -59,6 +59,7 @@ ALLOWED_PERMISSIONS = {
     "Bash(python3 tools/security_guards.py:*)",
     "Bash(python3 -m unittest discover:*)",
     "Bash(pandoc:*)",
+    "Bash(gh repo view:*)",
 }
 
 # Per-review-state and credential ignore rules that must never disappear from
