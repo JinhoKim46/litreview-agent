@@ -45,7 +45,7 @@ Read from `results/<TOPIC>/`:
 
 ### Information the pipeline does not capture — ask briefly
 
-A short, targeted round of questions (or `AskUserQuestion` where options are bounded) covers only what genuinely lives outside the pipeline state: title-page details (author name(s) and affiliation(s), corresponding author contact, ORCID iD(s)), target journal (check the reviewer profile in this repo's `CLAUDE.md` first — many reviews reuse one across a project — and ask only if absent), and the Declarations content (funding, competing interests, data-availability statement, ethics approval, acknowledgements). Word count and table/figure count are computed from the draft, never asked.
+A short, targeted round of questions (or `AskUserQuestion` where options are bounded) covers only what genuinely lives outside the pipeline state: title-page details (author name(s) and affiliation(s), corresponding author contact, ORCID iD(s)), target journal (check the reviewer profile in this repo's `CLAUDE.local.md` first — many reviews reuse one across a project — and ask only if absent), and the Declarations content (funding, competing interests, data-availability statement, ethics approval, acknowledgements). Word count and table/figure count are computed from the draft, never asked.
 
 If the user has a manuscript, protocol, or PROSPERO registration from outside this framework's own pipeline (e.g. they are auditing prior work, or migrating an existing draft in — see "Handling partial requests" below), read it and cross-reference against the pipeline files rather than overwriting one with the other; flag any contradiction (e.g. a different eligibility criterion in the uploaded protocol vs. `protocol.json`) instead of silently picking one.
 

@@ -13,7 +13,7 @@ You are running the initialization pipeline for a new (or existing) systematic r
    - If `$ARGUMENTS` is non-empty, derive `<TOPIC>` from it directly and proceed without blocking on confirmation — just state the folder name you resolved to in your first reply so the reviewer can redirect you if it's wrong (e.g. "I'll use `results/ai-in-korean-elder-care/` for this review — let me know if you'd prefer a different folder name.").
    - If `$ARGUMENTS` is empty, ask the reviewer for a short topic phrase (2-6 words is plenty — it only needs to be enough to name a folder; the full working title and objective are elicited properly in Step 4) before deriving the slug.
 3. **Check for an existing review**: attempt to read `results/<TOPIC>/protocol.json`.
-   - **If it exists**, this is a resume/update, not a fresh init. Read it in full, summarize its current title, framework, eligibility criteria, and scope back to the reviewer in plain language, and ask whether they want to (a) update this protocol (carry the update into Step 4, which routes to the `review-protocol` skill's own "Before you begin" update path and never silently overwrites recorded eligibility criteria), or (b) start a distinct review under a different topic slug (go back to Step 0.2 with a new slug). Do not re-run Steps 1-3 wholesale for an update — Step 2 (reviewer profile) in particular should only run if `CLAUDE.md` still has placeholder tokens; re-confirm scope (Step 1) only if the reviewer says scope is what's changing. Don't write the amendment record yourself — the `review-protocol` skill's update path owns `protocol.json`'s `amendments: [{date, change, reason}]` array (PRISMA Item 24c); your job here is only to route into that path.
+   - **If it exists**, this is a resume/update, not a fresh init. Read it in full, summarize its current title, framework, eligibility criteria, and scope back to the reviewer in plain language, and ask whether they want to (a) update this protocol (carry the update into Step 4, which routes to the `review-protocol` skill's own "Before you begin" update path and never silently overwrites recorded eligibility criteria), or (b) start a distinct review under a different topic slug (go back to Step 0.2 with a new slug). Do not re-run Steps 1-3 wholesale for an update — Step 2 (reviewer profile) in particular should only run if `CLAUDE.local.md` still has placeholder tokens; re-confirm scope (Step 1) only if the reviewer says scope is what's changing. Don't write the amendment record yourself — the `review-protocol` skill's update path owns `protocol.json`'s `amendments: [{date, change, reason}]` array (PRISMA Item 24c); your job here is only to route into that path.
    - **If it does not exist**, this is a fresh init. Continue to Step 1.
 
 ---
@@ -36,17 +36,12 @@ Hold the scope answer (`mode`, `region`, any named `coverage_gaps`) in context �
 
 ## Step 2: Reviewer Profile Interview
 
-1. Read the repo root `CLAUDE.md`.
-2. Check the `## Reviewer Profile` section for `[PLACEHOLDER]`-style bracketed tokens (`[YOUR_NAME]`, `[YOUR_FIELD]`, `[YOUR_INSTITUTION]`, `[PRIOR_WORK_1]`, `[TARGET_JOURNAL_1]`, `[CITATION_STYLE]`, etc.).
-   - **If none remain** (the section was already filled in by a prior run of this command or by hand), skip this interview entirely and say so: "Reviewer profile already on file, skipping the interview." Proceed to Step 3.
-   - **If placeholders remain**, continue to the visibility check below before asking anything.
-3. **Repo visibility check (before collecting anything personal).** `CLAUDE.md` is a tracked file, not gitignored — unlike `results/<TOPIC>/`, whatever this interview writes here becomes part of your git history. Check whether this is a public repo:
-   ```bash
-   gh repo view --json visibility,isFork 2>/dev/null
-   ```
-   - If this fails (not a git repo yet, no `gh` auth, no remote configured), skip the warning silently — there's nothing concrete to warn about yet, and failing this check must never block the interview.
-   - If it succeeds and `visibility` is `"PUBLIC"`, say so plainly before asking anything: "Heads up — this repo is public, and this interview writes your name, institution, and prior work into `CLAUDE.md`, which is tracked (not gitignored). If you'd rather that stayed private, run `gh repo edit --visibility private` first, or just skip fields you don't want on the record — none of them are required." Then continue regardless of their answer; this is a disclosure, not a gate.
-   - If `visibility` is `"PRIVATE"` or the repo is a private fork, no warning needed — say nothing about it.
+1. Check whether the repo root `CLAUDE.local.md` exists.
+   - **If it doesn't exist**, create it by copying the tracked template: `cp CLAUDE.local.md.example CLAUDE.local.md`. `CLAUDE.local.md` is gitignored, so this and everything the interview below writes into it never enters git history — safe to fill in even on a public fork.
+   - Read `CLAUDE.local.md`.
+2. Check it for `[PLACEHOLDER]`-style bracketed tokens (`[YOUR_NAME]`, `[YOUR_FIELD]`, `[YOUR_INSTITUTION]`, `[PRIOR_WORK_1]`, `[TARGET_JOURNAL_1]`, `[CITATION_STYLE]`, etc.).
+   - **If none remain** (it was already filled in by a prior run of this command or by hand), skip this interview entirely and say so: "Reviewer profile already on file, skipping the interview." Proceed to Step 3.
+   - **If placeholders remain**, continue and ask.
 4. Ask conversationally, in one grouped round (not a form, not one question per message):
    - Their name.
    - **Field of research** (e.g. "clinical anesthesiology", "education technology") — this calibrates tone and journal conventions later in `/prisma-report`.
@@ -55,7 +50,7 @@ Hold the scope answer (`mode`, `region`, any named `coverage_gaps`) in context �
    - **Target journal(s)** — used to calibrate manuscript tone, length, and reference style in `/prisma-report` (one or more; "not decided yet" is valid).
    - **Preferred citation style** — default to APA 7th edition if the reviewer has no preference; don't block on this.
    - **Institutional database access** (optional) — e.g. Scopus, Web of Science. This doesn't add a connector now; just note it so the reviewer remembers `/prisma-add-source` is available for it later.
-5. Use the **Edit** tool to replace the bracketed tokens in `CLAUDE.md`'s `## Reviewer Profile` section with the reviewer's actual answers. Make targeted edits only — do not rewrite the whole file. Preserve the section's structure and its explanatory HTML comments. If the reviewer gave one prior-work item where the template has two placeholder lines (`[PRIOR_WORK_1]`, `[PRIOR_WORK_2]`), remove the unused line rather than leaving a dangling placeholder; the same rule applies to target journals and institutional-access lines — trim to fit what was actually given, add more bullet lines if the reviewer gave more than the template has slots for. Also replace the `[YOUR_NAME]` token in the file's `# PRISMA Review Assistant for [YOUR_NAME]` title line.
+5. Use the **Edit** tool to replace the bracketed tokens in `CLAUDE.local.md` with the reviewer's actual answers. Make targeted edits only — do not rewrite the whole file. Preserve the file's structure and its explanatory HTML comments. If the reviewer gave one prior-work item where the template has two placeholder lines (`[PRIOR_WORK_1]`, `[PRIOR_WORK_2]`), remove the unused line rather than leaving a dangling placeholder; the same rule applies to target journals and institutional-access lines — trim to fit what was actually given, add more bullet lines if the reviewer gave more than the template has slots for.
 6. State which fields were filled in.
 
 ---

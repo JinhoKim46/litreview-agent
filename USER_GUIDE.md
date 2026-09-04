@@ -51,13 +51,7 @@ git clone https://github.com/<your-fork>/prisma-flow.git
 cd prisma-flow
 ```
 
-**Before you go further: if you forked this on GitHub, your fork is public by default**, same as the upstream repo. That matters here because `/prisma-init`'s reviewer-profile interview (Section 4 below) writes your name, institution, and prior publications into `CLAUDE.md` — a **tracked** file, not gitignored. If you'd rather that stayed private:
-
-```bash
-gh repo edit <your-username>/prisma-flow --visibility private
-```
-
-(or toggle it in the GitHub UI under Settings → General → Danger Zone). Your actual review data — search results, screening decisions, extracted study data, the drafted manuscript — is a separate concern and is gitignored by default regardless (see `results/<TOPIC>/` in Section 10); this warning is specifically about the reviewer-profile fields in `CLAUDE.md`.
+If you forked this on GitHub, your fork is public by default, same as the upstream repo — but that's fine here: `/prisma-init`'s reviewer-profile interview (Section 4 below) writes your name, institution, and prior publications into `CLAUDE.local.md`, which is gitignored, so none of it enters git history even on a public fork. Your actual review data — search results, screening decisions, extracted study data, the drafted manuscript — is a separate concern and is gitignored by default too (see `results/<TOPIC>/` in Section 10).
 
 ---
 
@@ -93,7 +87,7 @@ Then run:
 /prisma-init "your review topic"
 ```
 
-The **first time** you run this (on a fresh clone where `CLAUDE.md`'s Reviewer Profile section still has `[PLACEHOLDER]` tokens), it interviews you in one grouped conversational round — not a form, not one question per message:
+The **first time** you run this (on a fresh clone where `CLAUDE.local.md` doesn't exist yet, or still has `[PLACEHOLDER]` tokens), it interviews you in one grouped conversational round — not a form, not one question per message:
 
 - Your name
 - Field of research (calibrates tone and journal conventions later)
@@ -103,7 +97,7 @@ The **first time** you run this (on a fresh clone where `CLAUDE.md`'s Reviewer P
 - Preferred citation style (defaults to APA 7th if you have no preference)
 - Any institutional database access you have (Scopus, Web of Science) — noted for later, doesn't add a connector by itself
 
-It writes your answers straight into `CLAUDE.md` and tells you which fields it filled in. **Every run after that skips this interview automatically** — it checks for leftover placeholder tokens first, and only asks about what's still unfilled. You will not be re-interviewed for a second review's topic; this step is about *you*, not about any one review.
+It writes your answers straight into `CLAUDE.local.md` (gitignored — copied from the tracked `CLAUDE.local.md.example` template on first run) and tells you which fields it filled in. **Every run after that skips this interview automatically** — it checks for leftover placeholder tokens first, and only asks about what's still unfilled. You will not be re-interviewed for a second review's topic; this step is about *you*, not about any one review.
 
 After the interview, the same `/prisma-init` call keeps going into scope selection and the actual review protocol (PICO/eligibility criteria) for the topic you gave it — see Section 5.
 
@@ -224,7 +218,7 @@ Expected occasionally, especially from Semantic Scholar's unauthenticated pool. 
 Only happens if you've set an API-key environment variable to an empty or malformed value, or a connector you added via `/prisma-add-source` genuinely requires one. None of the six default connectors need a key to function at all.
 
 **`/prisma-init` didn't ask me the reviewer-profile questions**
-That's expected if `CLAUDE.md`'s Reviewer Profile section has no `[PLACEHOLDER]` tokens left — either from a previous run, or because you filled it in by hand. Edit `CLAUDE.md` directly and put a placeholder back (or just add a new field) if you want to re-trigger it.
+That's expected if `CLAUDE.local.md` has no `[PLACEHOLDER]` tokens left — either from a previous run, or because you filled it in by hand. Edit `CLAUDE.local.md` directly and put a placeholder back (or just add a new field) if you want to re-trigger it.
 
 **`/prisma-report --export docx` did nothing / printed an install hint**
 Pandoc isn't installed. This is expected and non-fatal — the Markdown manuscript at `results/<topic>/manuscript/manuscript.md` is still complete and is the framework's actual source of truth; `--export` is a convenience layer on top of it, not a requirement.

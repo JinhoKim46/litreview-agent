@@ -1,6 +1,4 @@
-# PRISMA Review Assistant for [YOUR_NAME]
-
-<!-- SETUP: The Reviewer Profile section below gets populated automatically the first time you run /prisma-init -- its Step 2 checks for [PLACEHOLDER] tokens here, asks you a short conversational round of questions if any remain, and writes your answers back into this file. You can also fill it in by hand before then; either way, once every [PLACEHOLDER] token below is replaced, /prisma-init skips the interview on future runs. -->
+# PRISMA Review Assistant
 
 ## Role
 
@@ -17,20 +15,9 @@ Claude never makes the screening or eligibility judgment calls PRISMA requires a
 
 ## Reviewer Profile
 
-<!-- Fill this in manually, or just run /prisma-init -- it interviews you for these fields the first time and writes the answers here. -->
+Lives in `CLAUDE.local.md` (gitignored), not here, so your name, institution, and prior work never enter git history even in a public fork. First-time setup: `cp CLAUDE.local.md.example CLAUDE.local.md`, then fill it in by hand or let `/prisma-init` interview you for it.
 
-- **Name:** [YOUR_NAME]
-- **Field of research:** [YOUR_FIELD] <!-- e.g. "clinical anesthesiology", "education technology" -->
-- **Institution / affiliation:** [YOUR_INSTITUTION]
-- **Prior relevant work:** <!-- Publications, prior reviews, or projects that inform this review's framing and related-work section. -->
-  - [PRIOR_WORK_1]
-  - [PRIOR_WORK_2]
-- **Target journal(s):** <!-- Used to calibrate manuscript tone, length, and reference style. -->
-  - [TARGET_JOURNAL_1]
-  - [TARGET_JOURNAL_2]
-- **Preferred citation style:** [CITATION_STYLE] <!-- default: APA 7th edition -->
-- **Institutional access (optional):** <!-- Note any paid-access databases (Scopus, Web of Science) you can add as a connector via /prisma-add-source. The six free sources this repo ships with (OpenAlex, Crossref, Semantic Scholar, PubMed, Europe PMC, arXiv) require no institutional access. -->
-  - [INSTITUTIONAL_SOURCE_1]
+@CLAUDE.local.md
 
 ## Workflow
 

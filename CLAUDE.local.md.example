@@ -1,0 +1,20 @@
+# Reviewer Profile
+
+<!-- This file is gitignored (see .gitignore) -- it never leaves your machine, even in a public fork.
+     Copy it once: cp CLAUDE.local.md.example CLAUDE.local.md
+     Then fill it in by hand, or just run /prisma-init -- it interviews you for these fields the
+     first time and writes the answers here. Once every [PLACEHOLDER] token below is replaced,
+     /prisma-init skips the interview on future runs. -->
+
+- **Name:** [YOUR_NAME]
+- **Field of research:** [YOUR_FIELD] <!-- e.g. "clinical anesthesiology", "education technology" -->
+- **Institution / affiliation:** [YOUR_INSTITUTION]
+- **Prior relevant work:** <!-- Publications, prior reviews, or projects that inform this review's framing and related-work section. -->
+  - [PRIOR_WORK_1]
+  - [PRIOR_WORK_2]
+- **Target journal(s):** <!-- Used to calibrate manuscript tone, length, and reference style. -->
+  - [TARGET_JOURNAL_1]
+  - [TARGET_JOURNAL_2]
+- **Preferred citation style:** [CITATION_STYLE] <!-- default: APA 7th edition -->
+- **Institutional access (optional):** <!-- Note any paid-access databases (Scopus, Web of Science) you can add as a connector via /prisma-add-source. The six free sources this repo ships with (OpenAlex, Crossref, Semantic Scholar, PubMed, Europe PMC, arXiv) require no institutional access. -->
+  - [INSTITUTIONAL_SOURCE_1]
