@@ -1,24 +1,14 @@
 ---
-framework_version: 1.0.0
+framework_version: 1.0.1
 ---
 
 # Risk of Bias Assessment
 
-Two tools cover the study designs a systematic review typically includes:
-the **Cochrane Collaboration's tool for assessing risk of bias** (commonly
-called "RoB2" in its current, revised form) for randomized controlled
-trials, and the **Newcastle-Ottawa Scale (NOS)** for non-randomized studies.
-Use exactly one per study, matched to its actual design — never mix domains
-from the two tools on a single study.
+Two tools cover the study designs a systematic review typically includes: the **Cochrane Collaboration's tool for assessing risk of bias** (commonly called "RoB2" in its current, revised form) for randomized controlled trials, and the **Newcastle-Ottawa Scale (NOS)** for non-randomized studies. Use exactly one per study, matched to its actual design — never mix domains from the two tools on a single study.
 
 ## Part 1 — Cochrane Risk of Bias Tool (RCTs)
 
-Source: Higgins JP, Altman DG, Sterne JA. Chapter 8: Assessing risk of bias
-in included studies. In: *Cochrane Handbook for Systematic Reviews of
-Interventions*. The Cochrane Collaboration, 2011 (updated 2017). Six domains,
-each judged **low / high / unclear**, each requiring a written "support of
-judgement" — a specific quote or paraphrase from the study, never a bare
-label with no evidence behind it.
+Source: Higgins JP, Altman DG, Sterne JA. Chapter 8: Assessing risk of bias in included studies. In: *Cochrane Handbook for Systematic Reviews of Interventions*. The Cochrane Collaboration, 2011 (updated 2017). Six domains, each judged **low / high / unclear**, each requiring a written "support of judgement" — a specific quote or paraphrase from the study, never a bare label with no evidence behind it.
 
 | Domain | Support of judgement — what to look for | What the judgement is protecting against |
 |---|---|---|
@@ -30,53 +20,27 @@ label with no evidence behind it.
 | **Selective reporting** | State how the possibility of selective outcome reporting was examined, and what was found — ideally by comparing the published outcomes against a registered protocol or trial registry entry (e.g. ClinicalTrials.gov). | Reporting bias due to selective outcome reporting. |
 | **Other bias** | State any important concerns about bias not addressed in the other domains (e.g. early stopping for benefit, baseline imbalance, a conflict of interest that plausibly shaped the reported result, deviation from a registered protocol, vested-interest funding). If particular questions were prespecified in the review's own protocol, answer each one explicitly here. | Bias due to problems not covered elsewhere in the tool. |
 
-*(Adapted from Higgins JP, Altman DG, Sterne JA, Cochrane Handbook for
-Systematic Reviews of Interventions, Chapter 8, as tabulated in Ahn E, Kang H.
-Introduction to systematic review and meta-analysis. Korean J Anesthesiol
-2018;71(2):103-112, Table 1.)*
+*(Adapted from Higgins JP, Altman DG, Sterne JA, Cochrane Handbook for Systematic Reviews of Interventions, Chapter 8, as tabulated in Ahn E, Kang H. Introduction to systematic review and meta-analysis. Korean J Anesthesiol 2018;71(2):103-112, Table 1.)*
 
 ### Judgement categories
 
-- **Low risk of bias** — the domain's description makes it unlikely that
-  bias materially affected the result.
-- **High risk of bias** — the domain's description makes it plausible that
-  bias materially affected the result (e.g. no blinding on a
-  patient-reported pain outcome; large, unexplained, imbalanced attrition).
-- **Unclear risk of bias** — the study does not report enough detail on this
-  domain to make a low/high judgement either way. This is a valid, common,
-  and honest judgement — never upgrade "unclear" to "low" because a study is
-  otherwise well conducted, and never invent detail the paper doesn't state.
+- **Low risk of bias** — the domain's description makes it unlikely that bias materially affected the result.
+- **High risk of bias** — the domain's description makes it plausible that bias materially affected the result (e.g. no blinding on a patient-reported pain outcome; large, unexplained, imbalanced attrition).
+- **Unclear risk of bias** — the study does not report enough detail on this domain to make a low/high judgement either way. This is a valid, common, and honest judgement — never upgrade "unclear" to "low" because a study is otherwise well conducted, and never invent detail the paper doesn't state.
 
 ### Overall risk-of-bias judgement per study
 
-RoB2's current guidance derives one overall judgement per outcome (not per
-study, strictly — different outcomes in the same trial can carry different
-judgements when blinding matters more for one outcome than another) from the
-worst domain-level judgement, with three tiers:
+RoB2's current guidance derives one overall judgement per outcome (not per study, strictly — different outcomes in the same trial can carry different judgements when blinding matters more for one outcome than another) from the worst domain-level judgement, with three tiers:
 
 - **Low risk of bias** — low risk in every domain.
-- **Some concerns** — at least one domain judged unclear or a non-critical
-  high, without other domains raising serious concern.
-- **High risk of bias** — at least one domain judged high risk in a way that
-  substantially undermines confidence in the result, or multiple domains
-  raising concern together.
+- **Some concerns** — at least one domain judged unclear or a non-critical high, without other domains raising serious concern.
+- **High risk of bias** — at least one domain judged high risk in a way that substantially undermines confidence in the result, or multiple domains raising concern together.
 
-Record the overall judgement per outcome when domain judgements genuinely
-differ by outcome (e.g. blinding of outcome assessment is "low" for a lab
-value but "high" for a self-reported pain score in the same unblinded-
-personnel trial); otherwise one overall judgement per study is sufficient.
+Record the overall judgement per outcome when domain judgements genuinely differ by outcome (e.g. blinding of outcome assessment is "low" for a lab value but "high" for a self-reported pain score in the same unblinded- personnel trial); otherwise one overall judgement per study is sufficient.
 
 ## Part 2 — Newcastle-Ottawa Scale (non-randomized studies)
 
-For cohort, case-control, before-after, and cross-sectional studies — where
-RoB2's "allocation concealment" and "sequence generation" domains do not
-apply because there was no randomization — use the **Newcastle-Ottawa Scale**
-(Ottawa Hospital Research Institute; referenced as the standard alternative
-for non-randomized studies in the GRADE/RoB2 literature, e.g. Ahn & Kang
-2018, kjae-2018-71-2-103, "Quality of evidence" section). NOS awards **stars**
-(maximum 9) across three categories, using the **cohort-study** version
-(adapt item wording for case-control per the official OHRI case-control
-form when a study is case-control rather than cohort):
+For cohort, case-control, before-after, and cross-sectional studies — where RoB2's "allocation concealment" and "sequence generation" domains do not apply because there was no randomization — use the **Newcastle-Ottawa Scale** (Ottawa Hospital Research Institute; referenced as the standard alternative for non-randomized studies in the GRADE/RoB2 literature, e.g. Ahn & Kang 2018, kjae-2018-71-2-103, "Quality of evidence" section). NOS awards **stars** (maximum 9) across three categories, using the **cohort-study** version (adapt item wording for case-control per the official OHRI case-control form when a study is case-control rather than cohort):
 
 | Category | Items (1 star each unless noted) | Max stars |
 |---|---|---|
@@ -84,31 +48,14 @@ form when a study is case-control rather than cohort):
 | **Comparability** | (5) Comparability of cohorts on the basis of the design or analysis controlling for the most important confounder (1 star) and a second important confounder (a further star, 2 max) | 2 |
 | **Outcome** | (6) Assessment of outcome; (7) Was follow-up long enough for outcomes to occur; (8) Adequacy of follow-up of cohorts | 3 |
 
-Total NOS score guidance commonly used to bucket study quality (used only as
-a descriptive summary alongside the itemized stars, never as the sole
-reported number — always report the itemized breakdown too):
+Total NOS score guidance commonly used to bucket study quality (used only as a descriptive summary alongside the itemized stars, never as the sole reported number — always report the itemized breakdown too):
 
-- **Good quality**: 3-4 stars in Selection AND 1-2 stars in Comparability AND
-  2-3 stars in Outcome.
-- **Fair quality**: 2 stars in Selection AND 1-2 stars in Comparability AND
-  2-3 stars in Outcome.
-- **Poor quality**: 0-1 stars in Selection, OR 0 stars in Comparability, OR
-  0-1 stars in Outcome.
+- **Good quality**: 3-4 stars in Selection AND 1-2 stars in Comparability AND 2-3 stars in Outcome.
+- **Fair quality**: 2 stars in Selection AND 1-2 stars in Comparability AND 2-3 stars in Outcome.
+- **Poor quality**: 0-1 stars in Selection, OR 0 stars in Comparability, OR 0-1 stars in Outcome.
 
-Write the NOS assessment into a study's `risk_of_bias` block with
-`"tool": "NOS"` and one entry per category carrying
-`stars_awarded`/`stars_possible` and a `support` string naming the specific
-item(s) that earned or lost a star — the same evidence-based discipline as
-RoB2's "support of judgement," not a bare number.
+Write the NOS assessment into a study's `risk_of_bias` block with `"tool": "NOS"` and one entry per category carrying `stars_awarded`/`stars_possible` and a `support` string naming the specific item(s) that earned or lost a star — the same evidence-based discipline as RoB2's "support of judgement," not a bare number.
 
 ## Rolling up to the outcome level
 
-`/prisma-synthesize` aggregates the per-study overall judgements
-contributing to one outcome into `synthesis/rob_table.json` (see
-`SKILL.md`'s schema) and computes `proportion_low_risk` — the fraction of
-studies judged low risk / good quality. This proportion, together with
-whether *any* high-risk/poor-quality study drives the pooled result, is the
-direct input to the risk-of-bias domain of the GRADE rating in
-`02-grade-certainty.md`: a preponderance of high-risk-of-bias or poor-quality
-studies contributing to an outcome is grounds to rate down certainty by one
-or two levels on that domain alone.
+`/prisma-synthesize` aggregates the per-study overall judgements contributing to one outcome into `synthesis/rob_table.json` (see `SKILL.md`'s schema) and computes `proportion_low_risk` — the fraction of studies judged low risk / good quality. This proportion, together with whether *any* high-risk/poor-quality study drives the pooled result, is the direct input to the risk-of-bias domain of the GRADE rating in `02-grade-certainty.md`: a preponderance of high-risk-of-bias or poor-quality studies contributing to an outcome is grounds to rate down certainty by one or two levels on that domain alone.
