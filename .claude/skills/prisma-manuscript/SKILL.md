@@ -1,41 +1,18 @@
 ---
 name: prisma-manuscript
 description: "Draft a systematic review (and, where the pipeline produced pooled effect estimates, meta-analysis) manuscript following the PRISMA 2020 reporting guideline, from this framework's own results/<TOPIC>/ pipeline state. Use this skill for /prisma-report, or whenever the user mentions 'systematic review', 'systematic literature review', 'SLR', 'PRISMA', 'PRISMA 2020', 'PRISMA flow diagram', 'PRISMA checklist', or asks for help writing, structuring, or auditing a review manuscript that follows PRISMA reporting guidelines. Also trigger when the user asks about inclusion/exclusion criteria wording, search-strategy appendix text, study-selection narrative, risk-of-bias or GRADE presentation, or synthesis write-up for a review paper. Covers the full PRISMA 2020 checklist (27 items), produces a Markdown manuscript in strict journal-article format (with optional Pandoc export to .docx/.pdf), generates an inline-SVG annotated PRISMA flow diagram, and enforces APA 7th Edition referencing throughout, verified via WebSearch/WebFetch. Includes quantitative-synthesis reporting (forest plots, heterogeneity, RoB2, GRADE) when `synthesis/` data exists, and falls back to narrative-only reporting when it does not. Adapted from slr-prisma by Chuah Kee Man (MIT)."
-framework_version: 1.0.0
+framework_version: 1.0.1
 ---
 
-<!--
-  Adapted from slr-prisma (https://github.com/keemanxp/slr-prisma) by
-  Chuah Kee Man, MIT License.
-  Manuscript structure, PRISMA-item mapping, drafting conventions, tone
-  calibration, and APA7 citation-format rules are reused almost verbatim
-  from the original slr-prisma/SKILL.md. Tool dependencies specific to the
-  Claude.ai environment (docx-js, the bundled apa-referencing skill, the
-  "Visualizer" tool) have been swapped for Markdown-first drafting, a
-  bundled self-contained APA7 reference file, native WebSearch/WebFetch
-  verification, and inline SVG — per the architecture plan's §7 tool-
-  dependency swap table — and the manuscript now draws its content from
-  this framework's own search/screening/extraction/synthesis pipeline
-  instead of being re-elicited from the reviewer's memory.
--->
+<!-- Adapted from slr-prisma (https://github.com/keemanxp/slr-prisma) by Chuah Kee Man, MIT License. Manuscript structure, PRISMA-item mapping, drafting conventions, tone calibration, and APA7 citation-format rules are reused almost verbatim from the original slr-prisma/SKILL.md. Tool dependencies specific to the Claude.ai environment (docx-js, the bundled apa-referencing skill, the "Visualizer" tool) have been swapped for Markdown-first drafting, a bundled self-contained APA7 reference file, native WebSearch/WebFetch verification, and inline SVG — per the architecture plan's §7 tool- dependency swap table — and the manuscript now draws its content from this framework's own search/screening/extraction/synthesis pipeline instead of being re-elicited from the reviewer's memory. -->
 
 # Systematic Review & Meta-Analysis Manuscript — PRISMA 2020
 
 **Adapted from:** slr-prisma by Chuah Kee Man (MIT) | **Based on:** PRISMA 2020 (Page et al., 2021)
 
-This skill drafts a systematic review manuscript — and, when the pipeline's
-`synthesis/` stage produced pooled effect estimates, a meta-analysis
-manuscript — that follows the PRISMA 2020 reporting guideline. It produces
-a manuscript in **strict journal article format** as Markdown
-(`manuscript/manuscript.md`, with an optional Pandoc export to .docx/.pdf),
-generates an **annotated PRISMA flow diagram** as inline SVG, and enforces
-**APA 7th Edition referencing** throughout.
+This skill drafts a systematic review manuscript — and, when the pipeline's `synthesis/` stage produced pooled effect estimates, a meta-analysis manuscript — that follows the PRISMA 2020 reporting guideline. It produces a manuscript in **strict journal article format** as Markdown (`manuscript/manuscript.md`, with an optional Pandoc export to .docx/.pdf), generates an **annotated PRISMA flow diagram** as inline SVG, and enforces **APA 7th Edition referencing** throughout.
 
-PRISMA is a **reporting** guideline, not a **conduct** guideline — but
-unlike a reporting-only tool, this framework actually ran the search,
-screening, extraction, and (where applicable) statistical synthesis this
-skill reports on. Numbers and content are drawn from the review's own
-pipeline state, never re-elicited from the reviewer's memory.
+PRISMA is a **reporting** guideline, not a **conduct** guideline — but unlike a reporting-only tool, this framework actually ran the search, screening, extraction, and (where applicable) statistical synthesis this skill reports on. Numbers and content are drawn from the review's own pipeline state, never re-elicited from the reviewer's memory.
 
 ## Before you begin
 
@@ -44,11 +21,7 @@ Read these reference files as needed:
 - `references/flow-diagram.md` — PRISMA flow diagram templates and guidance, preserved verbatim under its CC BY 4.0 license. Consult this for template selection (Template A/B/C/D), box contents, and terminology. Its closing "Generating the Flow Diagram" section still describes the original docx-js/Visualizer tooling — that section is superseded by Phase 3 below; follow Phase 3's Markdown-table-plus-inline-SVG process instead.
 - `references/apa7-formatting-rules.md` — APA 7th Edition formatting rules, self-contained (no external skill dependency). Consult this for every in-text citation and every reference-list entry, and for type-specific formatting (journal article, book, chapter, preprint, report, dataset, etc.).
 
-If this repo's `.claude/skills/quality-appraisal/` (RoB2 + GRADE) or
-`.claude/skills/review-protocol/` skills are present, their reference files
-are the authoritative source for domain definitions and eligibility-gate
-wording used in Methods §2.8/2.12 and §2.2 respectively — consult them
-rather than re-deriving domain definitions from general knowledge.
+If this repo's `.claude/skills/quality-appraisal/` (RoB2 + GRADE) or `.claude/skills/review-protocol/` skills are present, their reference files are the authoritative source for domain definitions and eligibility-gate wording used in Methods §2.8/2.12 and §2.2 respectively — consult them rather than re-deriving domain definitions from general knowledge.
 
 If the user has a **writing-style skill**, apply it to all drafted prose (but note that academic writing conventions take precedence over informal style rules, e.g. no informal analogies in scholarly manuscripts).
 
@@ -56,74 +29,25 @@ If the user has a **writing-style skill**, apply it to all drafted prose (but no
 
 ## Phase 1: Load the review's pipeline state
 
-Before any drafting, load what the pipeline already produced. This replaces
-an interview for anything the pipeline captured — asking the reviewer to
-re-supply a number or a search string that already lives in a file is both
-unnecessary and a source of drift between the manuscript and the ledger.
+Before any drafting, load what the pipeline already produced. This replaces an interview for anything the pipeline captured — asking the reviewer to re-supply a number or a search string that already lives in a file is both unnecessary and a source of drift between the manuscript and the ledger.
 
 ### Required pipeline files, and what each feeds
 
 Read from `results/<TOPIC>/`:
 
-- **`protocol.json`** — working title, research question(s)/objectives,
-  review type, PICO/PICo/SPIDER record, eligibility criteria, registration
-  status, scope (`mode: global|national`, `region`, `translation_used`,
-  `coverage_gaps`). Feeds Introduction §1.2, Methods §2.1–2.2, and the scope
-  caveat in Methods §2.3/Discussion §4.2.
-- **`search_plan.json`** — per-source Boolean strings in each source's own
-  query syntax, plus the keyword-expansion trail. This *is* the Methods
-  §2.4 content and the Appendix's full-search-strategy content — quote it
-  directly, never retype a search string from memory.
-- **`raw/<source>-<date>.json`** and **`rerun_search.sh`** — per-database
-  retrieved/total-available counts and the date each source was last
-  searched. Feeds Methods §2.3 (information sources) and the Identification
-  boxes of the flow diagram.
-- **`records.jsonl`** — the deduplicated record ledger. Feeds the
-  duplicates-removed count in the flow diagram.
-- **`screening_decisions.jsonl`** — the append-only screening ledger. All
-  flow-diagram box counts for Screening and Included phases are aggregated
-  from this file (latest decision per `(record_id, stage)`), never typed in
-  directly — see Phase 3, Step 2. Feeds Results §3.1 and Item 16b (studies
-  that looked eligible but were excluded, with the `reason` field).
-- **`extraction_table.json`** — one entry per included study. Feeds the
-  study-characteristics table (Results §3.2), Results of individual
-  studies (§3.4), and — via each entry's `effect_data`/`risk_of_bias`
-  blocks — the quantitative Results sections below.
-- **`synthesis/effect_sizes.json`, `heterogeneity.json`, `rob_table.json`,
-  `grade_table.json`, and per-outcome plot SVGs** (present only if
-  `/prisma-synthesize` ran and at least one outcome group cleared the
-  poolability gate) — feed Methods §2.9/2.10/2.12, Results §3.3 and
-  §3.5–3.7, and the Discussion's certainty-of-evidence framing. Plots are
-  named `forest_<outcome-slug>.svg`/`funnel_<outcome-slug>.svg`, one per
-  pooled outcome, not a single shared filename — read the actual path from
-  that outcome's own `effect_sizes.json` entry
-  (`forest_plot_svg`/`funnel_plot_svg`, the latter `null` below 10 studies).
-  `rob_traffic_light.svg`, when present, is a single shared file covering
-  every RoB2-assessed study with a full domain breakdown (read it directly,
-  don't look for a per-outcome variant).
-  When this directory is absent or an outcome's entry has `"pooled": false`,
-  report that outcome narratively and cite the recorded `reason` — do not
-  describe a pooled estimate that was never computed.
+- **`protocol.json`** — working title, research question(s)/objectives, review type, PICO/PICo/SPIDER record, eligibility criteria, registration status, scope (`mode: global|national`, `region`, `translation_used`, `coverage_gaps`). Feeds Introduction §1.2, Methods §2.1–2.2, and the scope caveat in Methods §2.3/Discussion §4.2.
+- **`search_plan.json`** — per-source Boolean strings in each source's own query syntax, plus the keyword-expansion trail. This *is* the Methods §2.4 content and the Appendix's full-search-strategy content — quote it directly, never retype a search string from memory.
+- **`raw/<source>-<date>.json`** and **`rerun_search.sh`** — per-database retrieved/total-available counts and the date each source was last searched. Feeds Methods §2.3 (information sources) and the Identification boxes of the flow diagram.
+- **`records.jsonl`** — the deduplicated record ledger. Feeds the duplicates-removed count in the flow diagram.
+- **`screening_decisions.jsonl`** — the append-only screening ledger. All flow-diagram box counts for Screening and Included phases are aggregated from this file (latest decision per `(record_id, stage)`), never typed in directly — see Phase 3, Step 2. Feeds Results §3.1 and Item 16b (studies that looked eligible but were excluded, with the `reason` field).
+- **`extraction_table.json`** — one entry per included study. Feeds the study-characteristics table (Results §3.2), Results of individual studies (§3.4), and — via each entry's `effect_data`/`risk_of_bias` blocks — the quantitative Results sections below.
+- **`synthesis/effect_sizes.json`, `heterogeneity.json`, `rob_table.json`, `grade_table.json`, and per-outcome plot SVGs** (present only if `/prisma-synthesize` ran and at least one outcome group cleared the poolability gate) — feed Methods §2.9/2.10/2.12, Results §3.3 and §3.5–3.7, and the Discussion's certainty-of-evidence framing. Plots are named `forest_<outcome-slug>.svg`/`funnel_<outcome-slug>.svg`, one per pooled outcome, not a single shared filename — read the actual path from that outcome's own `effect_sizes.json` entry (`forest_plot_svg`/`funnel_plot_svg`, the latter `null` below 10 studies). `rob_traffic_light.svg`, when present, is a single shared file covering every RoB2-assessed study with a full domain breakdown (read it directly, don't look for a per-outcome variant). When this directory is absent or an outcome's entry has `"pooled": false`, report that outcome narratively and cite the recorded `reason` — do not describe a pooled estimate that was never computed.
 
 ### Information the pipeline does not capture — ask briefly
 
-A short, targeted round of questions (or `AskUserQuestion` where options
-are bounded) covers only what genuinely lives outside the pipeline state:
-title-page details (author name(s) and affiliation(s), corresponding
-author contact, ORCID iD(s)), target journal (check the reviewer profile
-in this repo's `CLAUDE.md` first — many reviews reuse one across a project
-— and ask only if absent), and the Declarations content (funding,
-competing interests, data-availability statement, ethics approval,
-acknowledgements). Word count and table/figure count are computed from the
-draft, never asked.
+A short, targeted round of questions (or `AskUserQuestion` where options are bounded) covers only what genuinely lives outside the pipeline state: title-page details (author name(s) and affiliation(s), corresponding author contact, ORCID iD(s)), target journal (check the reviewer profile in this repo's `CLAUDE.md` first — many reviews reuse one across a project — and ask only if absent), and the Declarations content (funding, competing interests, data-availability statement, ethics approval, acknowledgements). Word count and table/figure count are computed from the draft, never asked.
 
-If the user has a manuscript, protocol, or PROSPERO registration from
-outside this framework's own pipeline (e.g. they are auditing prior work,
-or migrating an existing draft in — see "Handling partial requests"
-below), read it and cross-reference against the pipeline files rather than
-overwriting one with the other; flag any contradiction (e.g. a different
-eligibility criterion in the uploaded protocol vs. `protocol.json`) instead
-of silently picking one.
+If the user has a manuscript, protocol, or PROSPERO registration from outside this framework's own pipeline (e.g. they are auditing prior work, or migrating an existing draft in — see "Handling partial requests" below), read it and cross-reference against the pipeline files rather than overwriting one with the other; flag any contradiction (e.g. a different eligibility criterion in the uploaded protocol vs. `protocol.json`) instead of silently picking one.
 
 Once the pipeline state is loaded and any gaps are filled, confirm the plan with the user before drafting.
 
