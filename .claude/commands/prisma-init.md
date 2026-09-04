@@ -39,8 +39,15 @@ Hold the scope answer (`mode`, `region`, any named `coverage_gaps`) in context �
 1. Read the repo root `CLAUDE.md`.
 2. Check the `## Reviewer Profile` section for `[PLACEHOLDER]`-style bracketed tokens (`[YOUR_NAME]`, `[YOUR_FIELD]`, `[YOUR_INSTITUTION]`, `[PRIOR_WORK_1]`, `[TARGET_JOURNAL_1]`, `[CITATION_STYLE]`, etc.).
    - **If none remain** (the section was already filled in by a prior run of this command or by hand), skip this interview entirely and say so: "Reviewer profile already on file, skipping the interview." Proceed to Step 3.
-   - **If placeholders remain**, run the interview below.
-3. Ask conversationally, in one grouped round (not a form, not one question per message):
+   - **If placeholders remain**, continue to the visibility check below before asking anything.
+3. **Repo visibility check (before collecting anything personal).** `CLAUDE.md` is a tracked file, not gitignored — unlike `results/<TOPIC>/`, whatever this interview writes here becomes part of your git history. Check whether this is a public repo:
+   ```bash
+   gh repo view --json visibility,isFork 2>/dev/null
+   ```
+   - If this fails (not a git repo yet, no `gh` auth, no remote configured), skip the warning silently — there's nothing concrete to warn about yet, and failing this check must never block the interview.
+   - If it succeeds and `visibility` is `"PUBLIC"`, say so plainly before asking anything: "Heads up — this repo is public, and this interview writes your name, institution, and prior work into `CLAUDE.md`, which is tracked (not gitignored). If you'd rather that stayed private, run `gh repo edit --visibility private` first, or just skip fields you don't want on the record — none of them are required." Then continue regardless of their answer; this is a disclosure, not a gate.
+   - If `visibility` is `"PRIVATE"` or the repo is a private fork, no warning needed — say nothing about it.
+4. Ask conversationally, in one grouped round (not a form, not one question per message):
    - Their name.
    - **Field of research** (e.g. "clinical anesthesiology", "education technology") — this calibrates tone and journal conventions later in `/prisma-report`.
    - Institution / affiliation (optional).
@@ -48,8 +55,8 @@ Hold the scope answer (`mode`, `region`, any named `coverage_gaps`) in context �
    - **Target journal(s)** — used to calibrate manuscript tone, length, and reference style in `/prisma-report` (one or more; "not decided yet" is valid).
    - **Preferred citation style** — default to APA 7th edition if the reviewer has no preference; don't block on this.
    - **Institutional database access** (optional) — e.g. Scopus, Web of Science. This doesn't add a connector now; just note it so the reviewer remembers `/prisma-add-source` is available for it later.
-4. Use the **Edit** tool to replace the bracketed tokens in `CLAUDE.md`'s `## Reviewer Profile` section with the reviewer's actual answers. Make targeted edits only — do not rewrite the whole file. Preserve the section's structure and its explanatory HTML comments. If the reviewer gave one prior-work item where the template has two placeholder lines (`[PRIOR_WORK_1]`, `[PRIOR_WORK_2]`), remove the unused line rather than leaving a dangling placeholder; the same rule applies to target journals and institutional-access lines — trim to fit what was actually given, add more bullet lines if the reviewer gave more than the template has slots for. Also replace the `[YOUR_NAME]` token in the file's `# PRISMA Review Assistant for [YOUR_NAME]` title line.
-5. State which fields were filled in.
+5. Use the **Edit** tool to replace the bracketed tokens in `CLAUDE.md`'s `## Reviewer Profile` section with the reviewer's actual answers. Make targeted edits only — do not rewrite the whole file. Preserve the section's structure and its explanatory HTML comments. If the reviewer gave one prior-work item where the template has two placeholder lines (`[PRIOR_WORK_1]`, `[PRIOR_WORK_2]`), remove the unused line rather than leaving a dangling placeholder; the same rule applies to target journals and institutional-access lines — trim to fit what was actually given, add more bullet lines if the reviewer gave more than the template has slots for. Also replace the `[YOUR_NAME]` token in the file's `# PRISMA Review Assistant for [YOUR_NAME]` title line.
+6. State which fields were filled in.
 
 ---
 

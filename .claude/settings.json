@@ -15,7 +15,8 @@
       "Bash(python3 tools/check_framework_version.py:*)",
       "Bash(python3 tools/security_guards.py:*)",
       "Bash(python3 -m unittest discover:*)",
-      "Bash(pandoc:*)"
+      "Bash(pandoc:*)",
+      "Bash(gh repo view:*)"
     ]
   }
 }
