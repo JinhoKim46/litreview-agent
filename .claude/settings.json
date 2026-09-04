@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python3 -m connectors.openalex:*)",
+      "Bash(python3 -m connectors.crossref:*)",
+      "Bash(python3 -m connectors.semanticscholar:*)",
+      "Bash(python3 -m connectors.pubmed:*)",
+      "Bash(python3 -m connectors.europepmc:*)",
+      "Bash(python3 -m connectors.arxiv:*)",
+      "Bash(python3 -m connectors.citation_chase:*)",
+      "Bash(python3 -m connectors.registry:*)",
+      "Bash(python3 -m synthesis.run_synthesis:*)",
+      "Bash(python3 tools/lint_skills.py:*)",
+      "Bash(python3 tools/check_connector_contract.py:*)",
+      "Bash(python3 tools/check_framework_version.py:*)",
+      "Bash(python3 tools/security_guards.py:*)",
+      "Bash(python3 -m unittest discover:*)",
+      "Bash(pandoc:*)"
+    ]
+  }
+}
