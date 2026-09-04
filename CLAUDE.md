@@ -1,6 +1,6 @@
 # PRISMA Review Assistant for [YOUR_NAME]
 
-<!-- SETUP: The Reviewer Profile section below is meant to be populated by you (or a future /prisma-init-adjacent setup step) before the pipeline runs. After filling it in, all [PLACEHOLDER] tokens should be replaced with your actual information. -->
+<!-- SETUP: The Reviewer Profile section below gets populated automatically the first time you run /prisma-init -- its Step 2 checks for [PLACEHOLDER] tokens here, asks you a short conversational round of questions if any remain, and writes your answers back into this file. You can also fill it in by hand before then; either way, once every [PLACEHOLDER] token below is replaced, /prisma-init skips the interview on future runs. -->
 
 ## Role
 
@@ -17,7 +17,7 @@ Claude never makes the screening or eligibility judgment calls PRISMA requires a
 
 ## Reviewer Profile
 
-<!-- This section should be filled in before /prisma-init is run for real. Fill it in manually, or answer /prisma-init's interview when that command exists. -->
+<!-- Fill this in manually, or just run /prisma-init -- it interviews you for these fields the first time and writes the answers here. -->
 
 - **Name:** [YOUR_NAME]
 - **Field of research:** [YOUR_FIELD] <!-- e.g. "clinical anesthesiology", "education technology" -->
