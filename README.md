@@ -1,7 +1,6 @@
 # prisma-review
 
-*A PRISMA 2020-conformant systematic review and meta-analysis pipeline that
-actually runs, built on [Claude Code](https://claude.com/claude-code).*
+*A PRISMA 2020-conformant systematic review and meta-analysis pipeline that actually runs, built on [Claude Code](https://claude.com/claude-code).*
 
 > Note: This is an independent open-source project and is not affiliated with, endorsed by, or sponsored by Anthropic. Anthropic and Claude Code are referenced only to describe the toolchain this workflow uses.
 
@@ -9,18 +8,44 @@ Most "AI systematic review" tools are reporting assistants: you search, screen, 
 
 ## Pipeline
 
-```
-scope --> field/topic --> keywords --> search --> dedup --> screen --> extract --> synthesize --> report
-  |            |              |           |          |          |          |            |             |
-PICO/     eligibility    LLM-assisted   6 free    DOI/PMID/  export/   study char-  pool effect   manuscript.md
-PICo/     criteria,      synonym +      connector title-hash  import    acteristics, sizes, RoB2,  + flow diagram
-SPIDER    global vs.     MeSH/related   CLIs run  key with    sheets    effect data, GRADE, plots  + checklist
-record    national       term expansion the same  audit       (never    RoB2 fields  (auto narrative              audit
-                          per source     query     trail                              fallback when
-                                                                                       not poolable)
+```mermaid
+flowchart LR
+    subgraph s1["1 Define"]
+        direction TB
+        Scope["<b>Scope</b><br/>PICO / PICo / SPIDER, global vs. national"]
+        Field["<b>Field &amp; Topic</b><br/>eligibility criteria"]
+        Keywords["<b>Keywords</b><br/>synonym + MeSH/related-term expansion"]
+        Scope --> Field
+        Field -- "protocol.json" --> Keywords
+    end
+
+    subgraph s2["2 Acquire"]
+        direction TB
+        Search["<b>Search</b><br/>6 free connector CLIs, same query per source"]
+        Dedup["<b>Dedup</b><br/>DOI / PMID / title-hash key, audit trail"]
+        Screen["<b>Screen</b><br/>export/import sheets, never re-elicited"]
+        Search -- "raw/*.json" --> Dedup
+        Dedup -- "records.jsonl" --> Screen
+    end
+
+    subgraph s3["3 Evidence"]
+        direction TB
+        Extract["<b>Extract</b><br/>characteristics, effect data, RoB2 fields"]
+        Synthesize["<b>Synthesize</b><br/>pool effect sizes, RoB2, GRADE, plots"]
+        Report["<b>Report</b><br/>manuscript + flow diagram + checklist audit"]
+        Extract -- "extraction_table.json" --> Synthesize
+        Synthesize -- "synthesis/*.json + plots" --> Report
+    end
+
+    s1 -- "search_plan.json + rerun_search.sh" --> s2
+    s2 -- "screening_decisions.jsonl" --> s3
+
+    classDef stage fill:#eef3ff,stroke:#3b5bdb,stroke-width:2px,color:#1a1a1a,font-size:16px;
+    class Scope,Field,Keywords,Search,Dedup,Screen,Extract,Synthesize,Report stage;
+    linkStyle default font-size:14px;
 ```
 
-Every arrow above is a `results/<TOPIC>/` file, not a conversation the reviewer has to re-have: `protocol.json` -> `search_plan.json` + `rerun_search.sh` -> `records.jsonl` -> `screening_decisions.jsonl` -> `extraction_table.json` -> `synthesis/*.json` + plots -> `manuscript/`. Nothing downstream is ever re-elicited from memory — the report drafts straight from what the pipeline actually recorded.
+Every edge above is a `results/<TOPIC>/` file, not a conversation the reviewer has to re-have. Nothing downstream is ever re-elicited from memory — the report drafts straight from what the pipeline actually recorded.
 
 ## Quickstart
 
@@ -52,7 +77,9 @@ Six connectors ship out of the box, chosen to cover most disciplines with no pai
 | **Europe PMC** | Biomedical + preprints + patents, broader than PubMed |
 | **arXiv** | STEM preprints (flagged as not-yet-peer-reviewed in extraction) |
 
-Need an institutional source (Scopus, Web of Science)? Run `/prisma-add-source` — it scaffolds a new connector against the same fixed `{meta, results}` JSON contract the six above already use, with credentials read only from an environment variable, never a flag or a tracked file.
+A seventh connector, citation chasing (backward/forward snowballing via OpenAlex), covers PRISMA's "other methods" identification stream — see `/prisma-search --chase-citations`.
+
+Need an institutional source (Scopus, Web of Science)? Run `/prisma-add-source` — it scaffolds a new connector against the same fixed `{meta, results}` JSON contract the connectors above already use, with credentials read only from an environment variable, never a flag or a tracked file.
 
 ## Fork this and adapt
 
@@ -68,8 +95,8 @@ prisma-review/
 │   ├── commands/           # the 9 slash commands
 │   └── skills/             # PRISMA methodology, eligibility gates, synthesis stats
 ├── .agents/skills/         # cross-runtime connector pointers (Codex/Antigravity discoverable)
-├── connectors/             # one Python package: 6 source connectors + shared HTTP/retry/contract code
-├── synthesis/              # pooling, heterogeneity, forest/funnel plots
+├── connectors/             # one Python package: 7 source connectors + shared HTTP/retry/contract code
+├── synthesis/              # pooling, heterogeneity, forest/funnel/RoB-traffic-light plots
 ├── results/<TOPIC>/        # per-review state (gitignored except structure + schema docs)
 ├── tools/                  # CI/maintainer scripts (lint, contract checks)
 ├── tests/                  # fixture-based, no live network
@@ -80,8 +107,7 @@ prisma-review/
 
 - [Claude Code](https://claude.com/claude-code)
 - Python 3.10+ (`pip install -r requirements.txt`)
-- Optional: [Pandoc](https://pandoc.org/) for `--export docx|pdf` on the
-  manuscript; the pipeline is Markdown-first and works fully without it.
+- Optional: [Pandoc](https://pandoc.org/) for `--export docx|pdf` on the manuscript; the pipeline is Markdown-first and works fully without it.
 
 ## License
 

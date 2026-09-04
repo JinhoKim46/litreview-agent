@@ -1,0 +1,19 @@
+{
+  "status": "ok",
+  "message-type": "work",
+  "message-version": "1.0.0",
+  "message": {
+    "DOI": "10.1038/nphys1170",
+    "type": "journal-article",
+    "title": ["The Casimir effect in microstructured geometries"],
+    "container-title": ["Nature Physics"],
+    "author": [
+      {"given": "Diego A. R.", "family": "Dalvit", "sequence": "first"},
+      {"given": "Paulo A.", "family": "Maia Neto", "sequence": "additional"}
+    ],
+    "issued": {"date-parts": [[2011, 3]]},
+    "published-print": {"date-parts": [[2011, 3]]},
+    "URL": "https://doi.org/10.1038/nphys1170",
+    "is-referenced-by-count": 45
+  }
+}

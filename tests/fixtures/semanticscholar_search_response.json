@@ -1,0 +1,29 @@
+{
+  "total": 2,
+  "offset": 0,
+  "data": [
+    {
+      "paperId": "649def34f8be52c8b66281af98ae884c09aef38",
+      "title": "Construction of the Literature Graph in Semantic Scholar",
+      "abstract": "We describe a deployed scalable system for organizing published scientific literature into a heterogeneous graph.",
+      "year": 2018,
+      "venue": "NAACL",
+      "authors": [
+        {"authorId": "1741101", "name": "Waleed Ammar"},
+        {"authorId": "1683418", "name": "Dirk Groeneveld"}
+      ],
+      "externalIds": {"DOI": "10.18653/v1/N18-3011", "MAG": "2794005161", "CorpusId": 44134156},
+      "url": "https://www.semanticscholar.org/paper/649def34f8be52c8b66281af98ae884c09aef38"
+    },
+    {
+      "paperId": "aabcdef1234567890abcdef1234567890abcdef",
+      "title": "A Second Paper With No DOI",
+      "abstract": null,
+      "year": 2020,
+      "venue": null,
+      "authors": [{"authorId": "999", "name": "Someone Else"}],
+      "externalIds": {"CorpusId": 12345},
+      "url": "https://www.semanticscholar.org/paper/aabcdef1234567890abcdef1234567890abcdef"
+    }
+  ]
+}

@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom"
+      xmlns:opensearch="http://a9.com/-/spec/opensearch/1.1/"
+      xmlns:arxiv="http://arxiv.org/schemas/atom">
+  <link href="http://arxiv.org/api/query?search_query=all:transformer&amp;start=0&amp;max_results=2" rel="self" type="application/atom+xml"/>
+  <title type="html">ArXiv Query: search_query=all:transformer</title>
+  <id>http://arxiv.org/api/W1234abcd5678efgh</id>
+  <updated>2026-09-01T00:00:00-04:00</updated>
+  <opensearch:totalResults xmlns:opensearch="http://a9.com/-/spec/opensearch/1.1/">57312</opensearch:totalResults>
+  <opensearch:startIndex xmlns:opensearch="http://a9.com/-/spec/opensearch/1.1/">0</opensearch:startIndex>
+  <opensearch:itemsPerPage xmlns:opensearch="http://a9.com/-/spec/opensearch/1.1/">2</opensearch:itemsPerPage>
+  <entry>
+    <id>http://arxiv.org/abs/1706.03762v7</id>
+    <updated>2023-08-02T00:00:00Z</updated>
+    <published>2017-06-12T17:57:34Z</published>
+    <title>
+      Attention Is All You Need
+    </title>
+    <summary>
+      The dominant sequence transduction models are based on complex recurrent
+      or convolutional neural networks. We propose a new simple network
+      architecture, the Transformer, based solely on attention mechanisms.
+    </summary>
+    <author><name>Ashish Vaswani</name></author>
+    <author><name>Noam Shazeer</name></author>
+    <author><name>Niki Parmar</name></author>
+    <arxiv:comment>15 pages, 5 figures</arxiv:comment>
+    <link href="http://arxiv.org/abs/1706.03762v7" rel="alternate" type="text/html"/>
+    <link title="pdf" href="http://arxiv.org/pdf/1706.03762v7" rel="related" type="application/pdf"/>
+    <arxiv:primary_category term="cs.CL" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="cs.CL" scheme="http://arxiv.org/schemas/atom"/>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2010.11929v2</id>
+    <updated>2021-06-03T00:00:00Z</updated>
+    <published>2020-10-22T17:55:53Z</published>
+    <title>An Image is Worth 16x16 Words: Transformers for Image Recognition at Scale</title>
+    <summary>While the Transformer architecture has become the de-facto standard
+for natural language processing tasks, its applications to computer
+vision remain limited.</summary>
+    <author><name>Alexey Dosovitskiy</name></author>
+    <author><name>Lucas Beyer</name></author>
+    <arxiv:doi>10.48550/arXiv.2010.11929</arxiv:doi>
+    <arxiv:journal_ref>ICLR 2021</arxiv:journal_ref>
+    <link href="http://arxiv.org/abs/2010.11929v2" rel="alternate" type="text/html"/>
+    <link title="pdf" href="http://arxiv.org/pdf/2010.11929v2" rel="related" type="application/pdf"/>
+    <arxiv:primary_category term="cs.CV" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="cs.CV" scheme="http://arxiv.org/schemas/atom"/>
+  </entry>
+</feed>
