@@ -1,0 +1,47 @@
+{
+  "status": "ok",
+  "message-type": "work-list",
+  "message-version": "1.0.0",
+  "message": {
+    "total-results": 98796,
+    "next-cursor": "MTAyNzU4ODE1MTAwMCwxMC4xMDE2JTJGMDAxNC01NzkzJTI4OTElMjk4MTAxMy14",
+    "items": [
+      {
+        "DOI": "10.1016/0014-5793(86)80287-3",
+        "type": "journal-article",
+        "title": ["Characterization of central melatonin receptors using 125I-melatonin"],
+        "container-title": ["FEBS Letters"],
+        "author": [
+          {"given": "Moshe", "family": "Laudon", "sequence": "first"},
+          {"given": "Nava", "family": "Zisapel", "sequence": "additional"}
+        ],
+        "published-print": {"date-parts": [[1986, 3, 3]]},
+        "issued": {"date-parts": [[1986, 3, 3]]},
+        "abstract": "<jats:p>The binding of <jats:sup>125</jats:sup>I-melatonin was investigated. Kd = 38 nM.</jats:p>",
+        "URL": "https://doi.org/10.1016/0014-5793(86)80287-3",
+        "is-referenced-by-count": 71
+      },
+      {
+        "DOI": "10.64239/pi-vl6209",
+        "type": "report",
+        "title": ["Treatment of Sleep Disturbances in ASD: Melatonin and Other Strategies"],
+        "author": [],
+        "published-online": {"date-parts": [[2023, 1, 18]]},
+        "issued": {"date-parts": [[2023, 1, 18]]},
+        "URL": "https://doi.org/10.64239/pi-vl6209",
+        "is-referenced-by-count": 0
+      },
+      {
+        "DOI": "10.1002/tbt.committee",
+        "type": "other",
+        "title": ["Observers in the TBT Committee"],
+        "author": [
+          {"name": "World Trade Organization", "sequence": "first"}
+        ],
+        "issued": {"date-parts": [[2019]]},
+        "URL": "https://doi.org/10.1002/tbt.committee",
+        "is-referenced-by-count": 2
+      }
+    ]
+  }
+}

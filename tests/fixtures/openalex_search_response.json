@@ -1,0 +1,102 @@
+{
+  "meta": {
+    "count": 15420,
+    "db_response_time_ms": 42,
+    "page": null,
+    "per_page": 3,
+    "next_cursor": "IlszNSwgJ2h0dHBzOi8vb3BlbmFsZXguYuiOd0NzcxIl0="
+  },
+  "results": [
+    {
+      "id": "https://openalex.org/W2741809807",
+      "doi": "https://doi.org/10.7717/peerj.4375",
+      "title": "Melatonin receptors and sleep regulation: a tissue-level study",
+      "display_name": "Melatonin receptors and sleep regulation: a tissue-level study",
+      "publication_year": 2018,
+      "primary_location": {
+        "source": {
+          "id": "https://openalex.org/S1983995261",
+          "display_name": "PeerJ"
+        },
+        "landing_page_url": "https://peerj.com/articles/4375",
+        "is_oa": true
+      },
+      "open_access": {
+        "is_oa": true,
+        "oa_status": "gold",
+        "oa_url": "https://peerj.com/articles/4375.pdf"
+      },
+      "authorships": [
+        {"author": {"id": "https://openalex.org/A5010422930", "display_name": "Heather Piwowar"}},
+        {"author": {"id": "https://openalex.org/A5085462070", "display_name": "Jason Priem"}}
+      ],
+      "abstract_inverted_index": {
+        "This": [0],
+        "study": [1],
+        "examines": [2],
+        "melatonin": [3],
+        "receptors": [4],
+        "in": [5],
+        "human": [6],
+        "tissue": [7],
+        "samples.": [8]
+      },
+      "cited_by_count": 512
+    },
+    {
+      "id": "https://openalex.org/W3006923456",
+      "doi": null,
+      "title": "Sleep disturbance interventions: a scoping overview",
+      "display_name": "Sleep disturbance interventions: a scoping overview",
+      "publication_year": 2021,
+      "primary_location": {
+        "source": null,
+        "landing_page_url": null,
+        "is_oa": false
+      },
+      "open_access": {
+        "is_oa": false,
+        "oa_status": "closed",
+        "oa_url": null
+      },
+      "authorships": [],
+      "abstract_inverted_index": null,
+      "cited_by_count": 0
+    },
+    {
+      "id": "https://openalex.org/W4210998877",
+      "doi": "https://doi.org/10.1234/insomnia.review",
+      "title": "Insomnia and circadian rhythm: a narrative review",
+      "display_name": "Insomnia and circadian rhythm: a narrative review",
+      "publication_year": 2023,
+      "primary_location": {
+        "source": {
+          "id": "https://openalex.org/S4306400194",
+          "display_name": "Journal of Sleep Research"
+        },
+        "landing_page_url": "https://onlinelibrary.wiley.com/doi/10.1234/insomnia.review",
+        "is_oa": false
+      },
+      "open_access": {
+        "is_oa": false,
+        "oa_status": "closed",
+        "oa_url": null
+      },
+      "authorships": [
+        {"author": {"id": "https://openalex.org/A5099112233", "display_name": "Mei-Ling Chen"}}
+      ],
+      "abstract_inverted_index": {
+        "Circadian": [0],
+        "misalignment": [1],
+        "is": [2],
+        "a": [3],
+        "core": [4],
+        "driver": [5],
+        "of": [6],
+        "chronic": [7],
+        "insomnia.": [8]
+      },
+      "cited_by_count": 37
+    }
+  ]
+}
