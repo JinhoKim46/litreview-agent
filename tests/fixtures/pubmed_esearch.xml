@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE eSearchResult PUBLIC "-//NLM//DTD esearch 20060628//EN" "https://eutils.ncbi.nlm.nih.gov/eutils/dtd/20060628/esearch.dtd">
+<eSearchResult><Count>7405</Count><RetMax>2</RetMax><RetStart>0</RetStart><IdList>
+<Id>42687373</Id>
+<Id>42687371</Id>
+</IdList><TranslationSet><Translation>     <From>melatonin</From>     <To>"melatonin"[Supplementary Concept] OR "melatonin"[All Fields] OR "melatonin"[MeSH Terms] OR "melatonin's"[All Fields] OR "melatonine"[All Fields] OR "melatonins"[All Fields]</To>    </Translation><Translation>     <From>sleep</From>     <To>"sleep"[MeSH Terms] OR "sleep"[All Fields] OR "sleeping"[All Fields] OR "sleeps"[All Fields] OR "sleep's"[All Fields]</To>    </Translation></TranslationSet><QueryTranslation>("melatonin"[Supplementary Concept] OR "melatonin"[All Fields] OR "melatonin"[MeSH Terms] OR "melatonin s"[All Fields] OR "melatonine"[All Fields] OR "melatonins"[All Fields]) AND ("sleep"[MeSH Terms] OR "sleep"[All Fields] OR "sleeping"[All Fields] OR "sleeps"[All Fields] OR "sleep s"[All Fields])</QueryTranslation></eSearchResult>

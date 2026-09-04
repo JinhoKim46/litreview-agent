@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom"
+      xmlns:opensearch="http://a9.com/-/spec/opensearch/1.1/"
+      xmlns:arxiv="http://arxiv.org/schemas/atom">
+  <link href="http://arxiv.org/api/query?search_query=au:[AND]" rel="self" type="application/atom+xml"/>
+  <title type="html">ArXiv Query: search_query=au:[AND]</title>
+  <id>http://arxiv.org/api/errors#incorrect_id_format_for_1</id>
+  <updated>2026-09-01T00:00:00-04:00</updated>
+  <opensearch:totalResults xmlns:opensearch="http://a9.com/-/spec/opensearch/1.1/">1</opensearch:totalResults>
+  <opensearch:startIndex xmlns:opensearch="http://a9.com/-/spec/opensearch/1.1/">0</opensearch:startIndex>
+  <opensearch:itemsPerPage xmlns:opensearch="http://a9.com/-/spec/opensearch/1.1/">1</opensearch:itemsPerPage>
+  <entry>
+    <id>http://arxiv.org/api/errors#incorrect_id_format_for_1</id>
+    <title>Error</title>
+    <summary>incorrect id format for au:[AND]</summary>
+  </entry>
+</feed>

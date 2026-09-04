@@ -1,0 +1,52 @@
+{
+  "version": "6.9",
+  "hitCount": 2,
+  "nextCursorMark": "AoIIP4y8xxsDMjU4ODM1MzE-",
+  "request": {"query": "malaria", "resultType": "core", "format": "json"},
+  "resultList": {
+    "result": [
+      {
+        "id": "25883531",
+        "source": "MED",
+        "pmid": "25883531",
+        "doi": "10.1016/j.example.2015.01.001",
+        "title": "Effect of tracheotomy on drug consumption: an observational study.",
+        "authorString": "Smith J, Doe A, Lee K.",
+        "authorList": {
+          "author": [
+            {"fullName": "Smith J", "firstName": "J", "lastName": "Smith"},
+            {"fullName": "Doe A", "firstName": "A", "lastName": "Doe"},
+            {"fullName": "Lee K", "firstName": "K", "lastName": "Lee"}
+          ]
+        },
+        "journalInfo": {
+          "journal": {
+            "title": "Journal of Example Medicine",
+            "medlineAbbreviation": "J Example Med"
+          }
+        },
+        "pubYear": "2015",
+        "abstractText": "<h4>Background</h4>Malaria burden <i>remains high</i>.<h4>Methods</h4>We did a thing.",
+        "isOpenAccess": "N",
+        "inEPMC": "N",
+        "inPMC": "N",
+        "fullTextUrlList": {
+          "fullTextUrl": [
+            {"availability": "Subscription required", "documentStyle": "doi", "site": "DOI", "url": "https://doi.org/10.1016/j.example.2015.01.001"}
+          ]
+        }
+      },
+      {
+        "id": "PPR123456",
+        "source": "PPR",
+        "title": "A malaria preprint with no DOI yet.",
+        "authorString": "Nguyen T, Park S.",
+        "pubYear": "2024",
+        "abstractText": "Preprint abstract without HTML markup.",
+        "isOpenAccess": "Y",
+        "inEPMC": "Y",
+        "inPMC": "N"
+      }
+    ]
+  }
+}
