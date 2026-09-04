@@ -37,8 +37,8 @@ flowchart LR
         Synthesize -- "synthesis/*.json + plots" --> Report
     end
 
-    Keywords -- "search_plan.json + rerun_search.sh" --> Search
-    Screen -- "screening_decisions.jsonl" --> Extract
+    s1 -- "search_plan.json + rerun_search.sh" --> s2
+    s2 -- "screening_decisions.jsonl" --> s3
 
     classDef stage fill:#eef3ff,stroke:#3b5bdb,stroke-width:2px,color:#1a1a1a,font-size:16px;
     class Scope,Field,Keywords,Search,Dedup,Screen,Extract,Synthesize,Report stage;
