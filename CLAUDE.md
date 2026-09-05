@@ -13,6 +13,11 @@ This repo is a systematic-review and meta-analysis workspace. Claude acts as a *
 
 Claude never makes the screening or eligibility judgment calls PRISMA requires a human to make; it prepares everything so the reviewer can make them quickly and reproducibly.
 
+## Non-negotiables (every command, every turn)
+
+- **Search is comprehensive, never goal-narrowed.** The Boolean string `keyword-expansion` builds is derived only from confirmed PICO/PICo/SPIDER concept terms (synonyms/MeSH/broader/narrower) — never from `protocol.json.objective` or any restated goal/purpose sentence. `objective` exists for framework selection at elicitation time and PRISMA Item 4 manuscript reporting only. Narrowing by population/design/date/language happens exactly where the pipeline already puts it (explicit `eligibility` fields applied at search-string-build or screening time) — never because a search felt like it should be scoped to "what the review is really about."
+- **`<TOPIC>` is always re-resolved fresh, never assumed.** Every command resolves `<TOPIC>` from `$ARGUMENTS` + a `results/*/` glob per its own Step 0, and stops to ask rather than guess when more than one review exists and none was named. This holds even when the conversation (or a compacted prior-session summary) was just discussing a different review — a session's own history is never a substitute for that resolution step, and one review's `search_plan.json`/`protocol.json` is never read while operating on another.
+
 ## Reviewer Profile
 
 Lives in `CLAUDE.local.md` (gitignored), not here, so your name, institution, and prior work never enter git history even in a public fork. First-time setup: `cp CLAUDE.local.md.example CLAUDE.local.md`, then fill it in by hand or let `/prisma-init` interview you for it.

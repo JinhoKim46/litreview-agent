@@ -9,7 +9,7 @@ description: >
   inclusion, import screening decisions, apply screening decisions, /prisma-screen,
   /prisma-screen export, /prisma-screen import
 allowed-tools: Read, Glob, Grep, Bash(python3:*)
-framework_version: 1.0.1
+framework_version: 1.1.0
 ---
 
 # Screening Assistant
@@ -33,8 +33,8 @@ Slash command passthrough: `/prisma-screen export [--stage title_abstract|full_t
 ## Mode: export
 
 1. Determine `<TOPIC>` and `--stage` (default `title_abstract`) and `--group-by` (default `source`).
-2. Follow **"Export algorithm"** in `01-screening-sheet-workflow.md` exactly: read `records.jsonl` + `screening_decisions.jsonl`, compute the undecided candidate set for the stage, compute a per-record `ai_suggestion` and `ai_keywords` against `protocol.json`'s eligibility criteria and a fixed keyword taxonomy (both advisory only - never a decision), group and sort, truncate abstracts, write `results/<TOPIC>/screening/<stage>_sheet.md` and the `.csv` twin.
-3. Reply with **only**: total candidates, per-group counts, the include/exclude/unclear/none `ai_suggestion` breakdown, the corpus keyword-frequency overview (§4a), the two file paths, and one line reminding the reviewer that full-text excludes need a reason. Nothing from the sheet's per-record content (titles, abstracts, individual `ai_keywords`) appears in the reply - only these aggregate counts, which are computed inside the same subprocess and never require reading a record's text back into the conversation.
+2. Follow **"Export algorithm"** in `01-screening-sheet-workflow.md` exactly: compute the per-candidate `ai_suggestion`/`ai_rationale` (the one protocol-specific judgment Claude still makes, against `protocol.json`'s eligibility criteria) and this review's keyword taxonomy, write both to disk, then invoke `tools/build_screening_sheet.py` to do everything mechanical - reading `records.jsonl` + `screening_decisions.jsonl` + `possible_duplicates.jsonl`, computing the undecided candidate set, matching `ai_keywords` against the taxonomy, grouping and sorting, truncating abstracts, and writing `results/<TOPIC>/screening/<stage>_sheet.md` and the `.csv` twin. Never hand-author the sheet's factual columns (title/year/authors/source/doi/url/...) inline - that's exactly the risk the committed script exists to remove.
+3. Reply with **only** the script's printed summary: total candidates, per-group counts, the include/exclude/unclear/none `ai_suggestion` breakdown, the corpus keyword-frequency overview (§4a), the two file paths, and one line reminding the reviewer that full-text excludes need a reason. Nothing from the sheet's per-record content (titles, abstracts, individual `ai_keywords`) appears in the reply - only these aggregate counts, which the subprocess computes and prints without any record's text ever entering the conversation.
 
 ## Mode: import
 
