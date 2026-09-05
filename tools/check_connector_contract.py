@@ -75,8 +75,15 @@ def _run_cli(module, argv):
     and fall back to `sys.argv[1:]` via argparse, so patching sys.argv is the
     one invocation shape that works uniformly across all of them despite
     their differing `main()` signatures (`main(argv=None)` vs `main()`).
+
+    The temp file lives under results/ rather than the system tempdir: per
+    PRODUCT_READINESS_AUDIT.md P0-1, write_output now refuses any --out path
+    that doesn't resolve under results/, so this checker's own scratch file
+    has to live there too, not in /tmp.
     """
-    fd, path = tempfile.mkstemp(suffix=".json")
+    scratch_dir = os.path.join(ROOT, "results", ".check_connector_contract_scratch")
+    os.makedirs(scratch_dir, exist_ok=True)
+    fd, path = tempfile.mkstemp(suffix=".json", dir=scratch_dir)
     os.close(fd)
     try:
         full_argv = ["check_connector_contract", *argv, "--out", path]

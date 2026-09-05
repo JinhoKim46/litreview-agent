@@ -11,12 +11,15 @@ required keys.
 """
 import argparse
 import json
+import os
 import random
 import sys
 import time
 from datetime import datetime, timezone
 
 import requests
+
+from tools.path_policy import UnsafePathError, resolve_under_results
 
 # ponytail: single placeholder contact -- a real deployment sets this via
 # PRISMA_CONTACT_EMAIL so the User-Agent honestly names a reachable maintainer,
@@ -157,11 +160,26 @@ def resolve_query(args):
 
 
 def write_output(output, fmt, out_path):
-    """Validate and write connector output: JSON always to --out, else per --format to stdout."""
+    """Validate and write connector output: JSON always to --out, else per --format to stdout.
+
+    `--out` is pre-approved-permission-reachable (see PRODUCT_READINESS_AUDIT.md
+    P0-1), so it must never be trusted as a bare filesystem path: resolve it
+    and require it stay inside `results/` before opening anything for write.
+    Written atomically (temp sibling file + os.replace) so a crash mid-write
+    can never leave a partially-written file at the canonical path.
+    """
     validate_output_shape(output)
     if out_path:
-        with open(out_path, "w") as f:
+        try:
+            safe_path = resolve_under_results(out_path)
+        except UnsafePathError as exc:
+            write_error(str(exc), "UNSAFE_PATH")
+            sys.exit(1)
+        safe_path.parent.mkdir(parents=True, exist_ok=True)
+        tmp_path = safe_path.with_name(safe_path.name + f".tmp{os.getpid()}")
+        with open(tmp_path, "w") as f:
             json.dump(output, f, indent=2)
+        os.replace(tmp_path, safe_path)
         return
     if fmt == "plain":
         text = "\n".join(f"{r['title']} ({r['year']}) - {r['url']}" for r in output["results"])

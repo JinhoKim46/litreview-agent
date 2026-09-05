@@ -61,12 +61,10 @@ This preview is so you can sanity-check the script's output in Step 4 against wh
 Run:
 
 ```bash
-python3 -m synthesis.run_synthesis \
-  --extraction-table results/<TOPIC>/extraction_table.json \
-  --out-dir results/<TOPIC>/synthesis
+python3 -m synthesis.run_synthesis --topic <TOPIC>
 ```
 
-(This exact invocation is pre-allowlisted in `.claude/settings.json` — `Bash(python3 -m synthesis.run_synthesis:*)`.)
+(This exact invocation is pre-allowlisted in `.claude/settings.json` — `Bash(python3 -m synthesis.run_synthesis:*)`. Per PRODUCT_READINESS_AUDIT.md P0-1, the script derives `results/<TOPIC>/extraction_table.json` and `results/<TOPIC>/synthesis/` itself from the validated `<TOPIC>` slug — it no longer accepts free-form `--extraction-table`/`--out-dir` paths, so this pre-approved permission can never be used to write outside a review's own directory.)
 
 This single call does all of the following (see `synthesis/run_synthesis.py`'s module docstring for the full algorithm; do not reimplement any of it inline):
 

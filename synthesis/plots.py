@@ -3,12 +3,24 @@
 No hand-rolled pooling math here -- these functions only draw numbers that
 synthesis/pooling.py and synthesis/heterogeneity.py already computed.
 """
+import os
+
 import matplotlib
 
 matplotlib.use("Agg")  # headless: no display server in a Claude Code sandbox / CI
 
 import matplotlib.pyplot as plt
 from matplotlib.patches import Circle, Polygon
+
+
+def _atomic_savefig(fig, out_path, **kwargs):
+    """Save `fig` via a temp sibling file + os.replace, so a crash mid-render
+    can never leave a partially-written SVG as the canonical artifact
+    (PRODUCT_READINESS_AUDIT.md P0-1)."""
+    tmp_path = f"{out_path}.tmp{os.getpid()}"
+    fig.savefig(tmp_path, **kwargs)
+    os.replace(tmp_path, out_path)
+
 
 # Shared low/high/unclear (RoB2 domain-level) and low risk/some concerns/high
 # risk (three-tier overall) judgement vocabularies both map onto one
@@ -76,7 +88,7 @@ def forest_plot(studies, pooled, out_path, null_value=0):
     ax.spines["right"].set_visible(False)
     ax.spines["left"].set_visible(False)
     fig.tight_layout()
-    fig.savefig(out_path, format="svg")
+    _atomic_savefig(fig, out_path, format="svg")
     plt.close(fig)
 
 
@@ -99,7 +111,7 @@ def funnel_plot(studies, out_path):
     ax.spines["top"].set_visible(False)
     ax.spines["right"].set_visible(False)
     fig.tight_layout()
-    fig.savefig(out_path, format="svg")
+    _atomic_savefig(fig, out_path, format="svg")
     plt.close(fig)
 
 
@@ -150,12 +162,11 @@ def rob_traffic_light_plot(studies, domain_labels, out_path, overall_key="overal
         spine.set_visible(False)
     ax.tick_params(length=0)
     fig.tight_layout()
-    fig.savefig(out_path, format="svg")
+    _atomic_savefig(fig, out_path, format="svg")
     plt.close(fig)
 
 
 if __name__ == "__main__":
-    import os
     import tempfile
 
     example_studies = [

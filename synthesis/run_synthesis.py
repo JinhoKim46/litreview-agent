@@ -427,6 +427,16 @@ def build_rob_traffic_light(studies, out_dir):
     return out_path
 
 
+def _atomic_write_json(path, data):
+    """Write `data` as JSON to `path` via a temp sibling file + os.replace, so a
+    crash mid-write can never leave a partially-written file as the canonical
+    artifact (PRODUCT_READINESS_AUDIT.md P0-1)."""
+    tmp_path = f"{path}.tmp{os.getpid()}"
+    with open(tmp_path, "w") as f:
+        json.dump(data, f, indent=2)
+    os.replace(tmp_path, path)
+
+
 def run(extraction_table_path, out_dir):
     os.makedirs(out_dir, exist_ok=True)
     studies = load_studies(extraction_table_path)
@@ -461,14 +471,10 @@ def run(extraction_table_path, out_dir):
         rob_table.append(build_rob_entry(outcome_name, narrative_rows))
         grade_table.append(build_grade_draft(outcome_name, narrative_rows, "narrative", len(narrative_rows), None, None))
 
-    with open(os.path.join(out_dir, "effect_sizes.json"), "w") as f:
-        json.dump(effect_sizes, f, indent=2)
-    with open(os.path.join(out_dir, "heterogeneity.json"), "w") as f:
-        json.dump(heterogeneity, f, indent=2)
-    with open(os.path.join(out_dir, "rob_table.json"), "w") as f:
-        json.dump(rob_table, f, indent=2)
-    with open(os.path.join(out_dir, "grade_table.json"), "w") as f:
-        json.dump(grade_table, f, indent=2)
+    _atomic_write_json(os.path.join(out_dir, "effect_sizes.json"), effect_sizes)
+    _atomic_write_json(os.path.join(out_dir, "heterogeneity.json"), heterogeneity)
+    _atomic_write_json(os.path.join(out_dir, "rob_table.json"), rob_table)
+    _atomic_write_json(os.path.join(out_dir, "grade_table.json"), grade_table)
 
     rob_traffic_light_svg = build_rob_traffic_light(studies, out_dir)
 
@@ -479,20 +485,37 @@ def run(extraction_table_path, out_dir):
 
 
 def main():
+    # Imported lazily, not at module level: this module's __main__ self-check
+    # runs via `python3 synthesis/run_synthesis.py` (script-path invocation,
+    # repo root not on sys.path), while the CLI path this function serves
+    # only ever runs via `python3 -m synthesis.run_synthesis` from the repo
+    # root (where `tools` is importable) -- see the bottom of this file.
+    from tools.path_policy import UnsafePathError, safe_topic_path
+
     parser = argparse.ArgumentParser(description="Group extraction_table.json by outcome, pool poolable outcomes, write synthesis/*.json + plots.")
-    parser.add_argument("--extraction-table", required=True, help="path to results/<TOPIC>/extraction_table.json")
-    parser.add_argument("--out-dir", required=True, help="path to results/<TOPIC>/synthesis (created if missing)")
+    parser.add_argument("--topic", required=True,
+                         help="review slug; derives results/<topic>/extraction_table.json "
+                              "and results/<topic>/synthesis/ itself -- never accepts a free-form path "
+                              "(PRODUCT_READINESS_AUDIT.md P0-1: this permission is pre-approved, so "
+                              "the CLI must not let any argument direct a write outside results/<topic>/)")
     args = parser.parse_args()
-    result = run(args.extraction_table, args.out_dir)
+    try:
+        extraction_table_path = safe_topic_path(args.topic, "extraction_table.json")
+        out_dir = safe_topic_path(args.topic, "synthesis")
+    except UnsafePathError as exc:
+        print(f"Error: {exc}", file=sys.stderr)
+        return 1
+    result = run(str(extraction_table_path), str(out_dir))
     pooled_n = sum(1 for h in result["heterogeneity"] if h["pooled"])
     narrative_n = sum(1 for h in result["heterogeneity"] if not h["pooled"])
     rob_plot_note = f"rob_traffic_light.svg ({result['rob_traffic_light_svg']})" if result["rob_traffic_light_svg"] else \
         "rob_traffic_light.svg NOT written (no RoB2-assessed study had a full domains breakdown)"
     print(f"{len(result['heterogeneity'])} outcome group(s): {pooled_n} pooled, {narrative_n} narrative fallback. "
-          f"Wrote effect_sizes.json, heterogeneity.json, rob_table.json, grade_table.json, {rob_plot_note} to {args.out_dir}")
+          f"Wrote effect_sizes.json, heterogeneity.json, rob_table.json, grade_table.json, {rob_plot_note} to {out_dir}")
     for grade in result["grade_table"]:
         if grade["final_certainty"] == "needs_review":
             print(f"  NEEDS REVIEW before report: GRADE indirectness/imprecision for outcome {grade['outcome']!r}")
+    return 0
 
 
 def _selfcheck():
@@ -664,9 +687,9 @@ def _selfcheck():
 if __name__ == "__main__":
     # `python3 synthesis/run_synthesis.py` with no args runs the self-check
     # (matches synthesis/pooling.py, heterogeneity.py, plots.py's convention);
-    # `python3 -m synthesis.run_synthesis --extraction-table ... --out-dir ...`
+    # `python3 -m synthesis.run_synthesis --topic <TOPIC>`
     # (the invocation /prisma-synthesize actually uses) runs the CLI.
     if len(sys.argv) > 1:
-        main()
+        sys.exit(main())
     else:
         _selfcheck()
