@@ -1,7 +1,7 @@
 ---
 name: review-protocol
 description: "Elicit and record a systematic review's protocol: the research-question framework (PICO/PICo/SPIDER/other), eligibility criteria, and scope. Use whenever the user starts a new systematic review or meta-analysis, runs /prisma-init, mentions 'PICO', 'PICo', 'SPIDER', 'research question framework', 'eligibility criteria', 'inclusion criteria', 'exclusion criteria', 'protocol', 'PROSPERO', or asks 'is this study eligible' / 'should I include this paper' / 'does this study pass screening'. Also trigger mid-review whenever a screening or extraction step needs an eligibility ruling on a specific study, or when scope needs to change (e.g. adding a language, narrowing a population) partway through a review. Covers framework selection and elicitation questions plus the hard-gate-before-scoring eligibility check; it does not cover keyword expansion (see keyword-expansion) or manuscript drafting (see prisma-manuscript)."
-framework_version: 1.0.0
+framework_version: 1.1.0
 ---
 
 # Review Protocol
@@ -33,7 +33,12 @@ Ask whether the user has a research proposal, a PROSPERO registration, a protoco
 
 If no documents are provided, or after extracting what's available, gather the rest conversationally. Work through it in 2–3 grouped rounds, not a single wall of questions:
 
-1. **Big picture first**: working title, the review's objective in one or two sentences, review type (intervention effectiveness, diagnostic accuracy, qualitative, prognosis, scoping-turned-systematic, etc.) — this determines which framework applies (see `01-question-frameworks.md`).
+1. **Big picture first**: working title, the review's objective in one or two sentences, review type (intervention effectiveness, diagnostic accuracy, qualitative, prognosis, scoping-turned-systematic, etc.) — this determines which framework applies (see `01-question-frameworks.md`). Also ask the reviewer to classify the review's **subject domain**, via `AskUserQuestion`, since this decides `keyword-expansion`'s MeSH-vs-free-text default (`01-expansion-methodology.md` §2) and a wrong guess here is exactly the kind of mix-up a reviewer has to catch and correct later:
+   - `clinical_medicine` — patient-facing/clinical/hospital medicine: diagnosis, treatment, epidemiology of disease in human or animal patients.
+   - `biomedical_technical` — a biomedical-*adjacent* technical/engineering field (imaging reconstruction, biosensor design, bioinformatics tooling, etc.) where a controlled biomedical vocabulary exists but isn't the primary way this literature is indexed or found.
+   - `non_biomedical` — no biomedical controlled vocabulary applies at all.
+
+   Pre-check a default option from a quick heuristic (e.g. the reviewer's own field-of-research line in `CLAUDE.local.md`) but always show the question — never infer this silently, since "biomedical-sounding" and "clinical medicine" are not the same thing (an MRI-reconstruction review is biomedical-adjacent engineering, not clinical medicine, even though both mention imaging/patients).
 2. **Framework-specific elicitation**: run the prompts from `01-question-frameworks.md` for the chosen framework.
 3. **Eligibility gates**: run the elicitation in `02-eligibility-criteria.md` — population match, study design, publication type, date range, and language-of-publication. Get explicit values for each; do not leave a gate undefined and call the protocol complete.
 4. **Scope**: global or national/regional (`mode: global|national`); if national, which region and whether keyword translation will be used. Flag known coverage gaps up front if the reviewer already knows a chosen source has weak coverage for the target region/language (e.g. "PubMed has weak Korean-language coverage") — this seeds `protocol.json.scope.coverage_gaps` rather than being discovered as a surprise later.
@@ -50,6 +55,7 @@ Write (or update) `results/<TOPIC>/protocol.json` with at minimum:
 {
   "title": "...",
   "objective": "...",
+  "field_domain": "clinical_medicine",
   "framework": "PICO",
   "framework_fields": { "population": "...", "intervention": "...", "comparator": "...", "outcome": "..." },
   "review_type": "intervention_effectiveness",
@@ -70,6 +76,8 @@ Write (or update) `results/<TOPIC>/protocol.json` with at minimum:
   }
 }
 ```
+
+`field_domain` is one of `clinical_medicine` | `biomedical_technical` | `non_biomedical`, from the Phase 1 elicitation above — `keyword-expansion` reads it to decide the MeSH axis's default.
 
 This file is read verbatim by `/prisma-search` (to build `search_plan.json`), `/prisma-screen` (to run the eligibility gate on each candidate record — see `02-eligibility-criteria.md`), and `/prisma-report` (Methods §2.2/§2.3). Never re-elicit these values from memory later in the pipeline — always read them from this file.
 

@@ -1,5 +1,5 @@
 ---
-framework_version: 1.0.1
+framework_version: 1.1.0
 ---
 
 # Screening Sheet Workflow
@@ -70,43 +70,25 @@ If the candidate set is empty, say so plainly (`"0 undecided <stage> records - n
 
 **Context-flatness rule:** every step below happens *inside* a `python3` subprocess run via `Bash(python3:*)` - never via the `Read` tool. `Read`ing `records.jsonl` or a sheet file defeats the whole point of this skill the moment a review has thousands of records; the subprocess prints only what §8/§9.6 specify (counts, paths, validation errors), and that printed output is all that ever enters the conversation.
 
-1. Read `records.jsonl` line by line, parse JSON, drop any with `duplicate_of` not `null`.
-2. Read `screening_decisions.jsonl` (treat a missing file as empty), aggregate per §1's rule.
-3. Apply §2's stage-progression filter to get the candidate list.
-4. Read `protocol.json` if present; compute `ai_suggestion` for each candidate (§4).
-5. Group candidates by `--group-by` (`theme` | `source` | `year`, default `source` - see §5 for exactly how each grouping works and what happens when the field is missing).
-6. Within each group, sort by `year` descending (nulls last), then `title` ascending.
-7. Truncate each `abstract` to 500 characters (§6).
-8. `(topic_dir / "screening").mkdir(parents=True, exist_ok=True)`, then write both files (§7 has the exact templates):
+Everything mechanical here - reading `records.jsonl`/`screening_decisions.jsonl`/`possible_duplicates.jsonl`, the stage-progression filter, grouping, sorting, abstract truncation, and writing the CSV/MD twin - is done by the committed `tools/build_screening_sheet.py`, **not** hand-authored inline. A fresh inline re-implementation of row-critical logic every single export run is exactly the kind of unreviewed, untested code that produces row/column misalignment on a bad day; one tested script removes that risk entirely for the parts that are genuinely mechanical.
+
+1. Compute `ai_suggestion`/`ai_rationale` for each undecided candidate per §4 (read `protocol.json.eligibility_criteria` if present; every candidate gets `none`/`no eligibility criteria yet` if it's absent). Write these judgments to a scratch file `results/<TOPIC>/screening/_suggestions.jsonl`, one line per candidate: `{"record_id": "...", "ai_suggestion": "include|exclude|unclear", "ai_rationale": "..."}`. This is the one step that stays a Claude-authored judgment call - it's protocol-specific and can't be a generic committed script.
+2. Pick the keyword taxonomy for this review's PICO/PICo/SPIDER concepts per §4a (adapt the term list to the actual review, never reuse a hardcoded imaging-specific list).
+3. Run, via `Bash(python3:*)`:
+   ```bash
+   python3 tools/build_screening_sheet.py \
+     --topic-dir results/<TOPIC> \
+     --stage <title_abstract|full_text> \
+     --group-by <theme|source|year|ai_suggestion> \
+     --suggestions results/<TOPIC>/screening/_suggestions.jsonl \
+     --taxonomy <comma,separated,terms>
+   ```
+   Omit `--suggestions` only if `protocol.json` has no eligibility criteria yet (every candidate then renders `ai_suggestion: none` per §4, which is the script's default with no `--suggestions` given). Omit `--taxonomy` only if the review has no keyword taxonomy to check yet.
+4. The script writes both files itself:
    - `results/<TOPIC>/screening/<stage>_sheet.md`
    - `results/<TOPIC>/screening/<stage>_sheet.csv`
-9. Reply with **only** the export summary (§8) - never the sheet content.
-
-Minimal reference implementation for steps 1-4 (adapt inline, don't ship this as a separate script - there's exactly one place that runs it):
-
-```python
-import json, pathlib
-
-topic_dir = pathlib.Path("results/<TOPIC>")
-records = [json.loads(l) for l in (topic_dir / "records.jsonl").read_text().splitlines() if l.strip()]
-records = [r for r in records if r.get("duplicate_of") is None]
-
-decisions_path = topic_dir / "screening_decisions.jsonl"
-events = [json.loads(l) for l in decisions_path.read_text().splitlines() if l.strip()] if decisions_path.exists() else []
-latest = {}
-for e in events:  # file order = append order = truth; a later line always overwrites
-    latest[(e["record_id"], e["stage"])] = e
-
-stage = "title_abstract"  # or "full_text"
-if stage == "title_abstract":
-    candidates = [r for r in records if (r["record_id"], "title_abstract") not in latest]
-else:
-    candidates = [
-        r for r in records
-        if latest.get((r["record_id"], "title_abstract"), {}).get("decision") == "include"
-        and (r["record_id"], "full_text") not in latest
-    ]
-```
+   and prints the §8 export summary as its stdout.
+5. Reply with **only** that printed summary - never the sheet content, and never re-derive or restate it yourself.
 
 ---
 
@@ -118,15 +100,17 @@ For each candidate, if `protocol.json.eligibility_criteria` exists, read the rec
 - **`exclude`** - a gate is clearly tripped from the title/abstract alone (wrong population, wrong study design stated outright, wrong publication type, out-of-range date/language when that's a stated criterion).
 - **`unclear`** - the abstract doesn't give enough information to call it either way (the correct answer for most borderline records - PRISMA's title/abstract stage is meant to be inclusive; when genuinely unsure, don't suggest `exclude`).
 
-Write a one-line rationale alongside the label (e.g. `"exclude — animal study, protocol requires human subjects"`). This rationale goes into the sheet for the human to read; only the label (`include`/`exclude`/`unclear`) is what gets persisted to `screening_decisions.jsonl.ai_suggestion` on import. **The suggestion never fills in the DECISION field itself** - it's a column/line the reviewer can glance at and override freely, exactly like the quick fit assessment in job-scraper's Step 3.
+Write a one-line rationale alongside the label (e.g. `"exclude — animal study, protocol requires human subjects"`). This rationale goes into the sheet for the human to read; only the label (`include`/`exclude`/`unclear`) is what gets persisted to `screening_decisions.jsonl.ai_suggestion` on import. **The suggestion never fills in the DECISION field itself** - it's a column/line the reviewer can glance at and override freely, exactly like the quick fit assessment in job-scraper's Step 3. Write each candidate's label + rationale to `results/<TOPIC>/screening/_suggestions.jsonl` (§3 step 1) for `tools/build_screening_sheet.py` to merge in by `record_id`.
 
-**No `protocol.json` / no `eligibility_criteria`:** render the label as the literal string `none` and the rationale as `no eligibility criteria yet`. §7's templates always show both fields with these literals rather than leaving them blank, so a reviewer or the §9.3 parser never has to distinguish "empty" from "not computed". On import, the label `none` maps back to `ai_suggestion: null` in the ledger (§1) - it is never stored as the string `"none"`.
+**No `protocol.json` / no `eligibility_criteria`:** render the label as the literal string `none` and the rationale as `no eligibility criteria yet`. §7's templates always show both fields with these literals rather than leaving them blank, so a reviewer or the §9.3 parser never has to distinguish "empty" from "not computed". On import, the label `none` maps back to `ai_suggestion: null` in the ledger (§1) - it is never stored as the string `"none"`. `tools/build_screening_sheet.py` renders this same `none`/`no eligibility criteria yet` default automatically whenever `--suggestions` is omitted, or a specific candidate has no entry in that file.
 
 ---
 
 ## 4a. Keyword tagging and corpus overview (advisory only, never a decision or a finding)
 
 Two additional pieces of advisory output, both computed the same way as `ai_suggestion` - case-insensitive substring matching against a **fixed keyword taxonomy**, run inside the same export subprocess, never an LLM re-reading each abstract. This is a deliberate choice, not a shortcut taken for lack of a better option: matching every one of a review's candidate abstracts with real semantic judgment would mean reading all of them back into the conversation, which is exactly the context-blowup this skill's "one rule" exists to prevent. A keyword match is honest about being a keyword match - it never claims to report a study's actual finding (a specific result value), only which topics/metrics/methods the title or abstract *mentions*. Never let `ai_keywords` or the corpus overview be read by a reviewer (or by `/prisma-report` later) as a substitute for `/prisma-extract`'s actual data extraction from full text.
+
+Both the per-record match and the corpus overview are computed by `tools/build_screening_sheet.py` from the `--taxonomy` list Claude passes in (§3 step 2/3) - Claude picks the terms, the script does the substring matching and counting.
 
 **Per-record `ai_keywords`:** maintain a small taxonomy of terms relevant to the review's domain (method-family terms and outcome/metric terms - for an imaging/reconstruction review, e.g. `cnn`, `gan`, `u-net`, `transformer`, `diffusion`, `unrolled`, `self-supervised`, `ssim`, `psnr`, `diagnostic accuracy`, `reader study`, `scan time`, `acceleration factor`; adapt the list to the review's actual PICO/PICo/SPIDER concepts rather than hardcoding an imaging-specific list for every topic). For each candidate, `ai_keywords` is the comma-joined list of taxonomy terms found (case-insensitive substring match) in `title + " " + abstract`, in taxonomy order, deduplicated. Empty string if none matched - never fabricate a keyword that isn't a literal substring match.
 
@@ -178,7 +162,7 @@ record_id,decision,reason,ai_suggestion,ai_rationale,ai_keywords,title,year,auth
 - `ai_suggestion` / `ai_rationale` / `ai_keywords` are pre-filled, read-only in spirit (the reviewer can ignore them; they're not re-derived, checked against, or written to `screening_decisions.jsonl` on import - `ai_keywords` is a sheet-only convenience column, never part of the ledger schema in §1).
 - `authors` is `; `-joined so a single CSV field survives round-tripping through a spreadsheet app without being split into extra columns.
 
-Write with the stdlib `csv` module (`csv.DictWriter`, `quoting=csv.QUOTE_MINIMAL`) so commas/quotes inside titles and abstracts are escaped correctly - never hand-join columns with a plain `join(",")`, that breaks the instant an abstract contains a comma.
+Write with the stdlib `csv` module (`csv.DictWriter`, `quoting=csv.QUOTE_MINIMAL`) so commas/quotes inside titles and abstracts are escaped correctly - never hand-join columns with a plain `join(",")`, that breaks the instant an abstract contains a comma. `tools/build_screening_sheet.py` already does this; nothing here needs re-implementing.
 
 ### Markdown (`<stage>_sheet.md`) - fallback edit target, and a readable companion
 
@@ -214,6 +198,8 @@ One `---` horizontal rule between record blocks, one `## Group: <name> (<n> reco
 ---
 
 ## 8. Export summary (the only thing that reaches the conversation)
+
+This block is literally `tools/build_screening_sheet.py`'s stdout - relay it verbatim (§3 step 5), don't restate or re-derive it.
 
 ```
 Exported 45 undecided title_abstract records for <TOPIC>, grouped by source:
