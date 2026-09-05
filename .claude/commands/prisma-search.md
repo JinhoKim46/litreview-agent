@@ -24,6 +24,7 @@ Follow the steps below **in order. Do not skip a step.**
 3. Confirm `results/<TOPIC>/protocol.json` exists (it must - Step 0.1/0.2 already found it via the glob, but re-state the path so the reviewer sees exactly which review this run targets).
 4. Parse the remaining flags in `$ARGUMENTS`, if any:
    - `--revise-keywords` - force Step 3 into the revise path even if `search_plan.json` already exists and looks current.
+   - `--change-sources` - the reviewer wants to revisit which connectors run, even though mode isn't `build`. Makes Step 4 ask its source-confirmation question this run (see Step 4's "confirmed once, then locked in" rule) instead of silently reusing `enabled` from disk. Has no effect in `build` mode, where Step 4 always asks anyway.
    - `--rerun` - skip straight to Step 5 (regenerate and execute `rerun_search.sh` from whatever `search_plan.json` already has on disk, no keyword or enablement changes). Requires `search_plan.json` to already exist; if it does not, **stop** and say so - there is nothing to rerun yet.
    - `--chase-citations` - mode is `chase`: skip Steps 2-6 entirely (no keyword-plan or connector-enablement changes) and go straight to **Step 4b**, a separate "other methods" identification pass over the reviewer's already-screened studies via backward/forward citation chasing, per the plan's §11 benchmark addition. Requires at least one `full_text`-stage `include` decision in `screening_decisions.jsonl` (there is nothing to chase from before any screening has happened); if there is none, **stop** and say so, pointing at `/prisma-screen`.
    - Anything else unrecognized -> **stop** and name the unrecognized flag rather than silently ignoring it.
@@ -74,10 +75,12 @@ After the skill returns, `Read` `results/<TOPIC>/search_plan.json` back to confi
 
 ## Step 4: Confirm which connectors actually run this time
 
-This step is what turns keyword-expansion's *relevance* judgment (does this source even apply to the topic - e.g. arXiv disabled outright for a clinical topic) into today's *operational* decision (rate limits, missing credentials, a reviewer's own preference to narrow this particular run). Both live in the same `sources.<name>.enabled` field, but they are decided at different moments for different reasons - never skip this step on the assumption that keyword-expansion's flags are the final word.
+This step is what turns keyword-expansion's *relevance* judgment (does this source even apply to the topic - e.g. arXiv disabled outright for a clinical topic) into today's *operational* decision (rate limits, missing credentials, a reviewer's own preference to narrow this particular run). Both live in the same `sources.<name>.enabled` field, but they are decided at different moments for different reasons.
+
+**Source scope is confirmed once, then locked in - not re-asked every run.** The interactive question in step 3 below only fires when mode is `build` (this topic's first search plan) or the reviewer's own message this turn explicitly asks to change which sources run (e.g. "skip arXiv this time," or a `--change-sources` flag - see Step 0.4). For `reuse` or `revise` mode with no such explicit request, **skip straight to step 4** (the env check) after stating the enabled sources from disk in one line, e.g. *"Sources: pubmed, europepmc, openalex enabled (unchanged from last run)."* Re-asking a reviewer to reconfirm a choice they already made - and that they didn't just say they want to change - is exactly the kind of redundant prompt that leads to sources getting toggled by accident; a reviewer who wants to change scope will say so.
 
 1. From the `search_plan.json` already in context, list every key under `sources` with its current `enabled` value and (if disabled) its `reason`. This set is normally the six shipped connectors, but is not hardcoded to six - a source registered later via `/prisma-add-source` shows up here too, automatically, with no change needed to this command.
-2. Present a table to the reviewer, one row per source, with a one-line description to help them decide (use these for the six shipped connectors; for anything else, pull the one-liner from that source's `.agents/skills/<name>-search/SKILL.md` description):
+2. **Only when mode is `build`, or the reviewer explicitly asked to change sources this turn:** present a table to the reviewer, one row per source, with a one-line description to help them decide (use these for the six shipped connectors; for anything else, pull the one-liner from that source's `.agents/skills/<name>-search/SKILL.md` description):
 
    | Source | Provisional | Notes |
    |---|---|---|
@@ -88,16 +91,16 @@ This step is what turns keyword-expansion's *relevance* judgment (does this sour
    | `europepmc` | enabled/disabled | Broader than PubMed (includes preprints/patents); exposes full-text availability. |
    | `arxiv` | enabled/disabled | STEM preprints only, not peer-reviewed - see the dedup-merge rule in Step 7. |
 
-3. Ask the reviewer, via `AskUserQuestion` (multi-select over the sources listed), to confirm or change which ones run **now**. Default the pre-checked selection to whatever `enabled` already says, so a reviewer in a hurry can just confirm.
-4. Environment check (informational, never blocking - per the connector contract, missing credentials degrade gracefully rather than failing):
+   Ask, via `AskUserQuestion` (multi-select over the sources listed), to confirm or change which ones run **now**. Default the pre-checked selection to whatever `enabled` already says, so a reviewer in a hurry can just confirm. Skip this whole substep (table + question) in `reuse`/`revise` mode with no explicit change request, per the rule above.
+3. Environment check (informational, never blocking - per the connector contract, missing credentials degrade gracefully rather than failing):
    ```bash
    for v in PRISMA_CONTACT_EMAIL NCBI_API_KEY S2_API_KEY; do
      if [ -z "${!v:-}" ]; then echo "  $v: not set"; else echo "  $v: set"; fi
    done
    ```
 Mention any unset ones to the reviewer as a one-line FYI (PubMed/Semantic Scholar rate limits are friendlier with a key; `PRISMA_CONTACT_EMAIL` sets an honest User-Agent contact for the polite pool). Never block on this.
-5. If the reviewer's final selection differs from what was already on disk, update `results/<TOPIC>/search_plan.json` with `Edit`: set each changed source's `enabled` to the confirmed value, and for anything newly disabled set a short `reason` string (e.g. `"reviewer excluded this run - rate limited today"`) so a later reader of the file sees why, the same way keyword-expansion records a `reason` for its own relevance-based exclusions. **This is an operational note, not a scope decision** - if disabling a source also represents a genuine national-language coverage gap that `keyword-expansion` didn't already record, tell the reviewer to add it to `protocol.json.scope.coverage_gaps` themselves (via `/prisma-init`'s scope step or a direct edit) rather than folding it in here.
-6. If nobody ends up enabled, **stop** - there is nothing to search.
+4. If the reviewer's final selection differs from what was already on disk, update `results/<TOPIC>/search_plan.json` with `Edit`: set each changed source's `enabled` to the confirmed value, and for anything newly disabled set a short `reason` string (e.g. `"reviewer excluded this run - rate limited today"`) so a later reader of the file sees why, the same way keyword-expansion records a `reason` for its own relevance-based exclusions. **This is an operational note, not a scope decision** - if disabling a source also represents a genuine national-language coverage gap that `keyword-expansion` didn't already record, tell the reviewer to add it to `protocol.json.scope.coverage_gaps` themselves (via `/prisma-init`'s scope step or a direct edit) rather than folding it in here.
+5. If nobody ends up enabled, **stop** - there is nothing to search.
 
 ---
 

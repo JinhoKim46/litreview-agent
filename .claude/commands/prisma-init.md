@@ -94,6 +94,7 @@ After the `review-protocol` skill finishes, read `results/<TOPIC>/protocol.json`
 {
   "title": "...",
   "objective": "...",
+  "field_domain": "clinical_medicine",
   "framework": "PICO",
   "framework_fields": { "population": "...", "intervention": "...", "comparator": "...", "outcome": "..." },
   "review_type": "intervention_effectiveness",

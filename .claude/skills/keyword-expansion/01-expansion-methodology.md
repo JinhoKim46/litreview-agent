@@ -1,5 +1,5 @@
 ---
-framework_version: 1.0.1
+framework_version: 1.1.0
 ---
 
 # Keyword Expansion Methodology
@@ -14,7 +14,15 @@ For each PICO/PICo/SPIDER concept, the seed term(s) the reviewer supplied during
 
 **a. Synonyms and spelling variants.** Draw on general domain knowledge: American/British spelling (`randomized`/`randomised`, `anesthesia`/ `anaesthesia`), common abbreviations and their expansions (`COPD` ↔ `chronic obstructive pulmonary disease`), brand/generic naming where relevant, and near-synonyms actually used in the literature (`exercise therapy` / `physical therapy` / `physiotherapy` are not interchangeable in every domain — propose them separately, let the reviewer judge fit rather than merging them into one bucket for the model).
 
-**b. MeSH descriptors** (biomedical/health topics only — skip this axis entirely for non-biomedical reviews). Propose the MeSH heading(s) that most plausibly match the seed term, **flagged as unverified** until checked. This repo's `connectors/pubmed.py` does not currently expose a `mesh-lookup` subcommand, so verify by one of:
+**b. MeSH descriptors.** Whether this axis is proposed at all, and whether it's the *default* vocabulary or an opt-in one, is keyed on `protocol.json.field_domain` (set during `review-protocol`'s field-domain elicitation — see that skill's Phase 1) rather than a single "biomedical or not" test. A binary test collapses two genuinely different cases: clinical/hospital medicine, where MeSH is the primary indexing convention the literature was built around, and a biomedical-*adjacent* technical/engineering field (MRI reconstruction, biosensor design, bioinformatics tooling, etc.), where MeSH headings exist for some vocabulary but free-text `[tiab]`/keyword terms are how that literature actually gets found and indexed.
+
+- `field_domain: clinical_medicine` — propose the MeSH axis **by default**, same as every other axis; the reviewer still prunes per-term as usual.
+- `field_domain: biomedical_technical` — MeSH terms may exist for part of the vocabulary (e.g. a disease or anatomical term nested in an otherwise technical concept) but are not this literature's primary index. Ask once, up front, before generating candidates: *"MeSH headings exist for some of this vocabulary but aren't the primary index for this literature — include them alongside free-text terms, or free-text only?"* Don't default MeSH in silently just because the topic sounds biomedical-adjacent.
+- `field_domain: non_biomedical` — skip this axis entirely, as before.
+
+If `protocol.json.field_domain` is missing (e.g. an older review from before this field existed), ask the reviewer which of the three applies before generating this axis's candidates — never infer it from the topic string alone.
+
+Whichever path proposes MeSH terms, propose the MeSH heading(s) that most plausibly match the seed term, **flagged as unverified** until checked. This repo's `connectors/pubmed.py` does not currently expose a `mesh-lookup` subcommand, so verify by one of:
   - `WebFetch` against NCBI's public MeSH browser, `https://www.ncbi.nlm.nih.gov/mesh/?term=<term>` (or `WebSearch` for the term plus `"MeSH"` if WebFetch is unavailable) — confirm the descriptor exists and read its scope note before proposing it as confirmed;
   - or, when neither tool can reach the network, present the candidate explicitly labeled `(unverified — please confirm this MeSH heading exists)` and let the reviewer confirm or reject it directly. Never present a MeSH heading as fact without one of these two checks — MeSH tree structure is exactly the kind of detail an LLM can misremember or invent plausibly.
 
