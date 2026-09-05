@@ -4,7 +4,11 @@
 
 > Note: This is an independent open-source project and is not affiliated with, endorsed by, or sponsored by Anthropic. Anthropic and Claude Code are referenced only to describe the toolchain this workflow uses.
 
-Most "AI systematic review" tools are reporting assistants: you search, screen, and extract data elsewhere (Rayyan, RevMan, Excel), then interview a model into narrating what you already did. This repo instead runs the whole pipeline — real database search, real deduplication, a real screening workflow, real data extraction, and real statistical meta-analysis (pooled effect sizes, heterogeneity, forest/funnel plots, GRADE certainty) — with the human judgment calls PRISMA itself requires (screening decisions, section approval) left to the reviewer, and everything else automated and auditable.
+Most "AI systematic review" tools are reporting assistants: you search, screen, and extract data elsewhere (Rayyan, RevMan, Excel), then interview a model into narrating what you already did. This repo instead runs the whole pipeline — real database search, real deduplication, a real screening workflow, real data extraction, and real statistical meta-analysis (pooled effect sizes, heterogeneity, forest/funnel plots, GRADE certainty) — as an **AI-assisted PRISMA-oriented review harness**, not an autonomous reviewer: protocol decisions, screening/eligibility judgments, full-text retrieval, extraction supervision, and every final methodological call stay with you, while search execution, deduplication, record-keeping, and the mechanical parts of synthesis (pooling arithmetic, heterogeneity stats, plot generation) are automated and auditable.
+
+## What this is — and is not
+
+This project helps a reviewer build an auditable evidence map and review workspace, with real search/dedup/synthesis machinery underneath. It is **not** a substitute for protocol registration (PROSPERO or equivalent), independent dual screening, licensed database access, full-text access, or your own expert methodological judgment — and it is not yet field-agnostic: the shipped risk-of-bias tools (RoB2, Newcastle-Ottawa), question frameworks (PICO/PICo/SPIDER/PIRD), and the default PRISMA 2020 manuscript structure all assume a clinical/health-science review. Four of the six search connectors are genuinely multidisciplinary, but the methodology skills downstream of search are not — a computer-science, engineering, or humanities systematic review is not yet well served here.
 
 ## Pipeline
 
@@ -64,6 +68,18 @@ claude
 
 `/prisma-status "your review topic"` works at any point and reconstructs exactly where a review stands, since every stage's state is either append-only or fully re-derivable — close your laptop mid-screening for weeks and pick back up with nothing lost.
 
+- [User guide](USER_GUIDE.md) — installation, first review, recovery, troubleshooting
+- [Contributing](CONTRIBUTING.md) — what belongs upstream and the PR bar
+- [Security policy](SECURITY.md) — reporting and untrusted-content boundaries
+- [Agent/runtime notes](AGENTS.md) — non-Claude connector discovery
+
+## Honest limitations
+
+- **Rate limits and coverage gaps are real.** Semantic Scholar's unauthenticated pool rate-limits often; PubMed/Europe PMC skew biomedical; a topic outside all six sources' combined coverage will search incompletely, and the pipeline reports this rather than hiding it — it does not yet block on it (see `USER_GUIDE.md`'s "Incomplete or interrupted review" section).
+- **Full-text access is on you.** The framework fetches what's freely available and otherwise asks you to supply the text; it does not bypass paywalls or institutional access controls.
+- **Extraction and risk-of-bias judgments are a single AI-assisted pass, not independent dual review.** Treat every extracted value and RoB/GRADE judgment as a draft for your review, not a finished second-rater.
+- **The default workflow is Claude Code-native.** Non-Claude agent runtimes get discoverable connector CLIs (see `AGENTS.md`) but not the slash-command orchestration layer described above.
+
 ## Free, multi-disciplinary sources
 
 Six connectors ship out of the box, chosen to cover most disciplines with no paid access required:
@@ -99,7 +115,8 @@ prisma-review/
 ├── connectors/             # one Python package: 7 source connectors + shared HTTP/retry/contract code
 ├── synthesis/              # pooling, heterogeneity, forest/funnel/RoB-traffic-light plots
 ├── results/<TOPIC>/        # per-review state (gitignored except structure + schema docs)
-├── tools/                  # CI/maintainer scripts (lint, contract checks)
+├── tools/                  # CI/maintainer scripts (lint, contract checks) + runtime path-safety
+│                           #   (path_policy.py, export_report.py — see SECURITY.md)
 ├── tests/                  # fixture-based, no live network
 └── requirements.txt        # requests, statsmodels, matplotlib
 ```
