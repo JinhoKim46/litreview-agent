@@ -12,7 +12,7 @@ The original slr-prisma skill this framework's manuscript methodology is adapted
 
 | Original (Claude.ai-only) dependency | What this command does instead |
 |---|---|
-| `/mnt/skills/public/docx` (docx-js) — hard Word-doc output | **Markdown-first**: draft directly to `manuscript/manuscript.md`. `--export docx\|pdf` shells out to `pandoc` only if `pandoc --version` succeeds (Step 12); otherwise print an install hint and stay Markdown-only. Export is never a hard dependency. |
+| `/mnt/skills/public/docx` (docx-js) — hard Word-doc output | **Markdown-first**: draft directly to `manuscript/manuscript.md`. `--export docx\|pdf` runs `tools/export_report.py` (Step 12), which shells out to `pandoc` only if it's installed; otherwise print an install hint and stay Markdown-only. Export is never a hard dependency. |
 | `/mnt/skills/user/apa-referencing` | The bundled, self-contained `.claude/skills/prisma-manuscript/references/apa7-formatting-rules.md` plus native **WebSearch/WebFetch** verification (Step 10) — no external skill dependency. |
 | "Visualizer" tool for the flow-diagram SVG | Inline SVG markup written directly to `manuscript/flow_diagram.svg` (Step 9) — no external tool call. |
 | `web_search` / `ask_user_input` (Claude.ai-specific) | Native **WebSearch**/**WebFetch** and ordinary conversation turns / `AskUserQuestion`. |
@@ -300,9 +300,9 @@ Mention, once, the default page-format conventions relevant at export/formatting
 
 Only if `--export docx` or `--export pdf` was passed in Step 0:
 
-1. Run `pandoc --version`.
-2. **If it succeeds**: run `pandoc manuscript/manuscript.md -o manuscript/manuscript.<docx|pdf>` (add a reference-doc/template flag if the target journal supplied one, for house styling). Then verify the export actually worked: confirm the `pandoc` command exited 0 **and** the output file exists and is non-empty. This replaces slr-prisma's `scripts/office/validate.py`, which depended on a docx-js-specific validator with no equivalent here.
-3. **If it fails** (pandoc not installed): print `Pandoc not found — install it to enable --export docx/pdf: https://pandoc.org/installing.html` and continue in Markdown-only mode. **Never treat this as a hard failure of the command** — the manuscript is complete and usable as `manuscript.md` on its own regardless of export.
+Run `python3 tools/export_report.py --topic <TOPIC> --format docx|pdf` (add `--reference-doc <path under results/<TOPIC>/>` if the target journal supplied a docx house-styling template — `--reference-doc` only applies to `--format docx`, Pandoc has no equivalent for pdf). This is pre-allowlisted in `.claude/settings.json` as `Bash(python3 tools/export_report.py:*)` — per PRODUCT_READINESS_AUDIT.md P0-1, it replaces a raw `pandoc` invocation (which used to run under an unrestricted `Bash(pandoc:*)` permission — Lua filters and arbitrary `-o`/`--resource-path` flags are real code-execution/arbitrary-write surfaces) with a fixed argument list the wrapper builds itself: it never accepts a filter or a path outside `results/<TOPIC>/`. The wrapper does everything Step 12 used to spell out inline: checks Pandoc is installed (prints the same `Pandoc not found — install it to enable --export docx/pdf: https://pandoc.org/installing.html` hint and exits non-zero if not), runs the conversion, and verifies the output file exists and is non-empty before reporting success. This replaces slr-prisma's `scripts/office/validate.py`, which depended on a docx-js-specific validator with no equivalent here.
+
+**If the wrapper exits non-zero** (pandoc not installed, or the conversion/verification failed — its stderr says which): continue in Markdown-only mode. **Never treat this as a hard failure of the command** — the manuscript is complete and usable as `manuscript.md` on its own regardless of export.
 
 ---
 

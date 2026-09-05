@@ -14,7 +14,12 @@ Checks:
    exact pinned entries this repo ships: one per connector module
    (`Bash(python3 -m connectors.<source>:*)`), one for the synthesis runner,
    one per tools/*.py maintainer script, `python3 -m unittest discover`, and
-   `pandoc` (the optional --export docx/pdf path). Catches permission
+   `tools/export_report.py` (the --export docx/pdf path -- a fixed wrapper
+   around Pandoc, not a raw `Bash(pandoc:*)` wildcard; see
+   PRODUCT_READINESS_AUDIT.md P0-1 and tools/path_policy.py for why a bare
+   Pandoc wildcard is unsafe: Lua filters and arbitrary -o/--resource-path
+   flags are real code-execution and arbitrary-write surfaces this wrapper
+   removes by never accepting them as arguments at all). Catches permission
    widening -- a bare `Bash(*)`, an unpinned `Bash(python3:*)`, a new
    unreviewed entry -- any of which would auto-approve arbitrary commands on
    every fork. The same file's `hooks` key is held to an allowlist too: a
@@ -58,7 +63,7 @@ ALLOWED_PERMISSIONS = {
     "Bash(python3 tools/check_framework_version.py:*)",
     "Bash(python3 tools/security_guards.py:*)",
     "Bash(python3 -m unittest discover:*)",
-    "Bash(pandoc:*)",
+    "Bash(python3 tools/export_report.py:*)",
     "Bash(gh repo view:*)",
 }
 
