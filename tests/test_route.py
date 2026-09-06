@@ -99,6 +99,25 @@ class RowResolutionTests(unittest.TestCase):
         self.assertEqual(result["matched_row"], "R3")
         self.assertEqual(result["method_id"], "reconnaissance")
 
+    def test_r4_map_sub_cases_also_shadowed_by_r3s_forming_clause(self):
+        # Same defect as R5, on a different row: a "map" goal with
+        # question_focus="forming" never reaches R4a-R4d's algorithm/venue
+        # logic. Documented, not silently patched -- see the _flagged note.
+        result = self.decide({"goal": ["map"], "evidence_type": "algorithm", "venue_default": "cs_se", "question_focus": "forming"})
+        self.assertEqual(result["matched_row"], "R3")
+        self.assertEqual(result["method_id"], "reconnaissance")
+
+    def test_r6a_qualitative_refusal_also_shadowed_by_r3s_forming_clause(self):
+        # The most consequential instance: a qualitative question that is
+        # also "forming" resolves via R3 to reconnaissance instead of
+        # hitting R6a's hard REFUSE (never systematic_review). This is a
+        # fail-closed path being silently bypassed for a subset of inputs --
+        # flagged prominently in the PR body, not patched by guessing at
+        # reordering.
+        result = self.decide({"goal": ["answer"], "evidence_type": "qualitative", "question_focus": "forming"})
+        self.assertEqual(result["matched_row"], "R3")
+        self.assertNotEqual(result["method_id"], "systematic_review")
+
     def test_r6a_answer_qualitative_refuses_never_sr(self):
         result = self.decide({"goal": ["answer"], "evidence_type": "qualitative"})
         self.assertEqual(result["matched_row"], "R6a")
@@ -211,6 +230,19 @@ class ShippedManifestGateTests(unittest.TestCase):
         self.assertEqual(result["kind"], "refuse")
         self.assertIn("reconnaissance", result["reason"])
         self.assertEqual(result["pointer"], route.ROADMAP_POINTER)
+
+    def test_refusal_never_offers_an_unshipped_method(self):
+        # R2's row offers "scoping_review", which has no shipped manifest
+        # either in M2 -- surfacing it as a live suggestion would hand the
+        # user a dead-end recommendation the tool would immediately refuse
+        # too. The offer must be filtered down to the real shipped roster.
+        result = route.decide({"goal": ["overview"]})  # R2 -> REFUSE, offer=["scoping_review"] in the table
+        self.assertEqual(result["kind"], "refuse")
+        self.assertEqual(result["offer"], [])
+
+    def test_refusal_keeps_a_shipped_offer(self):
+        result = route.decide({"goal": ["overview"]}, shipped_method_ids={"scoping_review"})
+        self.assertEqual(result["offer"], ["scoping_review"])
 
 
 class NoMatchTests(unittest.TestCase):
