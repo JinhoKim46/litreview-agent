@@ -9,7 +9,7 @@ Thanks for considering a contribution! This repo has a deliberate, narrow philos
 ## What gets merged
 
 - **Connector additions and fixes.** A new source connector that follows the fixed `{meta, results}` JSON contract (see `connectors/_shared.py`), or a fix to an existing one (a stale API parameter, a rate-limit change, incorrect pagination), is squarely in scope.
-- **Methodology-file fixes.** Corrections to the PRISMA-item mapping, the eligibility-gate logic, the RoB2/GRADE criteria, or the manuscript drafting conventions — anything that makes the methodology more accurate or more faithful to the PRISMA 2020 statement.
+- **Methodology-file fixes.** Corrections to the PRISMA-item mapping, the eligibility-gate logic, the RoB1/GRADE criteria, or the manuscript drafting conventions — anything that makes the methodology more accurate or more faithful to the PRISMA 2020 statement.
 - **Screening and synthesis robustness improvements.** Dedup edge cases (e.g. a preprint/peer-reviewed-version merge that currently fails), a heterogeneity decision-rule bug, a pooling-math correction, a screening sheet import that mishandles a valid CSV shape — all in scope, especially with a failing case demonstrated.
 
 ## What gets declined
@@ -26,7 +26,7 @@ Thanks for considering a contribution! This repo has a deliberate, narrow philos
 - For a bug: include a minimal reproduction (the documented CLI invocation, or a real connector fixture) — not a synthetic value fed straight to a function.
 - One concern per PR. A connector fix and a doc typo are two PRs.
 - No unrelated reformatting riding along with a functional change — it makes the real diff harder to review and revert.
-- A methodology change (eligibility-gate wording, RoB2/GRADE criteria, PRISMA-item mapping) must cite the primary source or guideline it's correcting toward — "this reads more clearly" isn't a methodology argument, "the 2019 RoB2 guidance says X" is.
+- A methodology change (eligibility-gate wording, RoB1/GRADE criteria, PRISMA-item mapping) must cite the primary source or guideline it's correcting toward — "this reads more clearly" isn't a methodology argument, "the 2019 RoB1 guidance says X" is.
 
 ## The CI verification bar
 

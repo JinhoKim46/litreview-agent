@@ -8,7 +8,7 @@ Most "AI systematic review" tools are reporting assistants: you search, screen, 
 
 ## What this is — and is not
 
-This project helps a reviewer build an auditable evidence map and review workspace, with real search/dedup/synthesis machinery underneath. It is **not** a substitute for protocol registration (PROSPERO or equivalent), independent dual screening, licensed database access, full-text access, or your own expert methodological judgment — and it is not yet field-agnostic: the shipped risk-of-bias tools (RoB2, Newcastle-Ottawa), question frameworks (PICO/PICo/SPIDER/PIRD), and the default PRISMA 2020 manuscript structure all assume a clinical/health-science review. Four of the six search connectors are genuinely multidisciplinary, but the methodology skills downstream of search are not — a computer-science, engineering, or humanities systematic review is not yet well served here.
+This project helps a reviewer build an auditable evidence map and review workspace, with real search/dedup/synthesis machinery underneath. It is **not** a substitute for protocol registration (PROSPERO or equivalent), independent dual screening, licensed database access, full-text access, or your own expert methodological judgment — and it is not yet field-agnostic: the shipped risk-of-bias tools (RoB1, Newcastle-Ottawa), question frameworks (PICO/PICo/SPIDER/PIRD), and the default PRISMA 2020 manuscript structure all assume a clinical/health-science review. Four of the six search connectors are genuinely multidisciplinary, but the methodology skills downstream of search are not — a computer-science, engineering, or humanities systematic review is not yet well served here.
 
 ## Pipeline
 
@@ -34,8 +34,8 @@ flowchart LR
 
     subgraph s3["3 Evidence"]
         direction TB
-        Extract["<b>Extract</b><br/>characteristics, effect data, RoB2 fields"]
-        Synthesize["<b>Synthesize</b><br/>pool effect sizes, RoB2, GRADE, plots"]
+        Extract["<b>Extract</b><br/>characteristics, effect data, RoB1 fields"]
+        Synthesize["<b>Synthesize</b><br/>pool effect sizes, RoB1, GRADE, plots"]
         Report["<b>Report</b><br/>manuscript + flow diagram + checklist audit"]
         Extract -- "extraction_table.json" --> Synthesize
         Synthesize -- "synthesis/*.json + plots" --> Report
@@ -61,7 +61,7 @@ claude
 /prisma-screen export                 # write a title/abstract screening sheet to disk
 # ... edit results/<TOPIC>/screening/title_abstract_sheet.csv (or .md) by hand ...
 /prisma-screen import                 # append your decisions to the ledger
-/prisma-extract                       # build the extraction table (characteristics, effect data, RoB2)
+/prisma-extract                       # build the extraction table (characteristics, effect data, RoB1)
 /prisma-synthesize                    # pool poolable outcomes, plot, assess heterogeneity/GRADE
 /prisma-report                        # draft the manuscript, flow diagram, and checklist audit
 ```
