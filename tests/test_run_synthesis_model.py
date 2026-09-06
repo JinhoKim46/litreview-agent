@@ -373,5 +373,73 @@ class SynthesisFamilyDispatchTests(unittest.TestCase):
                 resolve_synthesis_plan("t", None, _fake_safe_topic_path(tmp))
 
 
+class MainDescriptiveDispatchTests(unittest.TestCase):
+    """docs/PLAN.md M3: /prisma-synthesize's CLI entrypoint must actually run
+    tools/chart_summary.py for a scoping/mapping-study manifest, not reach
+    resolve_synthesis_plan()'s DESCRIPTIVE_NOT_IMPLEMENTED refusal (that
+    refusal is now reserved for callers who bypass main(), and for
+    synthesis_family="swim", which is still genuinely unimplemented)."""
+
+    SLUG = "run-synthesis-descriptive-dispatch-test-topic"
+
+    def setUp(self):
+        import shutil
+
+        from tools import path_policy
+
+        self.topic_dir = path_policy.RESULTS_ROOT / self.SLUG
+        if self.topic_dir.exists():
+            shutil.rmtree(self.topic_dir)
+        os.makedirs(self.topic_dir, exist_ok=True)
+        (self.topic_dir / "protocol.json").write_text(json.dumps({"method": {"id": "scoping_review"}}))
+
+    def tearDown(self):
+        import shutil
+        if self.topic_dir.exists():
+            shutil.rmtree(self.topic_dir)
+
+    def test_main_dispatches_to_chart_summary_for_a_scoping_review(self):
+        import contextlib
+        import io
+
+        from tools.charting_gate import freeze
+        from synthesis import run_synthesis
+
+        table = freeze(self.topic_dir, self.SLUG, ["year"])
+        table["studies"] = [{"record_id": "r1", "data": {"year": 2024}}]
+        (self.topic_dir / "charting_table.json").write_text(json.dumps(table))
+
+        argv_backup = sys.argv
+        sys.argv = ["run_synthesis.py", "--topic", self.SLUG]
+        buf = io.StringIO()
+        try:
+            with contextlib.redirect_stdout(buf):
+                rc = run_synthesis.main()
+        finally:
+            sys.argv = argv_backup
+
+        self.assertEqual(rc, 0)
+        self.assertIn("synthesis_family=\"descriptive\"", buf.getvalue())
+        self.assertTrue((self.topic_dir / "synthesis" / "descriptive_summary.json").exists())
+
+    def test_main_still_refuses_cleanly_before_the_charting_form_is_frozen(self):
+        import contextlib
+        import io
+
+        from synthesis import run_synthesis
+
+        argv_backup = sys.argv
+        sys.argv = ["run_synthesis.py", "--topic", self.SLUG]
+        buf = io.StringIO()
+        try:
+            with contextlib.redirect_stdout(buf), contextlib.redirect_stderr(buf):
+                rc = run_synthesis.main()
+        finally:
+            sys.argv = argv_backup
+
+        self.assertEqual(rc, 1)
+        self.assertIn("frozen", buf.getvalue())
+
+
 if __name__ == "__main__":
     unittest.main()
