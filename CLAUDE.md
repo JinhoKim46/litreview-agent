@@ -32,7 +32,7 @@ The pipeline is driven by nine slash commands, run roughly in this order for a n
 2. **`/prisma-search`** — translate the confirmed keyword set into each enabled source's native query syntax, run the connector CLIs, and deduplicate results into `records.jsonl`.
 3. **`/prisma-screen export|import`** — export undecided records as title-abstract or full-text screening sheets (Markdown + CSV) for the reviewer to mark up outside the conversation, then import the decisions back into the append-only `screening_decisions.jsonl` ledger.
 4. **`/prisma-extract`** — build `extraction_table.json`: study characteristics, effect-size data, and risk-of-bias judgements for every included study.
-5. **`/prisma-synthesize`** — pool comparable outcomes statistically (fixed/random-effects), assess heterogeneity, generate forest/funnel plots, run RoB2 and GRADE, and fall back to narrative synthesis for outcomes that don't clear the poolability gate.
+5. **`/prisma-synthesize`** — pool comparable outcomes statistically (fixed/random-effects), assess heterogeneity, generate forest/funnel plots, run RoB1 and GRADE, and fall back to narrative synthesis for outcomes that don't clear the poolability gate.
 6. **`/prisma-report`** — draft the full manuscript, PRISMA flow diagram, and checklist audit from the recorded state only.
 7. **`/prisma-status`** — report exactly where a review currently stands (resumable across sessions, since all state is append-only or re-derivable).
 8. **`/prisma-add-source`** — scaffold a new search connector (e.g. an institutional Scopus/Web of Science connector) following the same contract as the shipped six.

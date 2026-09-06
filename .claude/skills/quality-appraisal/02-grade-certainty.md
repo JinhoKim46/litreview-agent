@@ -1,5 +1,5 @@
 ---
-framework_version: 1.0.1
+framework_version: 1.0.2
 ---
 
 # GRADE: Rating Certainty of Evidence
@@ -17,13 +17,13 @@ From that baseline, certainty is **rated down** across five domains (below) and,
 
 | Domain | Question it asks | Typical trigger for "serious" (−1) or "very serious" (−2) concern |
 |---|---|---|
-| **Risk of bias** | Are the contributing studies individually trustworthy? | A majority of the outcome's evidence comes from studies with an overall RoB2 judgement of "some concerns" (serious) or "high risk" (very serious), or NOS "fair"/"poor" quality — read `synthesis/rob_table.json`'s `proportion_low_risk` and which studies drive the pooled weight. |
+| **Risk of bias** | Are the contributing studies individually trustworthy? | A majority of the outcome's evidence comes from studies with an overall RoB1 judgement of "unclear risk" (serious) or "high risk" (very serious), or NOS "fair"/"poor" quality — read `synthesis/rob_table.json`'s `proportion_low_risk` and which studies drive the pooled weight. |
 | **Inconsistency** | Do the studies agree with each other? | High statistical heterogeneity: I² > 50%, or Cochrane's Q test p < 0.10 (per `synthesis/heterogeneity.py`'s output), especially when point estimates point in different directions or confidence intervals barely overlap. Overlapping CIs and I² < 25-50% with the same effect direction = not serious. |
 | **Indirectness** | Do the studies actually address the review's PICO, or something adjacent to it? | The population, intervention, comparator, or outcome measured in the studies differs meaningfully from what the review question asks (e.g. surrogate outcome instead of the patient-important one; a different drug class; a population outside the review's inclusion criteria used only for context). |
 | **Imprecision** | Is the pooled estimate precise enough to act on? | A wide 95% confidence interval that crosses the line of no effect (RR/OR = 1, or MD/SMD = 0) in a way that would change the clinical conclusion, or a small total sample size / few events relative to what's needed for a stable estimate (optimal information size not met). |
 | **Publication bias** | Is the visible evidence a biased sample of all the evidence that exists? | Funnel plot asymmetry (only generated at ≥10 studies per the synthesis gate), a statistically significant Egger's test, or a body of evidence dominated by small, industry-funded, or positive-only studies with no registered protocols found. When fewer than 10 studies contribute, publication bias is usually rated "undetected" (not "none") — the tools to detect it don't have enough power, so say so rather than implying its absence was confirmed. |
 
-Each domain is rated **not serious**, **serious** (−1 level), or **very serious** (−2 levels). Every downgrade must cite the specific evidence behind it (the heterogeneity numbers, the RoB2 proportions, the CI width) — never a bare "serious" with no support, mirroring the risk-of-bias rule that a judgement is only as good as what backs it.
+Each domain is rated **not serious**, **serious** (−1 level), or **very serious** (−2 levels). Every downgrade must cite the specific evidence behind it (the heterogeneity numbers, the RoB1 proportions, the CI width) — never a bare "serious" with no support, mirroring the risk-of-bias rule that a judgement is only as good as what backs it.
 
 ## Rating up (observational evidence only)
 
@@ -68,7 +68,7 @@ One entry per outcome, written during `/prisma-synthesize` and read verbatim by 
   "n_studies": 3,
   "starting_certainty": "high",
   "domains": {
-    "risk_of_bias": {"rating": "not_serious", "note": "All 3 contributing studies judged RoB2 'low risk'; see rob_table.json."},
+    "risk_of_bias": {"rating": "not_serious", "note": "All 3 contributing studies judged RoB1 'low risk'; see rob_table.json."},
     "inconsistency": {"rating": "serious", "note": "I² = 62%, Q p = 0.07 (heterogeneity.json); effect direction consistent, magnitude varies."},
     "indirectness": {"rating": "not_serious", "note": "All studies match the review's PICO population, intervention, and outcome definition exactly."},
     "imprecision": {"rating": "not_serious", "note": "95% CI (0.54–1.58) excludes a doubling of risk in either direction relative to the a priori MCID."},

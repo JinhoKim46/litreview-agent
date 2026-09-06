@@ -31,7 +31,7 @@ A complete walkthrough from "I just cloned this" to "I have a drafted manuscript
   claude --version
   ```
 
-- **Python 3.10 or later.**
+- **Python 3.11 or later.**
 
   ```bash
   python3 --version   # macOS/Linux
@@ -131,7 +131,7 @@ Confirms which of the (by default, all six) free connectors actually run this ti
 appends your decisions to the append-only `screening_decisions.jsonl` ledger. Run `export`/`import` twice — once with `--stage title_abstract`, once with `--stage full_text` — since PRISMA distinguishes the two screening levels.
 
 ### `/prisma-extract`
-For every study you included at full-text, builds `extraction_table.json`: standard characteristics, effect-size data (if the study reports something quantitative), and a risk-of-bias judgement (RoB2 for randomized studies, Newcastle-Ottawa for non-randomized). It fetches full text via URL when one is available, asks you to paste it if not, or interviews you directly as a last resort.
+For every study you included at full-text, builds `extraction_table.json`: standard characteristics, effect-size data (if the study reports something quantitative), and a risk-of-bias judgement (RoB1 for randomized studies, Newcastle-Ottawa for non-randomized). It fetches full text via URL when one is available, asks you to paste it if not, or interviews you directly as a last resort.
 
 ### `/prisma-synthesize`
 Groups extracted outcomes, pools anything with ≥2 comparable studies (fixed or random-effects, decided by heterogeneity), generates forest plots (and a funnel plot at ≥10 studies), rolls up risk-of-bias into a traffic-light plot, and drafts GRADE certainty ratings. Outcomes that don't clear the poolability gate fall back to narrative synthesis automatically, with the reason recorded — never silently dropped.
@@ -191,7 +191,7 @@ Before treating a review as ready for a manuscript, methods reviewer, or co-auth
 - [ ] **Every screening decision** at both stages is genuinely yours, not left on the AI-suggested default — spot-check a sample against the sheets you marked up.
 - [ ] **Full-text was actually available** for every included study, not interviewed out of you as a last resort when a URL failed — check `extraction_table.json`'s evidence locators.
 - [ ] **Data extraction** reflects what you'd write down yourself, not just what the pipeline's single AI-assisted pass produced — this framework runs one pass, not independent dual extraction with a resolver.
-- [ ] **Your review's field is one this framework's methodology actually covers.** Risk-of-bias appraisal (RoB2 for randomized studies, Newcastle-Ottawa for non-randomized), the question frameworks (PICO/PICo/SPIDER/PIRD), and the default PRISMA 2020 27-item manuscript structure all assume a clinical/health-science review — confirm all three are the right instruments for your actual field and study designs before relying on them, not just the risk-of-bias tool alone (see `README.md`'s "What this is — and is not").
+- [ ] **Your review's field is one this framework's methodology actually covers.** Risk-of-bias appraisal (RoB1 for randomized studies, Newcastle-Ottawa for non-randomized), the question frameworks (PICO/PICo/SPIDER/PIRD), and the default PRISMA 2020 27-item manuscript structure all assume a clinical/health-science review — confirm all three are the right instruments for your actual field and study designs before relying on them, not just the risk-of-bias tool alone (see `README.md`'s "What this is — and is not").
 - [ ] **Every pooled outcome's studies are actually compatible** — same timepoint, same direction, no double-counted participants — before trusting `/prisma-synthesize`'s pooled estimate over its narrative-fallback judgment.
 - [ ] **GRADE certainty ratings are complete**, not left at a placeholder domain `/prisma-synthesize` couldn't fill in automatically (indirectness and imprecision need your judgment call).
 - [ ] **A human did the final read.** A single reviewer/agent pass through this pipeline is not equivalent to independent dual review — if your target venue or protocol requires that, this framework doesn't provide it by itself.

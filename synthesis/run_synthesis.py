@@ -36,7 +36,7 @@ extraction_table.json contract this script expects -- the exact shape
           "author_year": "Kim et al. (2022)",
           "study_design": "RCT" | "cohort" | "case-control" | ...,
           "outcomes_measured": ["PONV", "patient satisfaction"],
-          "risk_of_bias": {"tool": "RoB2"|"NOS", "overall_judgement": "...", ...},
+          "risk_of_bias": {"tool": "RoB1"|"NOS", "overall_judgement": "...", ...},
           "effect_data": [
             {"outcome": "PONV", "measure_type": "OR"|"RR"|"RD", "timepoint": "...",
              "intervention_arm": {"label": "...", "events": int, "total": int},
@@ -71,10 +71,10 @@ from synthesis.plots import forest_plot, funnel_plot, rob_traffic_light_plot
 
 Z95 = 1.959964  # normal-approximation 95% CI multiplier, matches pool_effects' own CI method
 
-# Canonical RoB2 domain order (Cochrane Handbook Ch.8 / quality-appraisal/01-risk-of-bias.md),
+# Canonical RoB1 domain order (Cochrane Handbook Ch.8 / quality-appraisal/01-risk-of-bias.md),
 # short headers for the traffic-light plot's columns -- the manuscript's figure caption spells
 # these back out (D1=sequence generation, D2=allocation concealment, ...).
-ROB2_DOMAIN_LABELS = [
+ROB1_DOMAIN_LABELS = [
     ("sequence_generation", "D1"),
     ("allocation_concealment", "D2"),
     ("blinding_participants_personnel", "D3"),
@@ -97,12 +97,49 @@ def slugify(name):
     return re.sub(r"[^a-z0-9]+", "-", name.lower()).strip("-") or "outcome"
 
 
+# Historically this framework mislabeled its RoB1 (Cochrane 2011 six-domain)
+# output as "RoB2" -- see quality-appraisal/01-risk-of-bias.md. Extraction
+# tables written before that correction still carry the old label; accept it
+# on read (warning, never a hard error) and normalize to "RoB1" everywhere
+# downstream, so a legacy topic still synthesizes without hand-editing.
+ROB1_LEGACY_TOOL_ALIASES = {"RoB2"}
+INSTRUMENT_BY_TOOL = {"RoB1": "cochrane_rob1_2011", "NOS": "nos"}
+
+
+def normalize_risk_of_bias(rob, study_id):
+    """Alias legacy tool labels to their current name and add the explicit
+    `instrument` id (Phase 0 additive item, docs/PLAN.md decision 4) beside
+    the legacy `tool` field -- never mutates the caller's dict."""
+    if not rob:
+        return rob
+    tool = rob.get("tool")
+    if tool in ROB1_LEGACY_TOOL_ALIASES:
+        print(
+            f"warning: {study_id}: risk_of_bias.tool={tool!r} is a legacy label for the "
+            "Cochrane 2011 six-domain tool; normalizing to \"RoB1\" "
+            "(see .claude/skills/quality-appraisal/01-risk-of-bias.md)",
+            file=sys.stderr,
+        )
+        tool = "RoB1"
+    normalized = dict(rob, tool=tool)
+    if "instrument" not in normalized and tool in INSTRUMENT_BY_TOOL:
+        normalized["instrument"] = INSTRUMENT_BY_TOOL[tool]
+    return normalized
+
+
 def load_studies(path):
     with open(path) as f:
         doc = json.load(f)
     if not isinstance(doc, dict) or not isinstance(doc.get("studies"), list):
         raise ValueError(f"{path} must be a JSON object with a top-level 'studies' array (see /prisma-extract.md Step 8)")
-    return doc["studies"]
+    studies = doc["studies"]
+    for study in studies:
+        rob = study.get("risk_of_bias")
+        if rob:
+            study["risk_of_bias"] = normalize_risk_of_bias(
+                rob, study.get("record_id") or study.get("author_year") or "UNKNOWN_STUDY"
+            )
+    return studies
 
 
 def flatten_rows(studies):
@@ -258,7 +295,7 @@ def is_low_risk(rob):
         return None
     tool = rob.get("tool")
     judgement = (rob.get("overall_judgement") or "").lower()
-    if tool == "RoB2":
+    if tool == "RoB1":
         return "low risk" in judgement
     if tool == "NOS":
         return "good" in judgement
@@ -403,16 +440,16 @@ def process_outcome_group(outcome_name, measure, rows, out_dir, slug):
 
 
 def build_rob_traffic_light(studies, out_dir):
-    """Render one traffic-light plot covering every RoB2-assessed study with a
+    """Render one traffic-light plot covering every RoB1-assessed study with a
     full domain breakdown (studies assessed with NOS, or with only an
-    `overall_judgement` and no `domains`, are silently excluded -- RoB2's
+    `overall_judgement` and no `domains`, are silently excluded -- RoB1's
     seven domains and NOS's three categories aren't the same axes, and
     rob_table.json already covers both tools' overall judgements together).
     Returns the SVG path, or None if no study qualifies (never raises)."""
     plot_studies = []
     for study in studies:
         rob = study.get("risk_of_bias")
-        if not rob or rob.get("tool") != "RoB2" or not rob.get("domains"):
+        if not rob or rob.get("tool") != "RoB1" or not rob.get("domains"):
             continue
         domains = {key: entry.get("judgement") for key, entry in rob["domains"].items()}
         plot_studies.append({
@@ -423,7 +460,7 @@ def build_rob_traffic_light(studies, out_dir):
     if not plot_studies:
         return None
     out_path = os.path.join(out_dir, "rob_traffic_light.svg")
-    rob_traffic_light_plot(plot_studies, ROB2_DOMAIN_LABELS, out_path)
+    rob_traffic_light_plot(plot_studies, ROB1_DOMAIN_LABELS, out_path)
     return out_path
 
 
@@ -509,7 +546,7 @@ def main():
     pooled_n = sum(1 for h in result["heterogeneity"] if h["pooled"])
     narrative_n = sum(1 for h in result["heterogeneity"] if not h["pooled"])
     rob_plot_note = f"rob_traffic_light.svg ({result['rob_traffic_light_svg']})" if result["rob_traffic_light_svg"] else \
-        "rob_traffic_light.svg NOT written (no RoB2-assessed study had a full domains breakdown)"
+        "rob_traffic_light.svg NOT written (no RoB1-assessed study had a full domains breakdown)"
     print(f"{len(result['heterogeneity'])} outcome group(s): {pooled_n} pooled, {narrative_n} narrative fallback. "
           f"Wrote effect_sizes.json, heterogeneity.json, rob_table.json, grade_table.json, {rob_plot_note} to {out_dir}")
     for grade in result["grade_table"]:
@@ -526,7 +563,7 @@ def _selfcheck():
             {  # 3 studies, dichotomous RR, poolable, no zero cells
                 "record_id": "alpha2020", "author_year": "Alpha et al. 2020", "study_design": "RCT",
                 "outcomes_measured": ["PONV"],
-                "risk_of_bias": {"tool": "RoB2", "overall_judgement": "low risk", "domains": {
+                "risk_of_bias": {"tool": "RoB1", "overall_judgement": "low risk", "domains": {
                     "sequence_generation": {"judgement": "low", "support": "computer-generated"},
                     "allocation_concealment": {"judgement": "low", "support": "sealed envelopes"},
                     "blinding_participants_personnel": {"judgement": "low", "support": "double-blind"},
@@ -542,7 +579,7 @@ def _selfcheck():
             {
                 "record_id": "beta2021", "author_year": "Beta et al. 2021", "study_design": "RCT",
                 "outcomes_measured": ["PONV"],
-                "risk_of_bias": {"tool": "RoB2", "overall_judgement": "some concerns", "domains": {
+                "risk_of_bias": {"tool": "RoB1", "overall_judgement": "unclear risk", "domains": {
                     "sequence_generation": {"judgement": "low", "support": "random number table"},
                     "allocation_concealment": {"judgement": "unclear", "support": "not described"},
                     "blinding_participants_personnel": {"judgement": "low", "support": "double-blind"},
@@ -558,7 +595,7 @@ def _selfcheck():
             {
                 "record_id": "gamma2022", "author_year": "Gamma et al. 2022", "study_design": "RCT",
                 "outcomes_measured": ["PONV"],
-                "risk_of_bias": {"tool": "RoB2", "overall_judgement": "low risk", "domains": {
+                "risk_of_bias": {"tool": "RoB1", "overall_judgement": "low risk", "domains": {
                     "sequence_generation": {"judgement": "low", "support": "computer-generated"},
                     "allocation_concealment": {"judgement": "low", "support": "central allocation"},
                     "blinding_participants_personnel": {"judgement": "low", "support": "double-blind"},
@@ -582,7 +619,7 @@ def _selfcheck():
             {  # qualitative-only outcome, no effect_data anywhere -> narrative fallback
                 "record_id": "epsilon2018", "author_year": "Epsilon et al. 2018", "study_design": "RCT",
                 "outcomes_measured": ["patient satisfaction"],
-                "risk_of_bias": {"tool": "RoB2", "overall_judgement": "high risk", "domains": {
+                "risk_of_bias": {"tool": "RoB1", "overall_judgement": "high risk", "domains": {
                     "sequence_generation": {"judgement": "high", "support": "alternation by admission order"},
                     "allocation_concealment": {"judgement": "high", "support": "not concealed"},
                     "blinding_participants_personnel": {"judgement": "high", "support": "open-label"},
@@ -654,12 +691,12 @@ def _selfcheck():
         adverse_rob = next(r for r in result["rob_table"] if r["outcome"] == "adverse events")
         assert adverse_rob["proportion_low_risk"] is None and "zeta2020" in adverse_rob["missing_assessment"], adverse_rob
 
-        # Traffic light: alpha/beta/gamma/epsilon have RoB2 domains, delta is NOS
+        # Traffic light: alpha/beta/gamma/epsilon have RoB1 domains, delta is NOS
         # (excluded), zeta has no risk_of_bias at all (excluded) -> 4 studies plotted.
         assert result["rob_traffic_light_svg"] and os.path.getsize(result["rob_traffic_light_svg"]) > 0
         assert os.path.basename(result["rob_traffic_light_svg"]) == "rob_traffic_light.svg"
 
-        # A body of evidence with no domains-level RoB2 assessment at all must not write the file.
+        # A body of evidence with no domains-level RoB1 assessment at all must not write the file.
         no_domains_fixture = {"framework_version": "1.0.0", "topic": "selfcheck-no-domains", "studies": [
             {"record_id": "solo2020", "author_year": "Solo et al. 2020", "study_design": "cohort",
              "outcomes_measured": ["length of stay"],
