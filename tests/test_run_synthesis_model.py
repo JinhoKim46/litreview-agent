@@ -374,7 +374,7 @@ class SynthesisFamilyDispatchTests(unittest.TestCase):
 
 
 class MainDescriptiveDispatchTests(unittest.TestCase):
-    """docs/PLAN.md M3: /prisma-synthesize's CLI entrypoint must actually run
+    """docs/PLAN.md M3: /litreview-synthesize's CLI entrypoint must actually run
     tools/chart_summary.py for a scoping/mapping-study manifest, not reach
     resolve_synthesis_plan()'s DESCRIPTIVE_NOT_IMPLEMENTED refusal (that
     refusal is now reserved for callers who bypass main(), and for

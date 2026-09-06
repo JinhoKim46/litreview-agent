@@ -3,14 +3,14 @@
 command to run.
 
 Ported, behavior-preserving, from the inline `python3 -` heredoc
-`.claude/commands/prisma-status.md` Step 3 used to embed directly in the
+`.claude/commands/litreview-status.md` Step 3 used to embed directly in the
 prompt (Phase 0 correctness fix, docs/PLAN.md defect #3).
 
 Reuses tools/ledger.py's `load_ledger`/`latest_decisions` for the
 title-abstract/full-text aggregation, so this command and
 tools/flow_counts.py's PRISMA flow-diagram counts can never silently
 disagree about how a screening decision is reduced (same reasoning
-flow_counts.py itself documents relative to /prisma-status).
+flow_counts.py itself documents relative to /litreview-status).
 
 Usage:
     python3 tools/status.py                # list every review under results/
@@ -66,7 +66,7 @@ def study_id(study):
 def latest_raw_meta(topic_dir):
     """Most recent dated raw/<source>-<YYYYMMDD>.json per source --
     lexicographic filename sort means the last write per source wins, same
-    rule /prisma-report Step 3/Step 8 and tools/flow_counts.py use."""
+    rule /litreview-report Step 3/Step 8 and tools/flow_counts.py use."""
     latest = {}
     for p in sorted(glob.glob(str(topic_dir / "raw" / "*.json"))):
         source = os.path.basename(p).rsplit("-", 1)[0]
@@ -170,38 +170,38 @@ def compute(topic_dir):
 
     # ---- current stage + single next-command recommendation ----
     if protocol is None:
-        stage, next_cmd = "not_started", f'/prisma-init "{topic_dir.name}"'
+        stage, next_cmd = "not_started", f'/litreview-init "{topic_dir.name}"'
         why = "no protocol.json yet"
     elif not search_plan or not per_source:
-        stage, next_cmd = "protocol_defined", "/prisma-search"
+        stage, next_cmd = "protocol_defined", "/litreview-search"
         why = "protocol is defined but no search has been run yet"
     elif not records:
-        stage, next_cmd = "search_incomplete", "/prisma-search"
+        stage, next_cmd = "search_incomplete", "/litreview-search"
         why = "raw search results exist but records.jsonl was never written"
     elif undecided_ta > 0:
-        stage, next_cmd = "screening_title_abstract", "/prisma-screen export --stage title_abstract"
+        stage, next_cmd = "screening_title_abstract", "/litreview-screen export --stage title_abstract"
         why = f"{undecided_ta} record(s) still undecided at title/abstract"
     elif pending_full_text > 0:
-        stage, next_cmd = "screening_full_text", "/prisma-screen export --stage full_text"
+        stage, next_cmd = "screening_full_text", "/litreview-screen export --stage full_text"
         why = f"{pending_full_text} record(s) passed title/abstract but have no full-text decision yet"
     elif included_final == 0:
         stage, next_cmd = "screening_complete_zero_included", None
         why = "screening is complete but zero studies were included -- revisit protocol.json's eligibility criteria"
     elif extracted_count < included_final:
-        stage, next_cmd = "extraction_incomplete", "/prisma-extract"
+        stage, next_cmd = "extraction_incomplete", "/litreview-extract"
         why = f"{extracted_count}/{included_final} included studies extracted"
     elif not synth_present:
-        stage, next_cmd = "extraction_complete", "/prisma-synthesize"
+        stage, next_cmd = "extraction_complete", "/litreview-synthesize"
         why = "extraction is complete, synthesis has not run yet"
     elif not manuscript_exists:
-        stage, next_cmd = "synthesis_complete", "/prisma-report"
+        stage, next_cmd = "synthesis_complete", "/litreview-report"
         why = f"{len(pooled_outcomes)} outcome(s) pooled, {len(narrative_outcomes)} narrative-fallback -- manuscript not yet drafted"
     elif max(extraction_mtime, synth_mtime) > manuscript_mtime:
-        stage, next_cmd = "manuscript_drafted", "/prisma-report"
+        stage, next_cmd = "manuscript_drafted", "/litreview-report"
         why = "extraction_table.json or a synthesis/ file is newer than manuscript.md -- the manuscript may be stale"
     else:
         stage, next_cmd = "manuscript_drafted", None
-        why = "manuscript is drafted and up to date -- review it, or re-run /prisma-report after any further pipeline change"
+        why = "manuscript is drafted and up to date -- review it, or re-run /litreview-report after any further pipeline change"
 
     return dict(
         topic=topic_dir.name, protocol=protocol, per_source=per_source,
@@ -276,14 +276,14 @@ def print_full(s):
             ("Data integrity: full-text excludes missing a required reason (PRISMA Item 16b)",
              s["full_text_excludes_missing_reason"],
              "Fix by appending a corrected line to screening_decisions.jsonl (never edit history) "
-             "before running /prisma-extract."))
+             "before running /litreview-extract."))
     if s["orphaned_title_abstract"] or s["orphaned_full_text"]:
         warnings.append(
             ("Data integrity: screening decisions reference a record_id no longer canonical in records.jsonl",
              sorted(set(s["orphaned_title_abstract"]) | set(s["orphaned_full_text"])),
              "These records were likely reclassified as duplicates after being screened, or removed by "
              "a hand-edit. They are still counted in the include/exclude tallies above -- this script "
-             "deliberately mirrors /prisma-report's own flow-diagram aggregation, which does not filter "
+             "deliberately mirrors /litreview-report's own flow-diagram aggregation, which does not filter "
              "them either -- so the two commands never disagree. Confirm the reclassification was "
              "intentional; a record that turned out to be a duplicate after screening may need its "
              "decision reconsidered against whichever record it is now a duplicate of."))
@@ -291,7 +291,7 @@ def print_full(s):
         warnings.append(
             ("Extraction gap: full-text includes with no extraction_table.json entry",
              s["unextracted_included"],
-             "Run /prisma-extract to pick these up."))
+             "Run /litreview-extract to pick these up."))
     if s["truncated_sources"]:
         warnings.append(
             ("Search coverage: source(s) truncated by a --limit cap",
@@ -327,11 +327,11 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     if not RESULTS_ROOT.exists():
-        print("No reviews found -- results/ does not exist yet. Run /prisma-init \"<topic>\" to start one.")
+        print("No reviews found -- results/ does not exist yet. Run /litreview-init \"<topic>\" to start one.")
         return 0
     topics = sorted(d for d in RESULTS_ROOT.iterdir() if d.is_dir())
     if not topics:
-        print("No reviews found under results/. Run /prisma-init \"<topic>\" to start one.")
+        print("No reviews found under results/. Run /litreview-init \"<topic>\" to start one.")
         return 0
 
     if not args.topic:

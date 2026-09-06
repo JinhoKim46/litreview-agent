@@ -104,7 +104,7 @@ class RunEffectSizesProvenanceTests(unittest.TestCase):
     def test_provenance_persisted_to_disk_effect_sizes_json(self):
         # Confirm the on-disk file, not just the in-memory return value,
         # carries the provenance fields -- effect_sizes.json is what
-        # /prisma-report actually reads.
+        # /litreview-report actually reads.
         with tempfile.TemporaryDirectory() as tmp:
             studies = [_study_with_provenance("s1", 12, 60, 25, 60), _study_with_provenance("s2", 8, 50, 20, 50)]
             path = self._fixture_path(tmp, studies)

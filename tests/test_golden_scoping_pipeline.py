@@ -38,8 +38,8 @@ build script that produced it -- never hand-edit a file under expected/:
 Writes to a throwaway topic directory under the real (gitignored) results/
 tree, using the same tools every command actually uses, and removes it in
 tearDown -- this is what makes the test "golden": it exercises the exact
-code paths a live scoping review's /prisma-search -> /prisma-screen ->
-/prisma-extract -> /prisma-synthesize sequence would, not a
+code paths a live scoping review's /litreview-search -> /litreview-screen ->
+/litreview-extract -> /litreview-synthesize sequence would, not a
 reimplementation of them.
 """
 import contextlib
@@ -186,7 +186,7 @@ class GoldenScopingPipelineTest(unittest.TestCase):
         # ---- The M3 exit criterion's coverage-gap clause: protocol.json's
         # scope.coverage_gaps must actually correspond to the resolved
         # pack's own unreachable source_expectations (the PR A wiring in
-        # .claude/commands/prisma-init.md Step 4), not merely be present --
+        # .claude/commands/litreview-init.md Step 4), not merely be present --
         # otherwise this would just assert the fixture reproduces itself.
         # Rendering this data into manuscript prose (Limitations, the
         # "because" card) is an LLM-authored step this deterministic test

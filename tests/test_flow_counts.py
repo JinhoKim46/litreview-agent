@@ -1,7 +1,7 @@
 """Unit tests for tools/flow_counts.py -- PRISMA flow-diagram box counts,
 including the reports_not_retrieved box the decision enum's "not_retrieved"
 value (docs/PLAN.md decision 4) makes computable that the original inline
-heredoc in .claude/commands/prisma-report.md documented as impossible.
+heredoc in .claude/commands/litreview-report.md documented as impossible.
 """
 import json
 import os

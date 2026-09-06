@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""One aggregator gate for /prisma-synthesize and /prisma-report: runs
+"""One aggregator gate for /litreview-synthesize and /litreview-report: runs
 every deterministic Phase 0 gate in a single call and prints a pass/fail
 checklist, so neither command has to remember which script to call in
 which order, or interpret each one's exit code separately.
@@ -19,7 +19,7 @@ additionally checks that a synthesis_plan.json exists, but only when the
 resolved method manifest's synthesis.plan_required_for is non-empty
 (synthesis/run_synthesis.py will refuse to pool anything without one or an
 explicit --model override, but failing this early -- before
-/prisma-extract's own work -- saves a wasted extraction pass). A method
+/litreview-extract's own work -- saves a wasted extraction pass). A method
 that never pools at all (docs/PLAN.md M3: scoping_review,
 systematic_mapping_study -- synthesis.plan_required_for: []) has nothing
 this check could ever require, so it is skipped entirely rather than

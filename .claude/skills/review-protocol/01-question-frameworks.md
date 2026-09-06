@@ -1,5 +1,5 @@
 ---
-framework_version: 1.0.0
+framework_version: 1.0.1
 ---
 
 # Question Frameworks
@@ -27,7 +27,7 @@ Elicit each field with its own question, not as a single compound question:
 - **Population**: "Who is the population of interest? Be specific about condition, age range, setting, or other defining characteristics (e.g. 'adults aged 18-65 with type 2 diabetes in outpatient settings', not just 'diabetics')."
 - **Intervention**: "What is the intervention or exposure being studied? Include specific forms/doses/delivery modes if that granularity matters for your question."
 - **Comparator**: "What is it being compared against? Common answers: placebo, usual care, an alternative active intervention, no intervention, waitlist control. If multiple comparators are acceptable, list them all."
-- **Outcome**: "What outcome(s) determine whether the intervention worked? Distinguish primary from secondary outcomes if there's more than one — the primary outcome drives the effect-measure choice in `/prisma-extract` and `/prisma-synthesize`."
+- **Outcome**: "What outcome(s) determine whether the intervention worked? Distinguish primary from secondary outcomes if there's more than one — the primary outcome drives the effect-measure choice in `/litreview-extract` and `/litreview-synthesize`."
 - Optional: **Timing** ("over what follow-up period?") and **Setting** ("in what care/context setting?") when PICOTS granularity is useful for the search string.
 
 Worked example: "Population: adults with major depressive disorder; Intervention: cognitive behavioral therapy delivered via smartphone app; Comparator: face-to-face CBT or waitlist; Outcome: change in depression symptom severity (PHQ-9 or equivalent) at ≥8 weeks."

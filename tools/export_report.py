@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Safe wrapper around Pandoc for /prisma-report's `--export docx|pdf` step.
+"""Safe wrapper around Pandoc for /litreview-report's `--export docx|pdf` step.
 
 Per PRODUCT_READINESS_AUDIT.md P0-1: `.claude/settings.json` used to
 pre-approve `Bash(pandoc:*)` -- an unrestricted wildcard over a tool that can

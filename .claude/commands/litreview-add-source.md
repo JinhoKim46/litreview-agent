@@ -1,4 +1,4 @@
-# /prisma-add-source - Generate a New Literature-Search Connector
+# /litreview-add-source - Generate a New Literature-Search Connector
 
 You are helping the user add a new bibliographic-database connector to this systematic-review pipeline. Six connectors ship out of the box (OpenAlex, Crossref, Semantic Scholar, PubMed, Europe PMC, arXiv) covering most disciplines with no paid access required. This command scaffolds a seventh (or eighth, ninth...) — typically an institutional-access source (Scopus, Web of Science, CINAHL, EBSCO) or a discipline-specific index the six free sources don't cover — investigating the real API before writing any code, then proving it works against a real response before registering it.
 
@@ -63,7 +63,7 @@ Create these three artifacts:
 
 Must honor the connector contract exactly (this is what `tools/check_connector_contract.py` verifies in CI):
 
-- **Invocation:** `python3 -m connectors.<name> <search|detail> [flags]`, parsed via `_shared.build_arg_parser(SOURCE_KEY)` — do not hand-roll argparse; the shared scaffold already gives you `--query`, `--query-file`/`--source-key` (reads a pre-built query string out of `search_plan.json` — the actual reproducibility path `/prisma-search` uses), `--limit`, `--page`, `--cursor`, `--since`, `--until`, `--format json|table|plain` (default `json`), `--out <path>`, and `detail <id>`.
+- **Invocation:** `python3 -m connectors.<name> <search|detail> [flags]`, parsed via `_shared.build_arg_parser(SOURCE_KEY)` — do not hand-roll argparse; the shared scaffold already gives you `--query`, `--query-file`/`--source-key` (reads a pre-built query string out of `search_plan.json` — the actual reproducibility path `/litreview-search` uses), `--limit`, `--page`, `--cursor`, `--since`, `--until`, `--format json|table|plain` (default `json`), `--out <path>`, and `detail <id>`.
 - **Fixed JSON output shape**, identical to every other connector:
   ```json
   {"meta": {"source": "...", "query": "...", "retrieved": 100, "total_available": 4213, "truncated": true, "fetched_at": "..."},
@@ -139,7 +139,7 @@ Do not proceed to Step 5 until search, detail (or its documented not-supported e
    ```
 and verify `<name>` (or its `SOURCE_KEY`) now appears, picked up purely by `registry.py`'s glob over `connectors/*.py`. If it does not appear, the module likely has an import-time error — run `python3 -c "import connectors.<name>"` directly to surface it, fix it, and re-check.
 2. **If this connector needs an API key**, remind the user now:
-   - Export `<SOURCE>_API_KEY` in their shell (or a local, gitignored `.env` the user sources themselves — this repo doesn't auto-load `.env` files) before the first real `/prisma-search` run that includes this source.
+   - Export `<SOURCE>_API_KEY` in their shell (or a local, gitignored `.env` the user sources themselves — this repo doesn't auto-load `.env` files) before the first real `/litreview-search` run that includes this source.
    - Never commit the real key anywhere — not in `url-reference.md`, not in a `SKILL.md` example, not in a test fixture.
    - If per-call cost or an institutional seat limit applies (Step 2.7), restate it here so the reminder lands right when it's actionable.
 3. **Add the Bash allowlist entry.** `.claude/settings.json` pre-approves Bash commands one entry per connector module (`Bash(python3 -m connectors.<source>:*)`) — this is the one file registration *does* touch, and deliberately: add
@@ -162,15 +162,15 @@ Present a summary:
 >
 > Try it: `python3 -m connectors.<name> search --query "<test query>" --format table`
 >
-> This source is now available to `/prisma-search` for any review topic in this fork. If it's an institutional-access connector, per `CONTRIBUTING.md` it stays in your fork rather than being PR'd upstream — only the `/prisma-add-source` generator itself is the mergeable, universal part.
+> This source is now available to `/litreview-search` for any review topic in this fork. If it's an institutional-access connector, per `CONTRIBUTING.md` it stays in your fork rather than being PR'd upstream — only the `/litreview-add-source` generator itself is the mergeable, universal part.
 
 ---
 
 ## Design Principles
 
 - Investigation before scaffolding: this command never generates a field mapper from guesses about a docs page — Step 2 fetches real documentation and a real response first, and Step 4 proves it against a live query before anything is registered.
-- The fixed `{meta, results}` shape keeps every connector interchangeable for `/prisma-search`, `synthesis/`, and any future consumer: same commands, same flags, same output shape, same error convention, same retry/backoff (`_shared.py`, written once).
+- The fixed `{meta, results}` shape keeps every connector interchangeable for `/litreview-search`, `synthesis/`, and any future consumer: same commands, same flags, same output shape, same error convention, same retry/backoff (`_shared.py`, written once).
 - `total_available`/`truncated` are load-bearing, not cosmetic — a `--limit`-capped run must never silently under-report the true match count the PRISMA Identification box needs.
 - Access rules are surfaced, not silently bypassed: a provider whose terms prohibit automated access outright is declined at Step 2.7, not scaffolded and hoped past.
 - Credentials live in the environment, never in the repo: a generated connector reads its key from an environment variable, fails loudly with `MISSING_CREDENTIALS` when it is unset, and never commits one. Per-call cost or seat limits are disclosed before the connector is generated, not discovered afterwards.
-- No pipeline-logic edit is needed to add a source: `connectors/registry.py` discovers by glob, so `/prisma-search` and this command's own `--list` both pick up a new connector the moment its file exists and imports cleanly. The one file that *is* touched, deliberately, is `.claude/settings.json`'s Bash allowlist (Step 5.3) — permission scope, not pipeline logic.
+- No pipeline-logic edit is needed to add a source: `connectors/registry.py` discovers by glob, so `/litreview-search` and this command's own `--list` both pick up a new connector the moment its file exists and imports cleanly. The one file that *is* touched, deliberately, is `.claude/settings.json`'s Bash allowlist (Step 5.3) — permission scope, not pipeline logic.

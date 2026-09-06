@@ -6,10 +6,10 @@ description: >
   screening_decisions.jsonl ledger. Never renders the full sheet into the chat - context
   usage stays flat whether there are 50 or 5,000 records. Triggers on: screen these records,
   export screening sheet, title/abstract screening, full-text screening, screen for
-  inclusion, import screening decisions, apply screening decisions, /prisma-screen,
-  /prisma-screen export, /prisma-screen import
+  inclusion, import screening decisions, apply screening decisions, /litreview-screen,
+  /litreview-screen export, /litreview-screen import
 allowed-tools: Read, Glob, Grep, Bash(python3:*)
-framework_version: 1.2.0
+framework_version: 1.2.1
 ---
 
 # Screening Assistant
@@ -28,7 +28,7 @@ Natural language:
 - "I've marked up the sheet, import my decisions"
 - "Apply the screening decisions I just edited"
 
-Slash command passthrough: `/prisma-screen export [--stage title_abstract|full_text] [--group-by theme|source|year|ai_suggestion]` and `/prisma-screen import [--stage title_abstract|full_text]`. This skill *is* the body of that command - `prisma-screen.md` just routes here with the topic in context. If no topic is obvious from context, ask which `results/<TOPIC>/` the reviewer means before touching any files.
+Slash command passthrough: `/litreview-screen export [--stage title_abstract|full_text] [--group-by theme|source|year|ai_suggestion]` and `/litreview-screen import [--stage title_abstract|full_text]`. This skill *is* the body of that command - `litreview-screen.md` just routes here with the topic in context. If no topic is obvious from context, ask which `results/<TOPIC>/` the reviewer means before touching any files.
 
 ## Mode: export
 
@@ -44,4 +44,4 @@ Slash command passthrough: `/prisma-screen export [--stage title_abstract|full_t
 
 ## Why this shape
 
-`screening_decisions.jsonl` is append-only and keyed by `(record_id, stage)` with latest-line-wins aggregation (see the architecture plan §2) - re-importing a corrected sheet is always safe, it just appends a newer line, never rewrites history. That is what makes re-running `import` after fixing a validation failure idempotent in effect: the aggregate state converges on whatever the sheet says now, regardless of how many times the same file was imported before. `/prisma-extract` reads only the aggregated latest-line state, and per the architecture plan must itself refuse to proceed past a full-text exclude with no reason - this skill's import-time gate is the convenience that catches the problem at authoring time, but it is not the only guarantee: a ledger line written by hand (bypassing import) still needs `/prisma-extract`'s own check as the actual backstop.
+`screening_decisions.jsonl` is append-only and keyed by `(record_id, stage)` with latest-line-wins aggregation (see the architecture plan §2) - re-importing a corrected sheet is always safe, it just appends a newer line, never rewrites history. That is what makes re-running `import` after fixing a validation failure idempotent in effect: the aggregate state converges on whatever the sheet says now, regardless of how many times the same file was imported before. `/litreview-extract` reads only the aggregated latest-line state, and per the architecture plan must itself refuse to proceed past a full-text exclude with no reason - this skill's import-time gate is the convenience that catches the problem at authoring time, but it is not the only guarantee: a ledger line written by hand (bypassing import) still needs `/litreview-extract`'s own check as the actual backstop.

@@ -1,6 +1,6 @@
 """connectors/registry.py -- discovers every connectors/<source>.py module by
-glob (excluding __init__.py, _shared.py, and this file), so /prisma-search
-and /prisma-add-source never need a hardcoded source list to stay in sync
+glob (excluding __init__.py, _shared.py, and this file), so /litreview-search
+and /litreview-add-source never need a hardcoded source list to stay in sync
 with what connectors are actually installed on disk.
 
 CLI: python3 -m connectors.registry --list

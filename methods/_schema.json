@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://prisma-flow.local/methods/_schema.json",
+  "$id": "https://litreview-agent.local/methods/_schema.json",
   "title": "method manifest",
-  "description": "A method manifest is a flat JSON file of policy differences from today's systematic-review pipeline, plus the claims that policy licenses (docs/ROADMAP.md). It never lists pipeline stages or gates -- those stay in the nine .claude/commands/prisma-*.md files, which are the implementation. tools/method.py globs methods/*.json (except this file and _routing.json) and validates each against this schema.",
+  "description": "A method manifest is a flat JSON file of policy differences from today's systematic-review pipeline, plus the claims that policy licenses (docs/ROADMAP.md). It never lists pipeline stages or gates -- those stay in the nine .claude/commands/litreview-*.md files, which are the implementation. tools/method.py globs methods/*.json (except this file and _routing.json) and validates each against this schema.",
   "type": "object",
   "required": ["id", "label", "version", "family", "search", "screening", "capture", "appraisal", "synthesis", "label_rules", "microcopy"],
   "additionalProperties": false,

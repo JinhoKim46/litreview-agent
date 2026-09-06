@@ -1,5 +1,5 @@
 ---
-framework_version: 1.0.0
+framework_version: 1.0.1
 ---
 
 # Eligibility Criteria — run before scoring or synthesis
@@ -74,9 +74,9 @@ Compare the study's language against `protocol.json.eligibility.language.include
 
 - At title/abstract screening: the `reason` field is optional for a title/abstract exclude, but still record which gate failed and the quote when available — it saves re-deriving the reason at full-text.
 - At full-text screening: the `reason` field is **required** on every exclude decision (PRISMA Item 16b). Write it as `"<gate name>: <quoted source text>"`, e.g. `"study_design: case series, n=3, not a controlled trial"` — specific and countable, never a bare "not relevant".
-- A study that fails a gate is not scored on relevance and does not proceed to data extraction. Everything downstream (`/prisma-extract`, `/prisma-synthesize`) only ever sees studies that passed all five gates.
+- A study that fails a gate is not scored on relevance and does not proceed to data extraction. Everything downstream (`/litreview-extract`, `/litreview-synthesize`) only ever sees studies that passed all five gates.
 - If a reviewer disagrees with a gate verdict on a specific study, that is exactly the case the gate exists to surface for human judgment — present the quoted evidence and let them override, recording the override and its rationale in `screening_decisions.jsonl` rather than silently changing the gate logic for one study.
 
 ## Order of operations
 
-Run gates 1-5 in the order listed above and **stop at the first hard FAIL** — there is no need to evaluate publication type on a study that already failed the population gate, and reporting only the first failure keeps the exclusion reason specific rather than a pile of unrelated objections. If a study passes every gate (or exits with only FLAGs/unverified marks), it proceeds to relevance screening and, if included, to `/prisma-extract`.
+Run gates 1-5 in the order listed above and **stop at the first hard FAIL** — there is no need to evaluate publication type on a study that already failed the population gate, and reporting only the first failure keeps the exclusion reason specific rather than a pile of unrelated objections. If a study passes every gate (or exits with only FLAGs/unverified marks), it proceeds to relevance screening and, if included, to `/litreview-extract`.

@@ -1,6 +1,6 @@
 """Heterogeneity statistics for pooled effect sizes.
 
-Cochrane's Q and the Higgins I^2 statistic tell /prisma-synthesize how much a
+Cochrane's Q and the Higgins I^2 statistic tell /litreview-synthesize how much a
 set of per-study effects disagrees with itself -- they are reported
 alongside a pooled estimate, never used to pick the pooling model. Which
 model (fixed or random effects) is primary is prespecified by the reviewer

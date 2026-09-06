@@ -1,12 +1,12 @@
 ---
 name: quality-appraisal
-description: Assess risk of bias in included studies and rate the certainty of evidence for each outcome. Use during /prisma-extract (per-study risk-of-bias judgements) and /prisma-synthesize (per-outcome GRADE certainty rating, after pooling or narrative fallback). Trigger phrases — "assess risk of bias", "RoB1", "risk of bias assessment", "Cochrane risk of bias tool", "Newcastle-Ottawa", "NOS score", "GRADE the evidence", "certainty of evidence", "quality of evidence", "rate down/rate up", "summary of findings table", "how reliable is this evidence", "is this study biased". Do not use for eligibility screening (that's review-protocol) or for choosing pooling models (that's synthesis/heterogeneity.py) — this skill only judges study/outcome quality, not whether data can be combined.
-framework_version: 1.1.0
+description: Assess risk of bias in included studies and rate the certainty of evidence for each outcome. Use during /litreview-extract (per-study risk-of-bias judgements) and /litreview-synthesize (per-outcome GRADE certainty rating, after pooling or narrative fallback). Trigger phrases — "assess risk of bias", "RoB1", "risk of bias assessment", "Cochrane risk of bias tool", "Newcastle-Ottawa", "NOS score", "GRADE the evidence", "certainty of evidence", "quality of evidence", "rate down/rate up", "summary of findings table", "how reliable is this evidence", "is this study biased". Do not use for eligibility screening (that's review-protocol) or for choosing pooling models (that's synthesis/heterogeneity.py) — this skill only judges study/outcome quality, not whether data can be combined.
+framework_version: 1.1.1
 ---
 
 # Quality Appraisal: Risk of Bias + GRADE Certainty
 
-Systematic reviews don't just count studies — they weigh them. A pooled estimate built from five studies at high risk of bias is not more reliable than one careful study; it can be actively misleading. This skill provides the two-stage appraisal every included study and every synthesized outcome must pass through before `/prisma-report` writes a word about strength of evidence:
+Systematic reviews don't just count studies — they weigh them. A pooled estimate built from five studies at high risk of bias is not more reliable than one careful study; it can be actively misleading. This skill provides the two-stage appraisal every included study and every synthesized outcome must pass through before `/litreview-report` writes a word about strength of evidence:
 
 1. **Study-level risk of bias** (`01-risk-of-bias.md`) — is *this individual study's* result trustworthy, given how it was designed and run?
 2. **Outcome-level certainty of evidence** (`02-grade-certainty.md`) — given *all* the studies that contributed to *this outcome*, how confident can a reader be in the pooled (or narrative) conclusion?
@@ -15,10 +15,10 @@ These are different questions at different levels. A body of evidence can be bui
 
 ## When this runs in the pipeline
 
-- **`/prisma-extract`**: for every included study, run the RoB1 six-domain assessment (RCTs) or the Newcastle-Ottawa Scale (non-randomized studies) and write the result into that study's `risk_of_bias` block in `extraction_table.json`.
-- **`/prisma-synthesize`**: after pooling (or falling back to narrative synthesis) for each outcome, roll the per-study risk-of-bias judgements up into an outcome-level GRADE rating alongside inconsistency, indirectness, imprecision, and publication bias. Write `rob_table.json` and `grade_table.json`.
+- **`/litreview-extract`**: for every included study, run the RoB1 six-domain assessment (RCTs) or the Newcastle-Ottawa Scale (non-randomized studies) and write the result into that study's `risk_of_bias` block in `extraction_table.json`.
+- **`/litreview-synthesize`**: after pooling (or falling back to narrative synthesis) for each outcome, roll the per-study risk-of-bias judgements up into an outcome-level GRADE rating alongside inconsistency, indirectness, imprecision, and publication bias. Write `rob_table.json` and `grade_table.json`.
 
-Both files are read verbatim by `/prisma-report` to draft the "Quality of evidence" methods paragraph, the risk-of-bias figure/table, the GRADE summary of findings table, and the certainty language used in the Discussion — never re-derived from memory at report time.
+Both files are read verbatim by `/litreview-report` to draft the "Quality of evidence" methods paragraph, the risk-of-bias figure/table, the GRADE summary of findings table, and the certainty language used in the Discussion — never re-derived from memory at report time.
 
 ## Choosing the right tool
 
@@ -28,7 +28,7 @@ Both files are read verbatim by `/prisma-report` to draft the "Quality of eviden
 | Non-randomized study (cohort, case-control, before-after, cross-sectional) | Newcastle-Ottawa Scale (NOS) | `01-risk-of-bias.md`, NOS section |
 | Neither of the above (e.g. diagnostic test accuracy, single-arm/case series, qualitative, no comparator arm at all) | **Unsupported — fail closed** (`"tool": "unsupported"`), never forced into RoB1 or NOS | `01-risk-of-bias.md`, "Study designs neither tool covers" section |
 
-Ask the reviewer to confirm study design during `/prisma-extract` if the included-study table doesn't already record it unambiguously — RoB1 and NOS are not interchangeable, and using RoB1's "allocation concealment" domain on a cohort study produces a meaningless judgement (there was no allocation to conceal). A design that fits neither tool is not a reason to force one anyway — see the "unsupported" row above and `01-risk-of-bias.md`.
+Ask the reviewer to confirm study design during `/litreview-extract` if the included-study table doesn't already record it unambiguously — RoB1 and NOS are not interchangeable, and using RoB1's "allocation concealment" domain on a cohort study produces a meaningless judgement (there was no allocation to conceal). A design that fits neither tool is not a reason to force one anyway — see the "unsupported" row above and `01-risk-of-bias.md`.
 
 ## Independent, dual assessment
 
@@ -40,7 +40,7 @@ A risk-of-bias or GRADE rating is only ever written when the "support for judgem
 
 ## Output files
 
-**`extraction_table.json`** (per study, written during `/prisma-extract`) — each included study's entry carries a `risk_of_bias` block:
+**`extraction_table.json`** (per study, written during `/litreview-extract`) — each included study's entry carries a `risk_of_bias` block:
 
 ```json
 {
@@ -73,9 +73,9 @@ For a study whose design fits neither tool, `tool` is `"unsupported"`, there is 
 }
 ```
 
-`/prisma-synthesize` treats `"unsupported"` as **not low risk** (fail closed) when rolling this up into `rob_table.json`'s `proportion_low_risk` — never silently dropped from the denominator as if unassessed, and never assumed low risk by default. See `01-risk-of-bias.md`.
+`/litreview-synthesize` treats `"unsupported"` as **not low risk** (fail closed) when rolling this up into `rob_table.json`'s `proportion_low_risk` — never silently dropped from the denominator as if unassessed, and never assumed low risk by default. See `01-risk-of-bias.md`.
 
-**`synthesis/rob_table.json`** (per outcome, written during `/prisma-synthesize`) — aggregates the per-study judgements contributing to one outcome, for the manuscript's risk-of-bias summary figure:
+**`synthesis/rob_table.json`** (per outcome, written during `/litreview-synthesize`) — aggregates the per-study judgements contributing to one outcome, for the manuscript's risk-of-bias summary figure:
 
 ```json
 {
@@ -88,7 +88,7 @@ For a study whose design fits neither tool, `tool` is `"unsupported"`, there is 
 }
 ```
 
-**`synthesis/grade_table.json`** (per outcome, written during `/prisma-synthesize`) — the GRADE summary-of-findings row, per the schema in `02-grade-certainty.md`.
+**`synthesis/grade_table.json`** (per outcome, written during `/litreview-synthesize`) — the GRADE summary-of-findings row, per the schema in `02-grade-certainty.md`.
 
 ## See also
 

@@ -1,10 +1,10 @@
 ---
-framework_version: 1.0.2
+framework_version: 1.0.3
 ---
 
 # GRADE: Rating Certainty of Evidence
 
-Risk of bias (`01-risk-of-bias.md`) judges individual studies. **GRADE** (Grading of Recommendations, Assessment, Development and Evaluations; http://www.gradeworkinggroup.org/) judges the whole **body of evidence for one outcome** — every study that contributed to that outcome's pooled or narrative estimate, taken together. Run this once per outcome, in `/prisma-synthesize`, after pooling (or after the poolability gate routes that outcome to narrative synthesis instead).
+Risk of bias (`01-risk-of-bias.md`) judges individual studies. **GRADE** (Grading of Recommendations, Assessment, Development and Evaluations; http://www.gradeworkinggroup.org/) judges the whole **body of evidence for one outcome** — every study that contributed to that outcome's pooled or narrative estimate, taken together. Run this once per outcome, in `/litreview-synthesize`, after pooling (or after the poolability gate routes that outcome to narrative synthesis instead).
 
 ## Starting point: study design sets the baseline
 
@@ -56,11 +56,11 @@ The following is a real published GRADE summary-of-findings table, reproduced fr
 | Postoperative vomiting (POV) | 5 | Serious | Serious | Not serious | Not serious | None | 55/274 (20.1%) | 60/275 (21.8%) | 0.87 (0.48–1.57) | Very low |
 | Postoperative nausea and vomiting (PONV) | 3 | Not serious | Serious | Not serious | Not serious | None | 108/184 (58.7%) | 107/186 (57.5%) | 0.92 (0.54–1.58) | Low |
 
-Reading this table: PON and POV each carried two downgrades (risk of bias, inconsistency) from an RCT-evidence starting point of High, landing at Very low; PONV carried one downgrade (inconsistency only, since its contributing studies were judged not-serious for risk of bias), landing at Low. This is exactly the arithmetic to reproduce for every outcome group in `/prisma-synthesize` — start from the design baseline, apply each domain's downgrade independently, and land on one of the four certainty levels with every downgrade traceable to a specific number or judgement, not asserted.
+Reading this table: PON and POV each carried two downgrades (risk of bias, inconsistency) from an RCT-evidence starting point of High, landing at Very low; PONV carried one downgrade (inconsistency only, since its contributing studies were judged not-serious for risk of bias), landing at Low. This is exactly the arithmetic to reproduce for every outcome group in `/litreview-synthesize` — start from the design baseline, apply each domain's downgrade independently, and land on one of the four certainty levels with every downgrade traceable to a specific number or judgement, not asserted.
 
 ## Output: `synthesis/grade_table.json`
 
-One entry per outcome, written during `/prisma-synthesize` and read verbatim by `/prisma-report` for the Results summary-of-findings table and the certainty language used in the Discussion:
+One entry per outcome, written during `/litreview-synthesize` and read verbatim by `/litreview-report` for the Results summary-of-findings table and the certainty language used in the Discussion:
 
 ```json
 {
@@ -82,4 +82,4 @@ One entry per outcome, written during `/prisma-synthesize` and read verbatim by 
 }
 ```
 
-`domains.*.rating` is one of `not_serious`, `serious`, `very_serious` (and `undetected`/`not_assessed` for publication bias when k < 10). `final_certainty` is one of `high`, `moderate`, `low`, `very_low`. When an outcome fell back to narrative synthesis instead of pooling (per the poolability gate in `SKILL.md`'s parent `/prisma-synthesize` command), still write a `grade_table.json` entry for it with `"model_used": "narrative"` and `effect: null` — GRADE certainty applies to the underlying body of evidence regardless of whether it was statistically pooled.
+`domains.*.rating` is one of `not_serious`, `serious`, `very_serious` (and `undetected`/`not_assessed` for publication bias when k < 10). `final_certainty` is one of `high`, `moderate`, `low`, `very_low`. When an outcome fell back to narrative synthesis instead of pooling (per the poolability gate in `SKILL.md`'s parent `/litreview-synthesize` command), still write a `grade_table.json` entry for it with `"model_used": "narrative"` and `effect: null` — GRADE certainty applies to the underlying body of evidence regardless of whether it was statistically pooled.

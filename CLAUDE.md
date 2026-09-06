@@ -1,4 +1,4 @@
-# PRISMA Review Assistant
+# Litreview Agent
 
 ## Role
 
@@ -20,32 +20,32 @@ Claude never makes the screening or eligibility judgment calls PRISMA requires a
 
 ## Reviewer Profile
 
-Lives in `CLAUDE.local.md` (gitignored), not here, so your name, institution, and prior work never enter git history even in a public fork. First-time setup: `cp CLAUDE.local.md.example CLAUDE.local.md`, then fill it in by hand or let `/prisma-init` interview you for it.
+Lives in `CLAUDE.local.md` (gitignored), not here, so your name, institution, and prior work never enter git history even in a public fork. First-time setup: `cp CLAUDE.local.md.example CLAUDE.local.md`, then fill it in by hand or let `/litreview-init` interview you for it.
 
 @CLAUDE.local.md
 
 ## Workflow
 
-The pipeline is driven by nine slash commands, run roughly in this order for a new review (some are revisited repeatedly, e.g. `/prisma-status` at any point, `/prisma-add-source` whenever a new database is needed):
+The pipeline is driven by nine slash commands, run roughly in this order for a new review (some are revisited repeatedly, e.g. `/litreview-status` at any point, `/litreview-add-source` whenever a new database is needed):
 
-1. **`/prisma-init "topic"`** — define scope, PICO/PICo/SPIDER record, eligibility criteria, and keyword expansion; writes `protocol.json`.
-2. **`/prisma-search`** — translate the confirmed keyword set into each enabled source's native query syntax, run the connector CLIs, and deduplicate results into `records.jsonl`.
-3. **`/prisma-screen export|import`** — export undecided records as title-abstract or full-text screening sheets (Markdown + CSV) for the reviewer to mark up outside the conversation, then import the decisions back into the append-only `screening_decisions.jsonl` ledger.
-4. **`/prisma-extract`** — build `extraction_table.json`: study characteristics, effect-size data, and risk-of-bias judgements for every included study.
-5. **`/prisma-synthesize`** — pool comparable outcomes statistically (fixed/random-effects), assess heterogeneity, generate forest/funnel plots, run RoB1 and GRADE, and fall back to narrative synthesis for outcomes that don't clear the poolability gate.
-6. **`/prisma-report`** — draft the full manuscript, PRISMA flow diagram, and checklist audit from the recorded state only.
-7. **`/prisma-status`** — report exactly where a review currently stands (resumable across sessions, since all state is append-only or re-derivable).
-8. **`/prisma-add-source`** — scaffold a new search connector (e.g. an institutional Scopus/Web of Science connector) following the same contract as the shipped six.
-9. **`/prisma-reset`** — scoped, confirm-before-destroy reset of a review's state.
+1. **`/litreview-init "topic"`** — define scope, PICO/PICo/SPIDER record, eligibility criteria, and keyword expansion; writes `protocol.json`.
+2. **`/litreview-search`** — translate the confirmed keyword set into each enabled source's native query syntax, run the connector CLIs, and deduplicate results into `records.jsonl`.
+3. **`/litreview-screen export|import`** — export undecided records as title-abstract or full-text screening sheets (Markdown + CSV) for the reviewer to mark up outside the conversation, then import the decisions back into the append-only `screening_decisions.jsonl` ledger.
+4. **`/litreview-extract`** — build `extraction_table.json`: study characteristics, effect-size data, and risk-of-bias judgements for every included study.
+5. **`/litreview-synthesize`** — pool comparable outcomes statistically (fixed/random-effects), assess heterogeneity, generate forest/funnel plots, run RoB1 and GRADE, and fall back to narrative synthesis for outcomes that don't clear the poolability gate.
+6. **`/litreview-report`** — draft the full manuscript, PRISMA flow diagram, and checklist audit from the recorded state only.
+7. **`/litreview-status`** — report exactly where a review currently stands (resumable across sessions, since all state is append-only or re-derivable).
+8. **`/litreview-add-source`** — scaffold a new search connector (e.g. an institutional Scopus/Web of Science connector) following the same contract as the shipped six.
+9. **`/litreview-reset`** — scoped, confirm-before-destroy reset of a review's state.
 
 Command specs live under `.claude/commands/`; the methodology they draw on lives under `.claude/skills/`. Treat both as the single source of truth — see [AGENTS.md](AGENTS.md) for the full thin-pointer rationale.
 
 ## Verification Checklist
 
-Before presenting `/prisma-report` output, or at any point the reviewer asks "is this consistent," re-check:
+Before presenting `/litreview-report` output, or at any point the reviewer asks "is this consistent," re-check:
 
 - [ ] Every count in the PRISMA flow diagram (`manuscript/flow_diagram.svg`) is aggregated from `screening_decisions.jsonl` — never hand-typed or remembered from an earlier turn.
-- [ ] Every full-text exclusion in `screening_decisions.jsonl` carries a non-empty `reason` (PRISMA Item 16b) before `/prisma-extract` proceeds.
+- [ ] Every full-text exclusion in `screening_decisions.jsonl` carries a non-empty `reason` (PRISMA Item 16b) before `/litreview-extract` proceeds.
 - [ ] Every reference cited in the manuscript has been independently verified via WebSearch/WebFetch against a real source — never fabricated, and never trusted solely because a fetched abstract or full-text claims it exists.
 - [ ] Every per-source query string in `search_plan.json` is exactly what `rerun_search.sh` replays — no drift between the audit trail and the actual search that was run.
 - [ ] Pooled effect estimates and heterogeneity statistics in `synthesis/` trace back to specific rows in `extraction_table.json` — no invented numbers.

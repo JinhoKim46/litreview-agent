@@ -4,7 +4,7 @@ gate (every full-text exclude/not_retrieved needs a reason), and the
 candidate-set join against `records.jsonl` / `extraction_table.json`.
 
 Ported, behavior-preserving, from the inline Python heredocs
-`.claude/commands/prisma-extract.md` Steps 1 and 2 used to embed directly
+`.claude/commands/litreview-extract.md` Steps 1 and 2 used to embed directly
 in the prompt (Phase 0 correctness fix, docs/PLAN.md defect #3) -- plus the
 hash-chained append this framework's own append-only ledger never actually
 verified before (docs/PLAN.md decision 4 / "adopted from open-source
@@ -128,7 +128,7 @@ def full_text_reason_required_missing(latest):
 
 
 def candidate_set(records, latest, extracted_record_ids):
-    """Port of prisma-extract.md Step 2: full-text includes not yet
+    """Port of litreview-extract.md Step 2: full-text includes not yet
     extracted. `records`: dict of record_id -> record (canonical only,
     duplicate_of is None). `latest`: from latest_decisions(). Returns a
     list of {record_id, status, title, year, url, doi} in ledger order."""

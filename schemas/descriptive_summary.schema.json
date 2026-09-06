@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://prisma-flow.local/schemas/descriptive_summary.schema.json",
+  "$id": "https://litreview-agent.local/schemas/descriptive_summary.schema.json",
   "title": "descriptive_summary.json",
   "description": "Output of tools/chart_summary.py (docs/PLAN.md M3 §3.1 S7), the descriptive-synthesis engine for a scoping review's charted studies or a systematic mapping study's classified studies. Never contains a pooled effect estimate -- synthesis_family: \"descriptive\" forbids pooling by design.",
   "type": "object",

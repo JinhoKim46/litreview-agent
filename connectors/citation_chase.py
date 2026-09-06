@@ -26,7 +26,7 @@ backward), so a second copy of that logic here would just drift.
 
 Output uses the same fixed {meta, results} shape as every other connector
 (meta.source = "citation_chase") so its raw/*.json output flows through
-prisma-search.md's existing Step 7 dedup unchanged. Backward and forward
+litreview-search.md's existing Step 7 dedup unchanged. Backward and forward
 results are merged into one `results` list per invocation and deduplicated
 by id within this connector's own output (cross-run dedup against
 records.jsonl is Step 7's job, not this connector's).

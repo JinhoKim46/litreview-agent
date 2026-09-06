@@ -1,4 +1,4 @@
-# /prisma-init - Start or Resume a Systematic Review
+# /litreview-init - Start or Resume a Systematic Review
 
 You are running the initialization pipeline for a new (or existing) review under this multi-method evidence-synthesis workspace. This command implements pipeline steps 0-4: method routing (which review method this actually is — systematic review, scoping review, or systematic mapping study), scope selection, the reviewer-profile interview, defining the review question (via the `review-protocol` skill), and handing off keyword elicitation (to the `keyword-expansion` skill). It ends with a populated `results/<TOPIC>/` workspace and a written `protocol.json`.
 
@@ -44,7 +44,7 @@ Record the pick(s) as `goal` — a list drawn from `{"orient", "prior_work", "ba
 2. **One or more found**: list them (`python3 tools/status.py` with no `--topic`, its own condensed one-liner per review — reuse that output verbatim, never re-derive counts yourself) and ask which one the reviewer means. Never guess among several.
 3. Check the chosen review is actually a completed one — living mode updates a review that has already been through a full reporting cycle, not one still mid-pipeline: `python3 tools/status.py --topic <chosen>` and confirm its `stage` is `"manuscript_drafted"` with a manuscript that exists. If it isn't there yet, tell the reviewer plainly (quoting `why` from the status output) and offer the same (a)/(b) fallback as step 1.
 4. If it is completed: set `answers = {"goal": [...as recorded above...], "base_exists": true, "base_method_id": <chosen review's protocol.json.method.id>}` and run `tools/route.py`'s `decide()` — `methods/_routing.json`'s R1 row resolves this to `{"kind": "resolve", "method_id": <base_method_id>, "modes": ["living"]}` for real (skip Q0/Q2-Q6 entirely for this path; R1 needs nothing else from them). Render the "because" card exactly as below, but using the **chosen existing review's** own resolved manifest and microcopy, not a new one being routed for `<TOPIC>`.
-5. On confirmation (G-Route): **stop this entire command** — do not proceed to Step 1 and do not write a `protocol.json` under `<TOPIC>`. Hand off directly to `/prisma-search --living <chosen review's topic>`, which re-runs the same protocol-bounded search plan (deliberately not narrowed to "since last version" — see that command's Step 0.4 for why) and records a new `protocol.json.versions[]` entry once it completes; `tools/dedup.py`'s record_id idempotency is what makes only the genuinely new records surface for screening.
+5. On confirmation (G-Route): **stop this entire command** — do not proceed to Step 1 and do not write a `protocol.json` under `<TOPIC>`. Hand off directly to `/litreview-search --living <chosen review's topic>`, which re-runs the same protocol-bounded search plan (deliberately not narrowed to "since last version" — see that command's Step 0.4 for why) and records a new `protocol.json.versions[]` entry once it completes; `tools/dedup.py`'s record_id idempotency is what makes only the genuinely new records surface for screening.
 
 ### Q0: Existing-review check
 
@@ -150,12 +150,12 @@ Hold the scope answer (`mode`, `region`, any named `coverage_gaps`) in context �
    - **If placeholders remain**, continue and ask.
 4. Ask conversationally, in one grouped round (not a form, not one question per message):
    - Their name.
-   - **Field of research** (e.g. "clinical anesthesiology", "education technology") — this calibrates tone and journal conventions later in `/prisma-report`.
+   - **Field of research** (e.g. "clinical anesthesiology", "education technology") — this calibrates tone and journal conventions later in `/litreview-report`.
    - Institution / affiliation (optional).
    - **Prior relevant work** — publications, prior reviews, or projects that inform this review's framing and related-work section (one or more; "none yet" is a valid answer).
-   - **Target journal(s)** — used to calibrate manuscript tone, length, and reference style in `/prisma-report` (one or more; "not decided yet" is valid).
+   - **Target journal(s)** — used to calibrate manuscript tone, length, and reference style in `/litreview-report` (one or more; "not decided yet" is valid).
    - **Preferred citation style** — default to APA 7th edition if the reviewer has no preference; don't block on this.
-   - **Institutional database access** (optional) — e.g. Scopus, Web of Science. This doesn't add a connector now; just note it so the reviewer remembers `/prisma-add-source` is available for it later.
+   - **Institutional database access** (optional) — e.g. Scopus, Web of Science. This doesn't add a connector now; just note it so the reviewer remembers `/litreview-add-source` is available for it later.
 5. Use the **Edit** tool to replace the bracketed tokens in `CLAUDE.local.md` with the reviewer's actual answers. Make targeted edits only — do not rewrite the whole file. Preserve the file's structure and its explanatory HTML comments. If the reviewer gave one prior-work item where the template has two placeholder lines (`[PRIOR_WORK_1]`, `[PRIOR_WORK_2]`), remove the unused line rather than leaving a dangling placeholder; the same rule applies to target journals and institutional-access lines — trim to fit what was actually given, add more bullet lines if the reviewer gave more than the template has slots for.
 6. State which fields were filled in.
 
@@ -176,7 +176,7 @@ touch results/<TOPIC>/synthesis/.gitkeep
 touch results/<TOPIC>/manuscript/.gitkeep
 ```
 
-Substitute the real `<TOPIC>` slug from Step 0. The `.gitkeep` touches matter: `.gitignore` ignores everything under `results/**` except `.gitkeep` and `README.md` files, so an empty subfolder needs one to survive being tracked by anyone who later `git add`s the structure. Do not create `search_plan.json`, `records.jsonl`, `screening_decisions.jsonl`, `extraction_table.json`, or `rerun_search.sh` here — those are written by later pipeline commands (`/prisma-search` writes the first and last of those), not by `/prisma-init`.
+Substitute the real `<TOPIC>` slug from Step 0. The `.gitkeep` touches matter: `.gitignore` ignores everything under `results/**` except `.gitkeep` and `README.md` files, so an empty subfolder needs one to survive being tracked by anyone who later `git add`s the structure. Do not create `search_plan.json`, `records.jsonl`, `screening_decisions.jsonl`, `extraction_table.json`, or `rerun_search.sh` here — those are written by later pipeline commands (`/litreview-search` writes the first and last of those), not by `/litreview-init`.
 
 ---
 
@@ -225,7 +225,7 @@ After the `review-protocol` skill finishes, read `results/<TOPIC>/protocol.json`
 }
 ```
 
-Some fields are legitimately `null` and are not gaps: `registration.id` when `registration.status` is `"unregistered"`, `eligibility.date_range.to` for an open-ended date range, and `scope.region` for a `"global"` review. Treat only a genuinely unanswered field (an empty `framework_fields` entry, a `criterion`/`included` value the reviewer never actually gave) as a gap. If any such field is missing, do not proceed to Step 6 — go back into the `review-protocol` skill's interview for the missing field specifically, rather than inventing a value or leaving it blank. This file is read verbatim by every later command (`/prisma-search`, `/prisma-screen`, `/prisma-report`) — a gap here becomes a silent gap everywhere downstream.
+Some fields are legitimately `null` and are not gaps: `registration.id` when `registration.status` is `"unregistered"`, `eligibility.date_range.to` for an open-ended date range, and `scope.region` for a `"global"` review. Treat only a genuinely unanswered field (an empty `framework_fields` entry, a `criterion`/`included` value the reviewer never actually gave) as a gap. If any such field is missing, do not proceed to Step 6 — go back into the `review-protocol` skill's interview for the missing field specifically, rather than inventing a value or leaving it blank. This file is read verbatim by every later command (`/litreview-search`, `/litreview-screen`, `/litreview-report`) — a gap here becomes a silent gap everywhere downstream.
 
 `signed_at`/`signed_by` should already be present too — `review-protocol`'s own Phase 2 stamps them (`tools/sign_protocol.py`) once every field above is populated, the G-Protocol gate `tools/label_gate.py`'s systematic-review conduct floor depends on. If they're missing, the skill's sign-off call didn't run (or was skipped); go back and run it — do not hand-write these two fields, since the whole point is that `sign_protocol.py` independently re-verified completeness first.
 
@@ -235,11 +235,11 @@ Some fields are legitimately `null` and are not gaps: `registration.id` when `re
 
 Invoke the **`keyword-expansion`** skill (Skill tool, `skill: keyword-expansion`) for `results/<TOPIC>/`. This is a full handoff, not a summary you perform yourself: let the skill read the PICO/PICo/SPIDER seed terms out of the `protocol.json` you just verified, run its own LLM-assisted expansion pass with reviewer confirmation, translate the confirmed terms into each source's native query syntax, apply the Step 1 scope (it will re-read `protocol.json.scope.mode` and, if `"national"`, offer the optional keyword-translation step and record any additional coverage gaps), and persist the result to `results/<TOPIC>/search_plan.json`.
 
-"Enabled" at this stage means **all six shipped sources** (OpenAlex, Crossref, Semantic Scholar, PubMed, Europe PMC, arXiv) — all six are free at basic-access level (§3), so `/prisma-init` has no reason to exclude any of them. Build a confirmed query string for every one of the six; picking which sources actually *run* in a given search is `/prisma-search`'s job, not this command's — narrowing the set here would leave `search_plan.json` incomplete for PRISMA Item 7's per-database audit trail.
+"Enabled" at this stage means **all six shipped sources** (OpenAlex, Crossref, Semantic Scholar, PubMed, Europe PMC, arXiv) — all six are free at basic-access level (§3), so `/litreview-init` has no reason to exclude any of them. Build a confirmed query string for every one of the six; picking which sources actually *run* in a given search is `/litreview-search`'s job, not this command's — narrowing the set here would leave `search_plan.json` incomplete for PRISMA Item 7's per-database audit trail.
 
-Do not skip this step or defer it to `/prisma-search` "for later" — a review with a protocol but no search plan is not actually ready to search, and `search_plan.json` is what makes PRISMA Item 7 auditable later.
+Do not skip this step or defer it to `/litreview-search` "for later" — a review with a protocol but no search plan is not actually ready to search, and `search_plan.json` is what makes PRISMA Item 7 auditable later.
 
-**After the skill returns**, re-read `results/<TOPIC>/protocol.json` once more. If `scope.translation_used` was set to `true` (the skill's Step 4 ran a national-scope translation), also set `eligibility.language.translation_used` to `true` and add the translated language(s) to `eligibility.language.included` if they aren't already there. `scope` is the authoritative record of *whether and into what* translation happened; `eligibility.language` must never silently disagree with it, since `/prisma-report`'s Methods §2.3 and the eligibility gate both read from `eligibility.language` directly.
+**After the skill returns**, re-read `results/<TOPIC>/protocol.json` once more. If `scope.translation_used` was set to `true` (the skill's Step 4 ran a national-scope translation), also set `eligibility.language.translation_used` to `true` and add the translated language(s) to `eligibility.language.included` if they aren't already there. `scope` is the authoritative record of *whether and into what* translation happened; `eligibility.language` must never silently disagree with it, since `/litreview-report`'s Methods §2.3 and the eligibility gate both read from `eligibility.language` directly.
 
 ---
 
@@ -249,9 +249,9 @@ Once `protocol.json` and `search_plan.json` both exist and are verified, present
 
 > **Review initialized: `results/<TOPIC>/`**
 >
-> - **Title:** [title from protocol.json] - **Framework:** [framework] — [one-line summary of the framework fields] - **Scope:** [Global | National/Regional: <region>], [N] coverage gap(s) noted - **Eligibility gates set:** population, study design, publication type, date range, language - **Search plan:** confirmed query strings for all six sources (OpenAlex, Crossref, Semantic Scholar, PubMed, Europe PMC, arXiv) - **Synthesis plan:** [prespecified <fixed|random>-effects model, signed <date> | not set — /prisma-synthesize will need a --model override or a later /prisma-init update if this review ends up pooling anything]
+> - **Title:** [title from protocol.json] - **Framework:** [framework] — [one-line summary of the framework fields] - **Scope:** [Global | National/Regional: <region>], [N] coverage gap(s) noted - **Eligibility gates set:** population, study design, publication type, date range, language - **Search plan:** confirmed query strings for all six sources (OpenAlex, Crossref, Semantic Scholar, PubMed, Europe PMC, arXiv) - **Synthesis plan:** [prespecified <fixed|random>-effects model, signed <date> | not set — /litreview-synthesize will need a --model override or a later /litreview-init update if this review ends up pooling anything]
 >
-> **Next:** run `/prisma-search` to run the connector CLIs against the confirmed search plan and build the deduplicated record ledger.
+> **Next:** run `/litreview-search` to run the connector CLIs against the confirmed search plan and build the deduplicated record ledger.
 
 If the reviewer profile interview (Step 2) was skipped because it was already on file, don't mention it again here — only call out what actually changed in this run.
 
@@ -260,6 +260,6 @@ If the reviewer profile interview (Step 2) was skipped because it was already on
 ## Notes
 
 - Steps 0-3 establish *where* things go (topic slug, workspace directories, reviewer profile) before Step 4 asks the `review-protocol` skill *what* the review is actually about — doing it in the other order means the skill has nowhere to write its output.
-- Scope (Step 1) is collected once, here, and threaded into both `review-protocol` (Step 4) and `keyword-expansion` (Step 6) rather than re-asked by each — a reviewer should never have to answer "global or national?" twice in the same `/prisma-init` run.
+- Scope (Step 1) is collected once, here, and threaded into both `review-protocol` (Step 4) and `keyword-expansion` (Step 6) rather than re-asked by each — a reviewer should never have to answer "global or national?" twice in the same `/litreview-init` run.
 - This command is safe to re-run on the same topic: Step 0.3 detects an existing `protocol.json` and routes into the update path instead of silently overwriting eligibility criteria that screening decisions may already depend on.
 - Nothing in this command touches `records.jsonl`, `screening_decisions.jsonl`, or any file under `synthesis/`/`manuscript/` — those belong to later commands and stay untouched here even on a resume.

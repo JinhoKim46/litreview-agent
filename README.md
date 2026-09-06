@@ -1,4 +1,4 @@
-# prisma-review
+# litreview-agent
 
 *A systematic review and meta-analysis pipeline that actually runs, built on [Claude Code](https://claude.com/claude-code), for running a review and drafting a manuscript that follows the PRISMA 2020 reporting guideline.*
 
@@ -56,17 +56,17 @@ Every edge above is a `results/<TOPIC>/` file, not a conversation the reviewer h
 ```bash
 claude
 # Then inside Claude Code:
-/prisma-init "your review topic"      # scope, PICO, eligibility criteria, keyword expansion
-/prisma-search                        # run connectors against enabled sources, dedupe
-/prisma-screen export                 # write a title/abstract screening sheet to disk
+/litreview-init "your review topic"      # scope, PICO, eligibility criteria, keyword expansion
+/litreview-search                        # run connectors against enabled sources, dedupe
+/litreview-screen export                 # write a title/abstract screening sheet to disk
 # ... edit results/<TOPIC>/screening/title_abstract_sheet.csv (or .md) by hand ...
-/prisma-screen import                 # append your decisions to the ledger
-/prisma-extract                       # build the extraction table (characteristics, effect data, RoB1)
-/prisma-synthesize                    # pool poolable outcomes, plot, assess heterogeneity/GRADE
-/prisma-report                        # draft the manuscript, flow diagram, and checklist audit
+/litreview-screen import                 # append your decisions to the ledger
+/litreview-extract                       # build the extraction table (characteristics, effect data, RoB1)
+/litreview-synthesize                    # pool poolable outcomes, plot, assess heterogeneity/GRADE
+/litreview-report                        # draft the manuscript, flow diagram, and checklist audit
 ```
 
-`/prisma-status "your review topic"` works at any point and reconstructs exactly where a review stands, since every stage's state is either append-only or fully re-derivable — close your laptop mid-screening for weeks and pick back up with nothing lost.
+`/litreview-status "your review topic"` works at any point and reconstructs exactly where a review stands, since every stage's state is either append-only or fully re-derivable — close your laptop mid-screening for weeks and pick back up with nothing lost.
 
 - [User guide](USER_GUIDE.md) — installation, first review, recovery, troubleshooting
 - [Contributing](CONTRIBUTING.md) — what belongs upstream and the PR bar
@@ -93,18 +93,18 @@ Six connectors ship out of the box, chosen to cover most disciplines with no pai
 | **Europe PMC** | Biomedical + preprints + patents, broader than PubMed |
 | **arXiv** | STEM preprints (flagged as not-yet-peer-reviewed in extraction) |
 
-A seventh connector, citation chasing (backward/forward snowballing via OpenAlex), covers PRISMA's "other methods" identification stream — see `/prisma-search --chase-citations`.
+A seventh connector, citation chasing (backward/forward snowballing via OpenAlex), covers PRISMA's "other methods" identification stream — see `/litreview-search --chase-citations`.
 
-Need an institutional source (Scopus, Web of Science)? Run `/prisma-add-source` — it scaffolds a new connector against the same fixed `{meta, results}` JSON contract the connectors above already use, with credentials read only from an environment variable, never a flag or a tracked file.
+Need an institutional source (Scopus, Web of Science)? Run `/litreview-add-source` — it scaffolds a new connector against the same fixed `{meta, results}` JSON contract the connectors above already use, with credentials read only from an environment variable, never a flag or a tracked file.
 
 ## Fork this and adapt
 
-**This repo is a universal template.** The connectors, PRISMA methodology, screening workflow, and synthesis math are topic-agnostic and reviewer-agnostic — fork it, run `/prisma-init "your topic"`, and everything your specific review produces lands under `results/<your-topic>/`, which is gitignored by default. Upstream improvements to the pipeline (new connectors, dedup fixes, better pooling logic) stay mergeable back into your fork precisely because your review's own data was never committed to it in the first place. See [CONTRIBUTING.md](CONTRIBUTING.md) for what's universal-pipeline vs. instance-specific, and [AGENTS.md](AGENTS.md) if you're driving this from a non-Claude agent runtime.
+**This repo is a universal template.** The connectors, PRISMA methodology, screening workflow, and synthesis math are topic-agnostic and reviewer-agnostic — fork it, run `/litreview-init "your topic"`, and everything your specific review produces lands under `results/<your-topic>/`, which is gitignored by default. Upstream improvements to the pipeline (new connectors, dedup fixes, better pooling logic) stay mergeable back into your fork precisely because your review's own data was never committed to it in the first place. See [CONTRIBUTING.md](CONTRIBUTING.md) for what's universal-pipeline vs. instance-specific, and [AGENTS.md](AGENTS.md) if you're driving this from a non-Claude agent runtime.
 
 ## Repo structure
 
 ```
-prisma-review/
+litreview-agent/
 ├── CLAUDE.md               # persona, workflow pointer
 ├── CLAUDE.local.md.example # reviewer-profile template (copy to CLAUDE.local.md, gitignored)
 ├── AGENTS.md               # thin pointer for non-Claude runtimes

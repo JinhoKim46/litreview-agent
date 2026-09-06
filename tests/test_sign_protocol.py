@@ -38,7 +38,7 @@ class CheckCompletenessTests(unittest.TestCase):
         self.assertEqual(sign_protocol.check_completeness(_complete_protocol()), [])
 
     def test_null_date_range_to_and_null_region_are_not_gaps(self):
-        # prisma-init.md Step 5's own documented exception list.
+        # litreview-init.md Step 5's own documented exception list.
         protocol = _complete_protocol()
         protocol["eligibility"]["date_range"]["to"] = None
         protocol["scope"]["region"] = None

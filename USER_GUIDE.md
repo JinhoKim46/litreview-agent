@@ -40,7 +40,7 @@ A complete walkthrough from "I just cloned this" to "I have a drafted manuscript
 
   If it's missing: macOS (`brew install python3`), Debian/Ubuntu (`sudo apt install python3 python3-pip`), Windows (install from [python.org](https://python.org), checking "Add python.exe to PATH" during setup).
 
-- **Optional: [Pandoc](https://pandoc.org/)** — only needed if you want `/prisma-report --export docx|pdf`. The pipeline is Markdown-first and works completely without it; skip this if you don't need a Word/PDF file. Install with `brew install pandoc` (macOS), `sudo apt install pandoc` (Debian/Ubuntu), or the installer at pandoc.org (Windows).
+- **Optional: [Pandoc](https://pandoc.org/)** — only needed if you want `/litreview-report --export docx|pdf`. The pipeline is Markdown-first and works completely without it; skip this if you don't need a Word/PDF file. Install with `brew install pandoc` (macOS), `sudo apt install pandoc` (Debian/Ubuntu), or the installer at pandoc.org (Windows).
 
 You do **not** need Bun, Node, or LaTeX for this framework — those are ai-job-search-sibling-project requirements, not this one's. Everything here is Python plus Claude Code.
 
@@ -49,11 +49,11 @@ You do **not** need Bun, Node, or LaTeX for this framework — those are ai-job-
 ## 2. Get the code
 
 ```bash
-git clone https://github.com/<your-fork>/prisma-flow.git
-cd prisma-flow
+git clone https://github.com/<your-fork>/litreview-agent.git
+cd litreview-agent
 ```
 
-If you forked this on GitHub, your fork is public by default, same as the upstream repo — but that's fine here: `/prisma-init`'s reviewer-profile interview (Section 4 below) writes your name, institution, and prior publications into `CLAUDE.local.md`, which is gitignored, so none of it enters git history even on a public fork. Your actual review data — search results, screening decisions, extracted study data, the drafted manuscript — is a separate concern and is gitignored by default too (see `results/<TOPIC>/` in Section 12).
+If you forked this on GitHub, your fork is public by default, same as the upstream repo — but that's fine here: `/litreview-init`'s reviewer-profile interview (Section 4 below) writes your name, institution, and prior publications into `CLAUDE.local.md`, which is gitignored, so none of it enters git history even on a public fork. Your actual review data — search results, screening decisions, extracted study data, the drafted manuscript — is a separate concern and is gitignored by default too (see `results/<TOPIC>/` in Section 12).
 
 ---
 
@@ -86,7 +86,7 @@ claude
 Then run:
 
 ```
-/prisma-init "your review topic"
+/litreview-init "your review topic"
 ```
 
 The **first time** you run this (on a fresh clone where `CLAUDE.local.md` doesn't exist yet, or still has `[PLACEHOLDER]` tokens), it interviews you in one grouped conversational round — not a form, not one question per message:
@@ -101,7 +101,7 @@ The **first time** you run this (on a fresh clone where `CLAUDE.local.md` doesn'
 
 It writes your answers straight into `CLAUDE.local.md` (gitignored — copied from the tracked `CLAUDE.local.md.example` template on first run) and tells you which fields it filled in. **Every run after that skips this interview automatically** — it checks for leftover placeholder tokens first, and only asks about what's still unfilled. You will not be re-interviewed for a second review's topic; this step is about *you*, not about any one review.
 
-After the interview, the same `/prisma-init` call keeps going into scope selection and the actual review protocol (PICO/eligibility criteria) for the topic you gave it — see Section 5.
+After the interview, the same `/litreview-init` call keeps going into scope selection and the actual review protocol (PICO/eligibility criteria) for the topic you gave it — see Section 5.
 
 ---
 
@@ -109,39 +109,39 @@ After the interview, the same `/prisma-init` call keeps going into scope selecti
 
 These are the same nine commands from `README.md`'s pipeline diagram, with what to actually expect at each step.
 
-### `/prisma-init "your review topic"`
+### `/litreview-init "your review topic"`
 Asks: global or national/regional scope; your research question via PICO (or PICo for qualitative reviews, SPIDER for mixed-methods); explicit inclusion/exclusion criteria (population, study design, publication type, date range, language); then hands off to keyword expansion. Ends by writing `results/<topic-slug>/protocol.json` and `search_plan.json`, and tells you the next command to run.
 
-**Resuming:** re-running `/prisma-init` on a topic that already has a `protocol.json` switches automatically into update mode — it reads back what's on file, asks what's changing, and never silently overwrites eligibility criteria that screening decisions may already depend on.
+**Resuming:** re-running `/litreview-init` on a topic that already has a `protocol.json` switches automatically into update mode — it reads back what's on file, asks what's changing, and never silently overwrites eligibility criteria that screening decisions may already depend on.
 
-### `/prisma-search`
+### `/litreview-search`
 Confirms which of the (by default, all six) free connectors actually run this time, generates and executes `results/<topic>/rerun_search.sh`, and deduplicates everything into `records.jsonl`. Reports a per-source retrieved/total-available/truncated line and a dedup summary (canonical vs. duplicate counts, by tier).
 
-- `/prisma-search --revise-keywords` — go back through keyword expansion before searching again.
-- `/prisma-search --rerun` — replay the exact same search plan (e.g. to pick up new publications since last time), no keyword changes.
-- `/prisma-search --chase-citations` — after you've screened at least one study to "include" at full-text, run backward/forward citation snowballing from your included set via the 7th connector. This is optional and additive, not part of the default flow.
+- `/litreview-search --revise-keywords` — go back through keyword expansion before searching again.
+- `/litreview-search --rerun` — replay the exact same search plan (e.g. to pick up new publications since last time), no keyword changes.
+- `/litreview-search --chase-citations` — after you've screened at least one study to "include" at full-text, run backward/forward citation snowballing from your included set via the 7th connector. This is optional and additive, not part of the default flow.
 
-### `/prisma-screen export` then `/prisma-screen import`
+### `/litreview-screen export` then `/litreview-screen import`
 `export` writes a screening sheet (Markdown + CSV) to `results/<topic>/screening/` — grouped by source, theme, or year (`--group-by`) — for you to mark up **outside the conversation**, in a spreadsheet or text editor. Fill in `include`/`exclude` and, for full-text exclusions, a reason. Then:
 
 ```
-/prisma-screen import
+/litreview-screen import
 ```
 
 appends your decisions to the append-only `screening_decisions.jsonl` ledger. Run `export`/`import` twice — once with `--stage title_abstract`, once with `--stage full_text` — since PRISMA distinguishes the two screening levels.
 
-### `/prisma-extract`
+### `/litreview-extract`
 For every study you included at full-text, builds `extraction_table.json`: standard characteristics, effect-size data (if the study reports something quantitative), and a risk-of-bias judgement (RoB1 for randomized studies, Newcastle-Ottawa for non-randomized). It fetches full text via URL when one is available, asks you to paste it if not, or interviews you directly as a last resort.
 
-### `/prisma-synthesize`
+### `/litreview-synthesize`
 Groups extracted outcomes, pools anything with ≥2 comparable studies (fixed or random-effects, decided by heterogeneity), generates forest plots (and a funnel plot at ≥10 studies), rolls up risk-of-bias into a traffic-light plot, and drafts GRADE certainty ratings. Outcomes that don't clear the poolability gate fall back to narrative synthesis automatically, with the reason recorded — never silently dropped.
 
-### `/prisma-report`
+### `/litreview-report`
 Drafts the manuscript section by section (pausing for your approval between sections), generates the annotated PRISMA flow diagram as inline SVG, verifies every reference via WebSearch before including it, and can run a checklist audit against all 27 PRISMA 2020 items. Everything it writes traces back to files earlier stages produced — nothing is re-elicited from your memory.
 
-- `/prisma-report --export docx` or `--export pdf` — after the Markdown manuscript is drafted, convert it via Pandoc if you have it installed (Section 1).
+- `/litreview-report --export docx` or `--export pdf` — after the Markdown manuscript is drafted, convert it via Pandoc if you have it installed (Section 1).
 
-### Anytime: `/prisma-status ["your review topic"]`
+### Anytime: `/litreview-status ["your review topic"]`
 Reports exactly what stage a review is at and what to run next — safe to run mid-review, after a break of any length, or with no argument to list every review you have in progress.
 
 ---
@@ -153,16 +153,16 @@ Rather than inventing a toy topic, run the pipeline once against something with 
 Why this specific topic: it's a mature, heavily-studied area (dozens of RCTs, not thousands — a manageable smoke test), it has real published Cochrane/systematic reviews you can compare your pooled result against, and it's the same clinical domain the `synthesis/` module's own unit tests are validated against (they reproduce real numbers from a published meta-analysis worked example) — so if your live run's pooled effect size lands in the same neighborhood as a known published one, you have real evidence the pipeline works end to end, not just that it ran without crashing.
 
 ```
-/prisma-init "5-HT3 antagonists for prevention of postoperative nausea and vomiting in adults"
+/litreview-init "5-HT3 antagonists for prevention of postoperative nausea and vomiting in adults"
 ```
 
-Answer the PICO interview roughly as: Population = adults undergoing surgery under general anesthesia; Intervention = a 5-HT3 receptor antagonist (e.g. ondansetron, palonosetron, ramosetron); Comparator = placebo or another antiemetic class; Outcome = incidence of PONV within 24-48h postoperatively. Then walk through `/prisma-search` → `/prisma-screen` → `/prisma-extract` → `/prisma-synthesize` → `/prisma-report` as in Section 5.
+Answer the PICO interview roughly as: Population = adults undergoing surgery under general anesthesia; Intervention = a 5-HT3 receptor antagonist (e.g. ondansetron, palonosetron, ramosetron); Comparator = placebo or another antiemetic class; Outcome = incidence of PONV within 24-48h postoperatively. Then walk through `/litreview-search` → `/litreview-screen` → `/litreview-extract` → `/litreview-synthesize` → `/litreview-report` as in Section 5.
 
 What to actually check, not just observe:
 - Does `search_plan.json`'s PubMed string look like something a librarian would write (real MeSH terms, not just the words you typed)?
 - Run `rerun_search.sh` twice — does the second run add zero new canonical records?
 - Pick 3 studies from `extraction_table.json` and check them against their real abstracts by hand.
-- Does `/prisma-synthesize`'s pooled risk ratio and confidence interval land in a plausible range compared to a real published meta-analysis on an overlapping set of trials?
+- Does `/litreview-synthesize`'s pooled risk ratio and confidence interval land in a plausible range compared to a real published meta-analysis on an overlapping set of trials?
 - Does at least one secondary outcome fall back to narrative synthesis (fewer than 2 poolable studies)? If everything pools, you haven't actually exercised that code path.
 
 A second, deliberately different topic — something like "spaced repetition for second-language vocabulary retention" — is worth running afterward specifically because it's *not* biomedical: weaker MeSH coverage, heavier reliance on OpenAlex/Semantic Scholar, and it's likely to stay in narrative synthesis rather than pool, exercising a different part of the framework than PONV does. Treat this second run as a search/dedup/screening smoke test only, not a demonstration that the framework fully supports non-biomedical reviews end to end — its risk-of-bias tools and question frameworks are still clinical/health-science-shaped either way (see `README.md`'s "What this is — and is not," and Section 8 below).
@@ -171,15 +171,15 @@ A second, deliberately different topic — something like "spaced repetition for
 
 ## 7. Incomplete or interrupted review
 
-A search is not automatically complete just because `/prisma-search` finished without an error. Three things make it incomplete, and the pipeline reports each one rather than hiding it:
+A search is not automatically complete just because `/litreview-search` finished without an error. Three things make it incomplete, and the pipeline reports each one rather than hiding it:
 
-- **A source failed** (rate-limited, upstream error, missing credentials for a source you added yourself). `/prisma-search` names which source and why, and offers to retry — most rate limits clear within minutes.
+- **A source failed** (rate-limited, upstream error, missing credentials for a source you added yourself). `/litreview-search` names which source and why, and offers to retry — most rate limits clear within minutes.
 - **A source truncated.** `raw/<source>-<date>.json`'s `meta.truncated` is `true` whenever `total_available` exceeds what was actually retrieved (the default per-source limit is capped; see `search_plan.json`). Re-run with a higher `--limit` if you need the full set — but note the raw file is named by day, so a same-day re-run **overwrites** the smaller response rather than keeping both; that's fine for getting the fuller record set into `records.jsonl`, but if you want to preserve the original truncated response for your own audit trail, copy it aside first.
-- **A source was deliberately skipped this run** — you said no to it in `/prisma-search`'s source-confirmation step.
+- **A source was deliberately skipped this run** — you said no to it in `/litreview-search`'s source-confirmation step.
 
-None of these three states are self-resolving: you decide whether to retry, revise the search, or explicitly accept the gap and disclose it in your methods section. `/prisma-report` does not currently block on an incomplete search — it's on you to check `/prisma-status` and each source's `raw/*.json` before treating a review as ready to write up.
+None of these three states are self-resolving: you decide whether to retry, revise the search, or explicitly accept the gap and disclose it in your methods section. `/litreview-report` does not currently block on an incomplete search — it's on you to check `/litreview-status` and each source's `raw/*.json` before treating a review as ready to write up.
 
-**Interrupted mid-review** (closed your laptop, came back a week later, switched machines): nothing is lost. Every stage's state is either append-only (`screening_decisions.jsonl`, `possible_duplicates.jsonl`) or fully re-derivable from files on disk. Run `/prisma-status "your topic"` and it reconstructs exactly where things stand and what to run next — there's no separate "resume" command because there's nothing to resume from except the files themselves.
+**Interrupted mid-review** (closed your laptop, came back a week later, switched machines): nothing is lost. Every stage's state is either append-only (`screening_decisions.jsonl`, `possible_duplicates.jsonl`) or fully re-derivable from files on disk. Run `/litreview-status "your topic"` and it reconstructs exactly where things stand and what to run next — there's no separate "resume" command because there's nothing to resume from except the files themselves.
 
 ---
 
@@ -192,8 +192,8 @@ Before treating a review as ready for a manuscript, methods reviewer, or co-auth
 - [ ] **Full-text was actually available** for every included study, not interviewed out of you as a last resort when a URL failed — check `extraction_table.json`'s evidence locators.
 - [ ] **Data extraction** reflects what you'd write down yourself, not just what the pipeline's single AI-assisted pass produced — this framework runs one pass, not independent dual extraction with a resolver.
 - [ ] **Your review's field is one this framework's methodology actually covers.** Risk-of-bias appraisal (RoB1 for randomized studies, Newcastle-Ottawa for non-randomized), the question frameworks (PICO/PICo/SPIDER/PIRD), and the default PRISMA 2020 27-item manuscript structure all assume a clinical/health-science review — confirm all three are the right instruments for your actual field and study designs before relying on them, not just the risk-of-bias tool alone (see `README.md`'s "What this is — and is not").
-- [ ] **Every pooled outcome's studies are actually compatible** — same timepoint, same direction, no double-counted participants — before trusting `/prisma-synthesize`'s pooled estimate over its narrative-fallback judgment.
-- [ ] **GRADE certainty ratings are complete**, not left at a placeholder domain `/prisma-synthesize` couldn't fill in automatically (indirectness and imprecision need your judgment call).
+- [ ] **Every pooled outcome's studies are actually compatible** — same timepoint, same direction, no double-counted participants — before trusting `/litreview-synthesize`'s pooled estimate over its narrative-fallback judgment.
+- [ ] **GRADE certainty ratings are complete**, not left at a placeholder domain `/litreview-synthesize` couldn't fill in automatically (indirectness and imprecision need your judgment call).
 - [ ] **A human did the final read.** A single reviewer/agent pass through this pipeline is not equivalent to independent dual review — if your target venue or protocol requires that, this framework doesn't provide it by itself.
 
 ---
@@ -218,19 +218,19 @@ Set these in your shell profile or a local `.env` you source before `claude` —
 **Need a source the six free connectors don't cover** (an institutional Scopus or Web of Science subscription, a discipline-specific index)?
 
 ```
-/prisma-add-source
+/litreview-add-source
 ```
 
-Interviews you for the source's basics, investigates its real API live (never guesses field mappings), scaffolds a new connector against the exact same `{meta, results}` contract the shipped six use, and runs a mandatory live test before registering it. `/prisma-add-source --list` shows every connector currently installed.
+Interviews you for the source's basics, investigates its real API live (never guesses field mappings), scaffolds a new connector against the exact same `{meta, results}` contract the shipped six use, and runs a mandatory live test before registering it. `/litreview-add-source --list` shows every connector currently installed.
 
-**Starting over, or a fresh clone from your fork** for a new review that has nothing to do with a previous one? Nothing special needed — `/prisma-init "a new topic"` just creates a new `results/<new-topic>/` directory alongside any existing ones; reviews don't interfere with each other.
+**Starting over, or a fresh clone from your fork** for a new review that has nothing to do with a previous one? Nothing special needed — `/litreview-init "a new topic"` just creates a new `results/<new-topic>/` directory alongside any existing ones; reviews don't interfere with each other.
 
 **Made a mistake and want to clear a review's state?**
 
 ```
-/prisma-reset "your topic" protocol   # just protocol.json + search_plan.json
-/prisma-reset "your topic" results    # everything except the manuscript
-/prisma-reset "your topic" all        # the entire results/<topic>/ folder
+/litreview-reset "your topic" protocol   # just protocol.json + search_plan.json
+/litreview-reset "your topic" results    # everything except the manuscript
+/litreview-reset "your topic" all        # the entire results/<topic>/ folder
 ```
 
 Always shows exactly what will be deleted and asks for confirmation first — nothing is removed silently.
@@ -243,22 +243,22 @@ Always shows exactly what will be deleted and asks for confirmation first — no
 `pip install -r requirements.txt` wasn't run, or was run in a different Python environment than the one Claude Code's Bash tool is using. Confirm with `python3 -c "import statsmodels"` in the same shell Claude Code would use.
 
 **A connector returns `RATE_LIMITED`**
-Expected occasionally, especially from Semantic Scholar's unauthenticated pool. `/prisma-search` reports which source failed and offers to retry — usually clears within minutes. See Section 9 for raising the limit permanently.
+Expected occasionally, especially from Semantic Scholar's unauthenticated pool. `/litreview-search` reports which source failed and offers to retry — usually clears within minutes. See Section 9 for raising the limit permanently.
 
 **A connector returns `MISSING_CREDENTIALS`**
-Only happens if you've set an API-key environment variable to an empty or malformed value, or a connector you added via `/prisma-add-source` genuinely requires one. None of the six default connectors need a key to function at all.
+Only happens if you've set an API-key environment variable to an empty or malformed value, or a connector you added via `/litreview-add-source` genuinely requires one. None of the six default connectors need a key to function at all.
 
-**`/prisma-init` didn't ask me the reviewer-profile questions**
+**`/litreview-init` didn't ask me the reviewer-profile questions**
 That's expected if `CLAUDE.local.md` has no `[PLACEHOLDER]` tokens left — either from a previous run, or because you filled it in by hand. Edit `CLAUDE.local.md` directly and put a placeholder back (or just add a new field) if you want to re-trigger it.
 
-**`/prisma-report --export docx` did nothing / printed an install hint**
+**`/litreview-report --export docx` did nothing / printed an install hint**
 Pandoc isn't installed. This is expected and non-fatal — the Markdown manuscript at `results/<topic>/manuscript/manuscript.md` is still complete and is the framework's actual source of truth; `--export` is a convenience layer on top of it, not a requirement.
 
 **A search returns far fewer records than you expected**
-Check `search_plan.json`'s query strings for that source — a keyword expansion pass that was pruned too aggressively is the most common cause. Re-run `/prisma-search --revise-keywords` to go through expansion again. Also check `meta.truncated` in that source's `raw/*.json` — a `--limit`-capped run reports the true total via `total_available` even when it didn't retrieve all of it.
+Check `search_plan.json`'s query strings for that source — a keyword expansion pass that was pruned too aggressively is the most common cause. Re-run `/litreview-search --revise-keywords` to go through expansion again. Also check `meta.truncated` in that source's `raw/*.json` — a `--limit`-capped run reports the true total via `total_available` even when it didn't retrieve all of it.
 
 **I closed my laptop mid-review and don't remember where I was**
-`/prisma-status "your topic"` reconstructs exactly where things stand from the state files on disk — nothing is ever lost or needs to be remembered.
+`/litreview-status "your topic"` reconstructs exactly where things stand from the state files on disk — nothing is ever lost or needs to be remembered.
 
 ---
 
@@ -279,7 +279,7 @@ results/<topic-slug>/
 └── manuscript/                # the drafted manuscript, flow diagram, checklist audit
 ```
 
-Every one of these is either append-only or fully re-derivable — that's what makes `/prisma-status` and mid-review resumption work. This entire directory is gitignored by default (except `.gitkeep`/`README.md` files that describe the schema), so your actual review's content is never accidentally published, independent of whatever you decided about repo visibility in Section 2.
+Every one of these is either append-only or fully re-derivable — that's what makes `/litreview-status` and mid-review resumption work. This entire directory is gitignored by default (except `.gitkeep`/`README.md` files that describe the schema), so your actual review's content is never accidentally published, independent of whatever you decided about repo visibility in Section 2.
 
 From here:
 - `README.md` — the short version of this guide, plus the pipeline diagram.

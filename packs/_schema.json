@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://prisma-flow.local/packs/_schema.json",
+  "$id": "https://litreview-agent.local/packs/_schema.json",
   "title": "field pack",
   "description": "A field pack (packs/<id>.json) is flat data adding glosses and expectations on top of a method manifest -- it never overrides a manifest field, and it needs no code of its own (references/docs/design/multi-method-consensus.md §4.4). tools/method.py globs packs/*.json (except this file) and validates each against this schema. A pack that needs code is a fork, per doctrine. Every `default` below documents what a pack author may omit; jsonschema.validate() does not fill it in at load time -- a pack that omits an optional field simply has no key for it, so any code reading pack[<field>] unconditionally (rather than pack.get(<field>, <default>)) must be written expecting that, not assuming the default already landed in the dict.",
   "type": "object",

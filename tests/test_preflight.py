@@ -1,5 +1,5 @@
 """Unit tests for tools/preflight.py -- the aggregator gate for
-/prisma-synthesize and /prisma-report. Phase 0 correctness addition,
+/litreview-synthesize and /litreview-report. Phase 0 correctness addition,
 docs/PLAN.md decision 4.
 """
 import json

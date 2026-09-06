@@ -6,7 +6,7 @@ review this framework runs is a method-manifest instance (methods/*.json),
 even though today only one manifest (methods/systematic_review.json) exists.
 A command's Step 0 calls this to find out which policy fields apply; nothing
 here decides pipeline stages or sequence -- those stay in the nine
-.claude/commands/prisma-*.md files, which are the implementation
+.claude/commands/litreview-*.md files, which are the implementation
 (docs/ROADMAP.md's "one sentence design").
 
 Absence of `protocol.json.method` (every review created before this file
@@ -142,7 +142,7 @@ def _installed_connector_ids() -> list[str]:
 def _load_protocol_method_block(protocol: dict | None) -> tuple[str, bool, str | None]:
     """Returns (method_id, recorded, pack_id). `protocol` is protocol.json's
     parsed content, or None if the file does not exist yet (a review that
-    has not run /prisma-init's protocol step at all -- resolve() still
+    has not run /litreview-init's protocol step at all -- resolve() still
     returns the default method so a caller can render "what SR requires"
     before one is signed).
 

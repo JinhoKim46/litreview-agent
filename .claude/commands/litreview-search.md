@@ -1,6 +1,6 @@
-# /prisma-search - Build the Search Plan, Run Connectors, Deduplicate
+# /litreview-search - Build the Search Plan, Run Connectors, Deduplicate
 
-You are running pipeline steps 5-6 of this PRISMA-on-Claude-Code framework: turning a confirmed search vocabulary into per-source Boolean strings (`search_plan.json`), letting the reviewer pick which connectors actually run right now, replaying that plan against the real connector CLIs (`rerun_search.sh` -> `raw/<source>-<date>.json`), and deduplicating every fetched record into the append-only `records.jsonl` ledger. By the time this command finishes, PRISMA Item 7 (search strategy) and the Identification box of the flow diagram both have real, reproducible numbers behind them.
+You are running pipeline steps 5-6 of this Litreview Agent framework: turning a confirmed search vocabulary into per-source Boolean strings (`search_plan.json`), letting the reviewer pick which connectors actually run right now, replaying that plan against the real connector CLIs (`rerun_search.sh` -> `raw/<source>-<date>.json`), and deduplicating every fetched record into the append-only `records.jsonl` ledger. By the time this command finishes, PRISMA Item 7 (search strategy) and the Identification box of the flow diagram both have real, reproducible numbers behind them.
 
 **Context stays flat regardless of record count.** `raw/<source>-<date>.json` and `records.jsonl` are never opened with the `Read` tool, at any step below
 - not "to double check a count," not "just to peek at one record." Every byte of those files is read and written inside a `python3` subprocess (Steps 6-7); the only things that ever enter your reply are that subprocess's printed counts, the file paths, and error messages. `protocol.json` and `search_plan.json` are the exception - they are small, structured configuration, not per-record data, and Steps 1/3/4 read them directly with `Read`.
@@ -15,10 +15,10 @@ Follow the steps below **in order. Do not skip a step.**
 
 1. If `$ARGUMENTS` is non-empty, take its first whitespace-separated token as a candidate topic (a flag starting with `--` is never the topic - see Step 0.4 for flag handling). `Glob` `results/*/protocol.json` for the existing reviews.
    - If a directory under `results/` matches the candidate exactly, use it as `<TOPIC>`.
-   - If none match exactly, derive a slug from the candidate using the same rule `/prisma-init` Step 0 uses (lowercase, collapse every run of non-`[a-z0-9]` characters to a single hyphen, trim leading/trailing hyphens, cap at 60 chars) and match *that* against the directory list. Never invent a brand-new topic directory here - `/prisma-search` only ever operates on a review `/prisma-init` already created.
-   - No match either way -> **stop**. Tell the reviewer no review exists under that name and list the directories that do exist (if any), or say none exist yet and point to `/prisma-init "<topic>"`.
+   - If none match exactly, derive a slug from the candidate using the same rule `/litreview-init` Step 0 uses (lowercase, collapse every run of non-`[a-z0-9]` characters to a single hyphen, trim leading/trailing hyphens, cap at 60 chars) and match *that* against the directory list. Never invent a brand-new topic directory here - `/litreview-search` only ever operates on a review `/litreview-init` already created.
+   - No match either way -> **stop**. Tell the reviewer no review exists under that name and list the directories that do exist (if any), or say none exist yet and point to `/litreview-init "<topic>"`.
 2. If `$ARGUMENTS` is empty (or contained only flags), glob `results/*/` :
-   - **Zero directories** -> **stop**, same message as above: run `/prisma-init` first.
+   - **Zero directories** -> **stop**, same message as above: run `/litreview-init` first.
    - **Exactly one** -> use it as `<TOPIC>`, but say which one you picked (e.g. `"Using the only review found: results/exercise-therapy-t2dm/"`).
    - **More than one** -> **stop** and ask which topic, listing the candidates. Never guess among several active reviews.
 3. Confirm `results/<TOPIC>/protocol.json` exists (it must - Step 0.1/0.2 already found it via the glob, but re-state the path so the reviewer sees exactly which review this run targets).
@@ -27,7 +27,7 @@ Follow the steps below **in order. Do not skip a step.**
    - `--change-sources` - the reviewer wants to revisit which connectors run, even though mode isn't `build`. Makes Step 4 ask its source-confirmation question this run (see Step 4's "confirmed once, then locked in" rule) instead of silently reusing `enabled` from disk. Has no effect in `build` mode, where Step 4 always asks anyway.
    - `--rerun` - skip straight to Step 5 (regenerate and execute `rerun_search.sh` from whatever `search_plan.json` already has on disk, no keyword or enablement changes). Requires `search_plan.json` to already exist; if it does not, **stop** and say so - there is nothing to rerun yet.
    - `--living` - a living-review delta rerun (docs/ROADMAP.md M5): identical behavior to `--rerun` (same plan, same protocol-bounded `--since`/`--until`, no keyword or enablement changes) - the *only* difference is Step 7d records a new version once the run completes. The search itself is deliberately **not** narrowed to "since the last version": connector date filters are on publication date, not index date, so a paper indexed late by a source would be silently and permanently missed by a rerun bounded at the last version's recorded date. Re-searching the full protocol-bounded range every time costs extra API calls, not extra reviewer effort - `tools/dedup.py`'s record_id idempotency (Step 7) means only genuinely new records are ever appended, and it is that dedup diff, not a narrower search, that makes "a delta run screens only new records" true. Requires `search_plan.json` to already exist (same as `--rerun`); a first-ever `--living` run on a topic with no prior recorded version is fine - it just records version 1. Mutually exclusive with `--revise-keywords`/`--change-sources`/`--chase-citations` - living mode is specifically "the same plan, run again," never a structural change in the same run.
-   - `--chase-citations` - mode is `chase`: skip Steps 2-6 entirely (no keyword-plan or connector-enablement changes) and go straight to **Step 4b**, a separate "other methods" identification pass over the reviewer's already-screened studies via backward/forward citation chasing, per the plan's §11 benchmark addition. Requires at least one `full_text`-stage `include` decision in `screening_decisions.jsonl` (there is nothing to chase from before any screening has happened); if there is none, **stop** and say so, pointing at `/prisma-screen`.
+   - `--chase-citations` - mode is `chase`: skip Steps 2-6 entirely (no keyword-plan or connector-enablement changes) and go straight to **Step 4b**, a separate "other methods" identification pass over the reviewer's already-screened studies via backward/forward citation chasing, per the plan's §11 benchmark addition. Requires at least one `full_text`-stage `include` decision in `screening_decisions.jsonl` (there is nothing to chase from before any screening has happened); if there is none, **stop** and say so, pointing at `/litreview-screen`.
    - Anything else unrecognized -> **stop** and name the unrecognized flag rather than silently ignoring it.
 
 State back, in one line, what you resolved (`"Searching results/<TOPIC>/, mode: <build|revise|rerun>"`) before continuing.
@@ -41,7 +41,7 @@ State back, in one line, what you resolved (`"Searching results/<TOPIC>/, mode: 
 - `eligibility.date_range.from` / `.to` - feeds Step 5's `--since`/`--until`.
 - `scope.mode`, `scope.region`, `scope.coverage_gaps` - context for the summary in Step 8; `keyword-expansion` (Step 3) is what actually acts on these, not this command.
 
-If `protocol.json` is missing any of the fields `/prisma-init` Step 5 requires (a leftover `null` where a real answer belongs), **stop** and tell the reviewer to finish `/prisma-init` for this topic before searching - building a search plan against an incomplete protocol produces query strings nobody can trace back to a documented eligibility criterion later.
+If `protocol.json` is missing any of the fields `/litreview-init` Step 5 requires (a leftover `null` where a real answer belongs), **stop** and tell the reviewer to finish `/litreview-init` for this topic before searching - building a search plan against an incomplete protocol produces query strings nobody can trace back to a documented eligibility criterion later.
 
 ---
 
@@ -50,7 +50,7 @@ If `protocol.json` is missing any of the fields `/prisma-init` Step 5 requires (
 Skip this step entirely if Step 0.4 already set `mode: rerun`.
 
 1. `Glob` `results/<TOPIC>/search_plan.json` (existence only).
-   - **Missing**: mode is `build`. `/prisma-init` normally hands off to `keyword-expansion` itself (its Step 6), so a missing plan here usually means the reviewer ran `/prisma-search` before finishing `/prisma-init`, or `/prisma-init`'s Step 6 was interrupted. Either way, build it now - go to Step 3.
+   - **Missing**: mode is `build`. `/litreview-init` normally hands off to `keyword-expansion` itself (its Step 6), so a missing plan here usually means the reviewer ran `/litreview-search` before finishing `/litreview-init`, or `/litreview-init`'s Step 6 was interrupted. Either way, build it now - go to Step 3.
    - **Exists** and `$ARGUMENTS` did not carry `--revise-keywords`: `Read` it, summarize back to the reviewer in one or two lines (topic, which sources have a confirmed query string, how many are currently `enabled`), and ask: *"Reuse this search plan as-is, or revise the keywords first?"* using `AskUserQuestion` with those two options.
      - **Reuse** -> mode is `reuse`; skip Step 3 entirely and go straight to Step 4 with the plan already in context.
      - **Revise** -> mode is `revise`; go to Step 3.
@@ -80,7 +80,7 @@ This step is what turns keyword-expansion's *relevance* judgment (does this sour
 
 **Source scope is confirmed once, then locked in - not re-asked every run.** The interactive question in step 3 below only fires when mode is `build` (this topic's first search plan) or the reviewer's own message this turn explicitly asks to change which sources run (e.g. "skip arXiv this time," or a `--change-sources` flag - see Step 0.4). For `reuse` or `revise` mode with no such explicit request, **skip straight to step 4** (the env check) after stating the enabled sources from disk in one line, e.g. *"Sources: pubmed, europepmc, openalex enabled (unchanged from last run)."* Re-asking a reviewer to reconfirm a choice they already made - and that they didn't just say they want to change - is exactly the kind of redundant prompt that leads to sources getting toggled by accident; a reviewer who wants to change scope will say so.
 
-1. From the `search_plan.json` already in context, list every key under `sources` with its current `enabled` value and (if disabled) its `reason`. This set is normally the six shipped connectors, but is not hardcoded to six - a source registered later via `/prisma-add-source` shows up here too, automatically, with no change needed to this command.
+1. From the `search_plan.json` already in context, list every key under `sources` with its current `enabled` value and (if disabled) its `reason`. This set is normally the six shipped connectors, but is not hardcoded to six - a source registered later via `/litreview-add-source` shows up here too, automatically, with no change needed to this command.
 2. **Only when mode is `build`, or the reviewer explicitly asked to change sources this turn:** present a table to the reviewer, one row per source, with a one-line description to help them decide (use these for the six shipped connectors; for anything else, pull the one-liner from that source's `.agents/skills/<name>-search/SKILL.md` description):
 
    | Source | Provisional | Notes |
@@ -100,7 +100,7 @@ This step is what turns keyword-expansion's *relevance* judgment (does this sour
    done
    ```
 Mention any unset ones to the reviewer as a one-line FYI (PubMed/Semantic Scholar rate limits are friendlier with a key; `PRISMA_CONTACT_EMAIL` sets an honest User-Agent contact for the polite pool). Never block on this.
-4. If the reviewer's final selection differs from what was already on disk, update `results/<TOPIC>/search_plan.json` with `Edit`: set each changed source's `enabled` to the confirmed value, and for anything newly disabled set a short `reason` string (e.g. `"reviewer excluded this run - rate limited today"`) so a later reader of the file sees why, the same way keyword-expansion records a `reason` for its own relevance-based exclusions. **This is an operational note, not a scope decision** - if disabling a source also represents a genuine national-language coverage gap that `keyword-expansion` didn't already record, tell the reviewer to add it to `protocol.json.scope.coverage_gaps` themselves (via `/prisma-init`'s scope step or a direct edit) rather than folding it in here.
+4. If the reviewer's final selection differs from what was already on disk, update `results/<TOPIC>/search_plan.json` with `Edit`: set each changed source's `enabled` to the confirmed value, and for anything newly disabled set a short `reason` string (e.g. `"reviewer excluded this run - rate limited today"`) so a later reader of the file sees why, the same way keyword-expansion records a `reason` for its own relevance-based exclusions. **This is an operational note, not a scope decision** - if disabling a source also represents a genuine national-language coverage gap that `keyword-expansion` didn't already record, tell the reviewer to add it to `protocol.json.scope.coverage_gaps` themselves (via `/litreview-init`'s scope step or a direct edit) rather than folding it in here.
 5. If nobody ends up enabled, **stop** - there is nothing to search.
 
 ---
@@ -167,12 +167,12 @@ Skip this step entirely unless Step 0.4 set mode `chase`. When it did, skip Step
 
 ## Step 5: Generate `rerun_search.sh`
 
-Write `results/<TOPIC>/rerun_search.sh` with exactly this content (this is the literal reproducibility artifact PRISMA Item 7 points to - it is regenerated by every `/prisma-search` run so it always matches the plan it claims to replay, never hand-edited in between). This template is identical for a `--living` run and every other mode - living mode changes nothing about what gets searched (see Step 0.4), only whether Step 7d runs afterward:
+Write `results/<TOPIC>/rerun_search.sh` with exactly this content (this is the literal reproducibility artifact PRISMA Item 7 points to - it is regenerated by every `/litreview-search` run so it always matches the plan it claims to replay, never hand-edited in between). This template is identical for a `--living` run and every other mode - living mode changes nothing about what gets searched (see Step 0.4), only whether Step 7d runs afterward:
 
 ```bash
 #!/usr/bin/env bash
-# Auto-generated by /prisma-search from search_plan.json in this directory.
-# Regenerate by re-running /prisma-search - do not hand-edit, or this file
+# Auto-generated by /litreview-search from search_plan.json in this directory.
+# Regenerate by re-running /litreview-search - do not hand-edit, or this file
 # will silently stop matching the plan it claims to replay (PRISMA Item 7).
 set -uo pipefail
 
@@ -186,7 +186,7 @@ LIMIT="${PRISMA_SEARCH_LIMIT:-200}"
 mkdir -p "$RAW_DIR"
 
 # Pull the protocol's date range, if any, so every connector call honors the
-# same eligibility.date_range the reviewer set in /prisma-init - never
+# same eligibility.date_range the reviewer set in /litreview-init - never
 # re-typed here. A living-mode delta rerun (docs/ROADMAP.md M5) reuses this
 # same full range rather than narrowing SINCE to the last recorded version:
 # connector date filters are on publication date, not index date, so a
@@ -212,7 +212,7 @@ except FileNotFoundError:
 
 # Enabled sources come straight from search_plan.json.sources.*.enabled -
 # never hand-maintained here, so a re-run always matches whatever
-# /prisma-search last confirmed with the reviewer.
+# /litreview-search last confirmed with the reviewer.
 ENABLED_SOURCES="$(python3 -c "
 import json
 d = json.load(open('$PLAN'))
@@ -275,14 +275,14 @@ Its own stdout is the only thing you need - one `retrieved=/total_available=/ tr
 Handle the result:
 
 - **Exit 0**: every enabled source succeeded. Continue to Step 7.
-- **Exit 1, some sources failed**: the script's stderr names which ones and the connector's own `{"error", "code"}` line explains why (`RATE_LIMITED`, `INVALID_QUERY`, `MISSING_CREDENTIALS`, `UPSTREAM_ERROR`). Tell the reviewer which sources failed and why, and ask whether to (a) retry now (rate limits and transient `UPSTREAM_ERROR`s often clear within minutes - re-running the whole script is safe and idempotent, it just writes a new dated `raw/<source>-<date>.json`), (b) proceed to Step 7 with the sources that did succeed and pick the rest up in a later `/prisma-search --rerun`, or (c) fix the cause first (e.g. set `NCBI_API_KEY` for `MISSING_CREDENTIALS`, revisit the query string via `--revise-keywords` for `INVALID_QUERY`). Never silently drop a failed source from the Identification-box count later - Step 8's summary must name it explicitly either way.
+- **Exit 1, some sources failed**: the script's stderr names which ones and the connector's own `{"error", "code"}` line explains why (`RATE_LIMITED`, `INVALID_QUERY`, `MISSING_CREDENTIALS`, `UPSTREAM_ERROR`). Tell the reviewer which sources failed and why, and ask whether to (a) retry now (rate limits and transient `UPSTREAM_ERROR`s often clear within minutes - re-running the whole script is safe and idempotent, it just writes a new dated `raw/<source>-<date>.json`), (b) proceed to Step 7 with the sources that did succeed and pick the rest up in a later `/litreview-search --rerun`, or (c) fix the cause first (e.g. set `NCBI_API_KEY` for `MISSING_CREDENTIALS`, revisit the query string via `--revise-keywords` for `INVALID_QUERY`). Never silently drop a failed source from the Identification-box count later - Step 8's summary must name it explicitly either way.
 - **Any source reports `truncated: true`**: flag it - `meta.total_available` exceeds what was actually fetched. Tell the reviewer the true count and ask whether to re-run with a higher `PRISMA_SEARCH_LIMIT` before finalizing the search date, since the Identification box needs the real per-database count, not a silently capped one.
 
 ---
 
 ## Step 7: Deduplicate into `records.jsonl`
 
-Run this exact command via the `Bash` tool - `tools/dedup.py` reads every `raw/<source>-*.json` file and appends only genuinely new lines to `results/<TOPIC>/records.jsonl`. It never touches a line already there (record_id-based idempotency), so re-running it after a later `/prisma-search` only adds what's new.
+Run this exact command via the `Bash` tool - `tools/dedup.py` reads every `raw/<source>-*.json` file and appends only genuinely new lines to `results/<TOPIC>/records.jsonl`. It never touches a line already there (record_id-based idempotency), so re-running it after a later `/litreview-search` only adds what's new.
 
 ```bash
 python3 tools/dedup.py --topic <TOPIC> --pass exact
@@ -297,7 +297,7 @@ The command prints the same JSON summary the old inline script did: `raw_files_p
 ## Step 7b: Flag possible near-duplicates (fuzzy pass, advisory only)
 
 Step 7's doi/pmid/title-author-year tiers require an **exact** normalized match. A retitled preprint, punctuation drift, or an OCR'd title from an older record can slip past all three tiers as two separate canonical records. This step never merges anything
-- it only writes advisory pairs to `results/<TOPIC>/possible_duplicates.jsonl` for the reviewer to see during `/prisma-screen` (see `screening-assistant`'s data contract).
+- it only writes advisory pairs to `results/<TOPIC>/possible_duplicates.jsonl` for the reviewer to see during `/litreview-screen` (see `screening-assistant`'s data contract).
 
 Run this exact command via the `Bash` tool - idempotent, appends only genuinely new pairs:
 
@@ -334,7 +334,7 @@ If this run was invoked with `--living`, close out the delta by recording a new 
 python3 tools/versioning.py --topic <TOPIC> record
 ```
 
-(Pre-allowlisted - `Bash(python3 tools/versioning.py:*)`.) Prints the new version's number, date, record count, and included count - or, if nothing has changed since the last recorded version (same canonical record set, same included count), reports that no-op explicitly rather than appending an identical-content version entry. For a non-`--living` run, skip this step entirely - an ordinary build/revise/rerun never advances the version counter; only a living delta rerun closes a version boundary. A topic's very first `--living` run is expected here too - it simply records version 1, and `/prisma-status`'s delta report has something to compare against starting with the second living run.
+(Pre-allowlisted - `Bash(python3 tools/versioning.py:*)`.) Prints the new version's number, date, record count, and included count - or, if nothing has changed since the last recorded version (same canonical record set, same included count), reports that no-op explicitly rather than appending an identical-content version entry. For a non-`--living` run, skip this step entirely - an ordinary build/revise/rerun never advances the version counter; only a living delta rerun closes a version boundary. A topic's very first `--living` run is expected here too - it simply records version 1, and `/litreview-status`'s delta report has something to compare against starting with the second living run.
 
 ---
 
@@ -348,11 +348,11 @@ Reply with a summary built only from Step 6's per-source lines and Step 7/7c's J
 >
 > - **Raw files this run:** `raw/<source>-<date>.json` per enabled source - **New records added:** N canonical, M marked as duplicates (D by DOI, P by PMID, T by title+author+year) - **Total distinct records now:** X (Y total lines including duplicates) - **Possible near-duplicates flagged (advisory):** *(from Step 7b's `new_possible_duplicates_flagged`, surfaced during screening - or "none")* - **Sources skipped or failed:** *(name them, or "none")* - **Coverage gaps on record:** *(from `protocol.json.scope.coverage_gaps`, or "none")* - **Search completeness/recall:** *(from Step 7c - "clean" if nothing unacknowledged, else the specific sources/known items still needing attention)*
 >
-> **Next:** `/prisma-screen export` to generate the title/abstract screening sheet from these records.
+> **Next:** `/litreview-screen export` to generate the title/abstract screening sheet from these records.
 
-If any source failed in Step 6 and the reviewer chose to proceed anyway (option b), say so explicitly here too - a summary that goes quiet about a failed source is indistinguishable from one that succeeded, and the Identification box drafted later in `/prisma-report` must not inherit that ambiguity.
+If any source failed in Step 6 and the reviewer chose to proceed anyway (option b), say so explicitly here too - a summary that goes quiet about a failed source is indistinguishable from one that succeeded, and the Identification box drafted later in `/litreview-report` must not inherit that ambiguity.
 
-For a `--living` run, add the version Step 7d recorded (number, date, record/included counts) and point at `/prisma-status` for the full delta report (what's new since the previous version) instead of the ordinary "screen these records" next-step line above - screening only the newly-added, still-undecided records is already what `/prisma-screen export` does by default (it only ever surfaces undecided records per stage), so the next step is the same command either way, just described as picking up the delta rather than starting fresh.
+For a `--living` run, add the version Step 7d recorded (number, date, record/included counts) and point at `/litreview-status` for the full delta report (what's new since the previous version) instead of the ordinary "screen these records" next-step line above - screening only the newly-added, still-undecided records is already what `/litreview-screen export` does by default (it only ever surfaces undecided records per stage), so the next step is the same command either way, just described as picking up the delta rather than starting fresh.
 
 ---
 
@@ -361,5 +361,5 @@ For a `--living` run, add the version Step 7d recorded (number, date, record/inc
 - **Idempotent and resumable.** Re-running this command - with the same plan, a revised one, or a different connector selection - never reprocesses a `record_id` already in `records.jsonl` and never rewrites `rerun_search.sh` into something that doesn't match the current plan. A reviewer can close their laptop for weeks and pick back up exactly here.
 - **The arXiv trap, named explicitly.** An arXiv preprint and its later peer-reviewed version are the same study and must merge. Since arXiv records usually carry no `doi`, they rely on the `title|author|year` tier
   - which only works if `first_author_surname` extracts the same surname from arXiv's "Given Family" author strings as from the published version's own format (which varies by source - MEDLINE-style for PubMed/Europe PMC, full names for OpenAlex/Crossref/Semantic Scholar). Step 7's script handles both formats; if a reviewer spots a preprint/published pair that didn't merge during screening, that is this heuristic's known failure mode (a retitled published version, or an author-order swap), not a bug to silently ignore - flag it and let the reviewer mark it manually.
-- **This command never writes `screening_decisions.jsonl`, `extraction_table.json`, or anything under `synthesis/`/`manuscript/`.** Those belong to `/prisma-screen`, `/prisma-extract`, `/prisma-synthesize`, and `/prisma-report` respectively.
-- **`search_plan.json`'s `sources` map is the single source of truth** for which connectors exist and which are enabled. This command never hardcodes "the six sources" in its logic - only in the descriptive table in Step 4, which a `/prisma-add-source`-registered connector extends by simply appearing in that same map.
+- **This command never writes `screening_decisions.jsonl`, `extraction_table.json`, or anything under `synthesis/`/`manuscript/`.** Those belong to `/litreview-screen`, `/litreview-extract`, `/litreview-synthesize`, and `/litreview-report` respectively.
+- **`search_plan.json`'s `sources` map is the single source of truth** for which connectors exist and which are enabled. This command never hardcodes "the six sources" in its logic - only in the descriptive table in Step 4, which a `/litreview-add-source`-registered connector extends by simply appearing in that same map.
