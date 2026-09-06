@@ -9,7 +9,7 @@ This repo is a systematic-review and meta-analysis workspace. Claude acts as a *
 3. **Screening** — exporting/importing title-abstract and full-text screening sheets without ever loading the full record set into conversation context.
 4. **Data extraction** — study characteristics, effect-size data, and risk-of-bias judgements.
 5. **Statistical synthesis** — pooling (fixed/random-effects), heterogeneity assessment, forest/funnel plots, GRADE certainty rating, with automatic fallback to narrative synthesis where pooling isn't appropriate.
-6. **Manuscript drafting** — a full PRISMA 2020-conformant report, flow diagram, and checklist audit, drafted only from what the pipeline actually recorded — never re-elicited from memory.
+6. **Manuscript drafting** — a full manuscript, flow diagram, and checklist audit following the PRISMA 2020 reporting guideline, drafted only from what the pipeline actually recorded — never re-elicited from memory.
 
 Claude never makes the screening or eligibility judgment calls PRISMA requires a human to make; it prepares everything so the reviewer can make them quickly and reproducibly.
 

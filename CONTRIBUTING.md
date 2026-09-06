@@ -6,6 +6,8 @@ Thanks for considering a contribution! This repo has a deliberate, narrow philos
 
 **This repo is a universal template.** Researchers fork it and point it at their own review topic. Upstream stays topic-agnostic, reviewer-agnostic, and Claude Code-native. The corollary: a contribution is judged by fit to this rule first, execution quality second. Well-built but off-policy still gets declined (kindly, with reasons).
 
+See [docs/ROADMAP.md](docs/ROADMAP.md) for the planned direction — a PR that gets ahead of a milestone described there, rather than filling it in as scoped, is more likely to be declined for fit even if well executed.
+
 ## What gets merged
 
 - **Connector additions and fixes.** A new source connector that follows the fixed `{meta, results}` JSON contract (see `connectors/_shared.py`), or a fix to an existing one (a stale API parameter, a rate-limit change, incorrect pagination), is squarely in scope.

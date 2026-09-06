@@ -1,6 +1,6 @@
 # prisma-review
 
-*A PRISMA 2020-conformant systematic review and meta-analysis pipeline that actually runs, built on [Claude Code](https://claude.com/claude-code).*
+*A systematic review and meta-analysis pipeline that actually runs, built on [Claude Code](https://claude.com/claude-code), for running a review and drafting a manuscript that follows the PRISMA 2020 reporting guideline.*
 
 > Note: This is an independent open-source project and is not affiliated with, endorsed by, or sponsored by Anthropic. Anthropic and Claude Code are referenced only to describe the toolchain this workflow uses.
 
