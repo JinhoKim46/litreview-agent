@@ -21,10 +21,10 @@
     },
     "cross_tabs": {
       "type": "array",
-      "description": "Pairwise facet cross-tabulations (classification only -- always empty for capture_mode \"charting\"); the data a bubble plot renders. Rendering the plot itself is not yet implemented.",
+      "description": "Pairwise facet cross-tabulations (classification only -- always empty for capture_mode \"charting\"); the data a Petersen et al. 2015-style bubble plot renders (synthesis/plots.py's bubble_plot()).",
       "items": {
         "type": "object",
-        "required": ["facet_a", "facet_b", "counts"],
+        "required": ["facet_a", "facet_b", "counts", "bubble_plot_svg"],
         "additionalProperties": false,
         "properties": {
           "facet_a": {"type": "string"},
@@ -33,6 +33,10 @@
             "type": "object",
             "description": "Key is \"value_a|value_b\"; value is the count of studies with that combination.",
             "additionalProperties": {"type": "integer", "minimum": 0}
+          },
+          "bubble_plot_svg": {
+            "type": ["string", "null"],
+            "description": "Repo-relative-at-runtime absolute path to the rendered SVG, or null only when `counts` is empty (nothing to plot)."
           }
         }
       }

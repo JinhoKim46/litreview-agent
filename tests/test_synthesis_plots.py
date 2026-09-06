@@ -14,6 +14,7 @@ counts (also in the figure) were cross-checked by hand against RR = (e1/n1)
 """
 import math
 import os
+import re
 import sys
 import tempfile
 import unittest
@@ -331,6 +332,75 @@ class RobTrafficLightPlotTest(unittest.TestCase):
         root = _parse_svg(out_path)
         headers = [el.text.strip() for el in _find_by_id(root, "matplotlib.axis_1").iter() if el.tag is ET.Comment]
         self.assertEqual(headers, ["D1", "D2"])
+
+
+class BubblePlotTest(unittest.TestCase):
+    def setUp(self):
+        self.tmpdir = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmpdir.cleanup)
+        self.out_path = os.path.join(self.tmpdir.name, "bubble.svg")
+        # Deliberately distinct-looking category names vs. counts, so a
+        # comment-text assertion can never accidentally match the wrong kind
+        # of label.
+        self.cross_tab = {
+            "facet_a": "research_type", "facet_b": "dataset",
+            "counts": {"validation|public": 1, "validation|private": 3, "evaluation|public": 2},
+        }
+        plots.bubble_plot(self.cross_tab, self.out_path)
+        self.assertTrue(os.path.exists(self.out_path))
+        self.assertGreater(os.path.getsize(self.out_path), 0)
+        self.root = _parse_svg(self.out_path)
+
+    def test_one_bubble_rendered_per_nonzero_cell(self):
+        collection_ids = {el.get("id") for el in self.root.iter() if el.get("id") and el.get("id").startswith("PathCollection_")}
+        self.assertEqual(len(collection_ids), 3)  # one per (value_a, value_b) cell in self.cross_tab
+
+    def test_axis_labels_are_the_facet_names(self):
+        x_label = _find_by_id(self.root, "matplotlib.axis_1")
+        y_label = _find_by_id(self.root, "matplotlib.axis_2")
+        x_comments = [el.text.strip() for el in x_label.iter() if el.tag is ET.Comment]
+        y_comments = [el.text.strip() for el in y_label.iter() if el.tag is ET.Comment]
+        self.assertIn("dataset", x_comments)
+        self.assertIn("research_type", y_comments)
+
+    def test_tick_labels_are_the_sorted_category_values(self):
+        x_ticks = [el.text.strip() for el in _find_by_id(self.root, "matplotlib.axis_1").iter() if el.tag is ET.Comment]
+        y_ticks = [el.text.strip() for el in _find_by_id(self.root, "matplotlib.axis_2").iter() if el.tag is ET.Comment]
+        # "dataset" / "research_type" (the axis labels themselves) are also
+        # Comment nodes under the same axis group -- filter to just the
+        # category values this test cares about.
+        self.assertEqual([t for t in x_ticks if t in ("private", "public")], ["private", "public"])
+        self.assertEqual([t for t in y_ticks if t in ("evaluation", "validation")], ["evaluation", "validation"])
+
+    def test_count_annotations_match_input_counts(self):
+        annotation_texts = [el.text.strip() for el in self.root.iter() if el.tag is ET.Comment and el.text.strip() in ("1", "2", "3")]
+        self.assertEqual(sorted(annotation_texts), ["1", "2", "3"])
+
+    def test_bubble_area_is_proportional_to_count(self):
+        # The count=3 cell's marker must render measurably larger than the
+        # count=1 cell's -- area (not radius) proportional to count is the
+        # whole point of a Petersen-style bubble plot; this is what would
+        # break silently if a future edit switched back to radius-proportional
+        # sizing without anyone noticing.
+        def _marker_area(collection_id):
+            group = _find_by_id(self.root, collection_id)
+            path = next(el for el in group.iter() if el.tag == SVG_NS + "path")
+            # matplotlib emits the marker's own path once in <defs>, sized in
+            # points; the group's <use> just re-positions it -- the path's
+            # own bounding coordinates (from its "d" attribute's numeric
+            # extremes) are what scale with the requested marker size.
+            coords = [float(n) for n in re.findall(r"-?\d+\.?\d*", path.get("d"))]
+            return max(abs(c) for c in coords)
+
+        collection_ids = sorted(
+            (el.get("id") for el in self.root.iter() if el.get("id") and el.get("id").startswith("PathCollection_")),
+            key=lambda cid: _marker_area(cid),
+        )
+        # Smallest-to-largest marker must correspond to smallest-to-largest
+        # count for at least the two most different cells (count=1 vs count=3).
+        smallest_area = _marker_area(collection_ids[0])
+        largest_area = _marker_area(collection_ids[-1])
+        self.assertGreater(largest_area, smallest_area)
 
 
 def _find_by_id_or_none(root, element_id):

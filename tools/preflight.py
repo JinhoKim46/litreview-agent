@@ -15,10 +15,18 @@ Usage:
 Checks (both stages): the screening ledger's Item 16b reason gate, the
 ledger's hash-chain integrity, and search completeness / known-item recall
 (docs/PLAN.md decision 4 / tools/search_preflight.py). `--stage synthesize`
-additionally checks that a synthesis_plan.json exists (synthesis/
-run_synthesis.py will refuse to pool anything without one or an explicit
---model override, but failing this early -- before /prisma-extract's own
-work -- saves a wasted extraction pass).
+additionally checks that a synthesis_plan.json exists, but only when the
+resolved method manifest's synthesis.plan_required_for is non-empty
+(synthesis/run_synthesis.py will refuse to pool anything without one or an
+explicit --model override, but failing this early -- before
+/prisma-extract's own work -- saves a wasted extraction pass). A method
+that never pools at all (docs/PLAN.md M3: scoping_review,
+systematic_mapping_study -- synthesis.plan_required_for: []) has nothing
+this check could ever require, so it is skipped entirely rather than
+failing every such review forever: a real bug found and fixed while
+building M3's scoping-review golden fixture (tests/test_golden_scoping_
+pipeline.py), which otherwise had no synthesis_plan.json to ever satisfy
+this check with.
 
 Exit code 0 if every check passes, 1 if any fails (each failing check's
 name and detail are printed).
@@ -64,7 +72,7 @@ def run_checks(topic_dir, stage):
         },
     })
 
-    if stage == "synthesize":
+    if stage == "synthesize" and _method_ever_requires_a_plan(topic_dir):
         plan_exists = (topic_dir / "synthesis_plan.json").exists()
         checks.append({
             "name": "synthesis_plan_present", "ok": plan_exists,
@@ -75,6 +83,24 @@ def run_checks(topic_dir, stage):
         })
 
     return checks
+
+
+def _method_ever_requires_a_plan(topic_dir) -> bool:
+    """Whether this topic's resolved method manifest can ever need a
+    synthesis_plan.json at all (synthesis.plan_required_for non-empty).
+    Methods that never pool (scoping_review, systematic_mapping_study --
+    synthesis.plan_required_for: []) have nothing this check could require;
+    treated as "not applicable", never as a failure. Falls back to True on
+    any resolution error (an unresolvable/legacy topic keeps today's
+    fail-closed behavior rather than silently skipping the check)."""
+    from tools.method import MethodError
+    from tools.method import resolve as resolve_method
+
+    try:
+        manifest = resolve_method(Path(topic_dir).name)["manifest"]
+    except MethodError:
+        return True
+    return bool(manifest["synthesis"].get("plan_required_for"))
 
 
 def main(argv: list[str] | None = None) -> int:

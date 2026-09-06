@@ -145,6 +145,59 @@ def funnel_plot(studies, out_path):
     plt.close(fig)
 
 
+def bubble_plot(cross_tab, out_path):
+    """Render a Petersen et al. 2015-style bubble plot to `out_path` (SVG):
+    one axis per facet, a bubble at each (value_a, value_b) cell whose area
+    (not radius) is proportional to that cell's count -- Petersen's own
+    convention, so a cell with double the count doesn't visually read as
+    four times as prominent.
+
+    cross_tab: {"facet_a": str, "facet_b": str, "counts": {"valueA|valueB":
+    int, ...}} -- tools/chart_summary.compute_cross_tabs()'s own output
+    shape, one entry at a time. No hand-rolled counting here -- this only
+    draws numbers that function already computed.
+    """
+    facet_a = cross_tab["facet_a"]
+    facet_b = cross_tab["facet_b"]
+
+    cells = []
+    for key, count in cross_tab["counts"].items():
+        value_a, _, value_b = key.partition("|")
+        cells.append((value_a, value_b, count))
+
+    values_a = sorted({c[0] for c in cells})
+    values_b = sorted({c[1] for c in cells})
+    a_index = {v: i for i, v in enumerate(values_a)}
+    b_index = {v: i for i, v in enumerate(values_b)}
+
+    max_count = max((c[2] for c in cells), default=1)
+    max_radius_points = 30.0
+
+    fig_width = max(4.0, 1.2 * len(values_b) + 2)
+    fig_height = max(3.0, 1.0 * len(values_a) + 1.5)
+    fig, ax = plt.subplots(figsize=(fig_width, fig_height))
+
+    for value_a, value_b, count in cells:
+        x, y = b_index[value_b], a_index[value_a]
+        radius = max_radius_points * (count / max_count) ** 0.5
+        ax.scatter([x], [y], s=radius**2, color="#4c72b0", alpha=0.7, edgecolors="black", linewidths=0.5, zorder=3)
+        ax.annotate(str(count), (x, y), ha="center", va="center", fontsize=8, zorder=4)
+
+    ax.set_xticks(range(len(values_b)))
+    ax.set_xticklabels(values_b, rotation=30, ha="right")
+    ax.set_yticks(range(len(values_a)))
+    ax.set_yticklabels(values_a)
+    ax.set_xlabel(facet_b)
+    ax.set_ylabel(facet_a)
+    ax.set_xlim(-0.5, len(values_b) - 0.5)
+    ax.set_ylim(-0.5, len(values_a) - 0.5)
+    ax.grid(True, linestyle=":", alpha=0.4, zorder=0)
+    fig.tight_layout()
+
+    _atomic_savefig(fig, out_path, format="svg")
+    plt.close(fig)
+
+
 def rob_traffic_light_plot(studies, domain_labels, out_path, overall_key="overall"):
     """Render a Cochrane-RoB1-style "traffic light" plot to `out_path` (SVG):
     one row per study, one column per risk-of-bias domain plus an optional
