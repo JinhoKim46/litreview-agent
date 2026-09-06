@@ -1,7 +1,7 @@
 ---
 name: review-protocol
 description: "Elicit and record a systematic review's protocol: the research-question framework (PICO/PICo/SPIDER/other), eligibility criteria, and scope. Use whenever the user starts a new systematic review or meta-analysis, runs /prisma-init, mentions 'PICO', 'PICo', 'SPIDER', 'research question framework', 'eligibility criteria', 'inclusion criteria', 'exclusion criteria', 'protocol', 'PROSPERO', or asks 'is this study eligible' / 'should I include this paper' / 'does this study pass screening'. Also trigger mid-review whenever a screening or extraction step needs an eligibility ruling on a specific study, or when scope needs to change (e.g. adding a language, narrowing a population) partway through a review. Covers framework selection and elicitation questions plus the hard-gate-before-scoring eligibility check; it does not cover keyword expansion (see keyword-expansion) or manuscript drafting (see prisma-manuscript)."
-framework_version: 1.1.0
+framework_version: 1.2.0
 ---
 
 # Review Protocol
@@ -42,6 +42,10 @@ If no documents are provided, or after extracting what's available, gather the r
 2. **Framework-specific elicitation**: run the prompts from `01-question-frameworks.md` for the chosen framework.
 3. **Eligibility gates**: run the elicitation in `02-eligibility-criteria.md` — population match, study design, publication type, date range, and language-of-publication. Get explicit values for each; do not leave a gate undefined and call the protocol complete.
 4. **Scope**: global or national/regional (`mode: global|national`); if national, which region and whether keyword translation will be used. Flag known coverage gaps up front if the reviewer already knows a chosen source has weak coverage for the target region/language (e.g. "PubMed has weak Korean-language coverage") — this seeds `protocol.json.scope.coverage_gaps` rather than being discovered as a surprise later.
+5. **Quantitative synthesis plan** (only if the reviewer expects to pool any outcome statistically): ask whether they anticipate several included studies reporting the same measurement for the same comparison, such that pooling would make sense. If yes:
+   - Ask which pooling model is primary — **fixed-effect** (studies assumed to estimate one true effect; use when studies are clinically/methodologically similar) or **random-effects** (studies assumed to estimate related but different true effects; use when meaningful between-study variation is expected) — and a one-sentence justification. Never derive this choice from data that doesn't exist yet, and never suggest it will be decided later from the pooled studies' own heterogeneity statistics — that is exactly the correctness defect this elicitation step exists to prevent (`synthesis/heterogeneity.py`'s module docstring). Offer, but don't require, an initial guess of the minimum number of studies (`k_min`, default 2) they want before trusting a pooled estimate.
+   - Record the answer immediately as `results/<TOPIC>/synthesis_plan.json` (schema: `schemas/synthesis_plan.schema.json`), **before any search runs** — `signed_at` must be the actual current timestamp, since `/prisma-synthesize` compares it against the review's first search run to confirm the model really was prespecified rather than added after study selection (PRISMA 2020 item 13a-c and item 24c).
+   - If the reviewer isn't sure yet, don't write the file — `/prisma-synthesize` will refuse to run without either this file or an explicit one-off `--model` override, and re-running `/prisma-init` later to add it is always available.
 
 Use bounded-choice tooling (e.g. `AskUserQuestion`) where the options are a fixed list (framework choice, study-design gate values); use open questions for things like the actual research question text and free-text population description.
 
@@ -80,6 +84,21 @@ Write (or update) `results/<TOPIC>/protocol.json` with at minimum:
 `field_domain` is one of `clinical_medicine` | `biomedical_technical` | `non_biomedical`, from the Phase 1 elicitation above — `keyword-expansion` reads it to decide the MeSH axis's default.
 
 This file is read verbatim by `/prisma-search` (to build `search_plan.json`), `/prisma-screen` (to run the eligibility gate on each candidate record — see `02-eligibility-criteria.md`), and `/prisma-report` (Methods §2.2/§2.3). Never re-elicit these values from memory later in the pipeline — always read them from this file.
+
+If Phase 1 step 5 elicited a quantitative synthesis plan, write it as its own file, `results/<TOPIC>/synthesis_plan.json` (never a `protocol.json` sub-object — `synthesis/run_synthesis.py` reads it directly by that path):
+
+```json
+{
+  "model": "random",
+  "tau2_estimator": "dl",
+  "ci_method": "normal",
+  "k_min": 2,
+  "signed_at": "2026-09-06T10:12:00Z",
+  "justification": "Included trials are expected to vary in dose, population, and follow-up duration; a random-effects model better reflects that heterogeneity."
+}
+```
+
+`tau2_estimator` and `ci_method` currently accept only `"dl"` and `"normal"` respectively — do not offer other values yet, the schema (`schemas/synthesis_plan.schema.json`) will reject them.
 
 ## Running the eligibility gate mid-review
 

@@ -140,7 +140,7 @@ Work through the manuscript **one section at a time**, in academic register, fol
 - 2.7 Data items [10a, 10b] — the field set actually present in `extraction_table.json`.
 - 2.8 Study risk of bias assessment [Item 11] — tool named per `synthesis/rob_table.json` (RoB1/NOS, per `quality-appraisal/01-risk-of-bias.md`).
 - 2.9 Effect measures [Item 12] — from `synthesis/effect_sizes.json` per outcome; "Not applicable" only for outcomes with no synthesis data at all.
-- 2.10 Synthesis methods [13a–13f] — per outcome group: pooling model and heterogeneity method (fixed vs. random, from `synthesis/heterogeneity.json`'s `choose_model` decision) for poolable outcomes; narrative/thematic synthesis and the recorded `reason` for non-poolable ones. Address every applicable sub-item.
+- 2.10 Synthesis methods [13a–13f] — per outcome group: the pooling model prespecified in `synthesis_plan.json` and reported in `synthesis/effect_sizes.json`'s `model`/`model_source` fields (state plainly when `model_source` is `"post_hoc"` or `"cli_override"` rather than `"protocol"` — PRISMA 2020 item 24c requires disclosing an analysis specified after study selection) for poolable outcomes; narrative/thematic synthesis and the recorded `reason` for non-poolable ones. Address every applicable sub-item.
 - 2.11 Reporting bias assessment [Item 14] — funnel-plot assessment only where a plot was generated (≥10 studies per outcome); otherwise state it could not be formally assessed.
 - 2.12 Certainty assessment [Item 15] — GRADE approach from `synthesis/grade_table.json`.
 

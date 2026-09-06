@@ -1,0 +1,61 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://prisma-flow.local/schemas/synthesis_plan.schema.json",
+  "title": "synthesis_plan.json",
+  "description": "A systematic review's pooling model, prespecified at protocol time (PRISMA 2020 item 13a-c) so /prisma-synthesize never selects fixed vs random effects from the data's own heterogeneity statistics. Read by synthesis/run_synthesis.py; written by the review-protocol skill during /prisma-init (or hand-edited for a legacy topic, with retrospective:true).",
+  "type": "object",
+  "required": ["model", "signed_at"],
+  "additionalProperties": false,
+  "properties": {
+    "model": {
+      "type": "string",
+      "enum": ["fixed", "random"],
+      "description": "The primary pooling model for every poolable outcome in this review. The other model is always computed too and reported under effect_sizes.json's per-outcome \"sensitivity\" field -- this field only decides which one is primary."
+    },
+    "tau2_estimator": {
+      "type": "string",
+      "enum": ["dl"],
+      "default": "dl",
+      "description": "Random-effects between-study variance estimator. Only DerSimonian-Laird ships in Phase 0; \"pm\" (Paule-Mandel) arrives in a later PR (docs/PLAN.md PR p0-10-re-estimators)."
+    },
+    "ci_method": {
+      "type": "string",
+      "enum": ["normal"],
+      "default": "normal",
+      "description": "Confidence-interval method for the pooled estimate. Only the normal-approximation CI ships in Phase 0; \"hksj\" (modified Hartung-Knapp-Sidik-Jonkman) arrives with tau2_estimator:\"pm\" (docs/PLAN.md PR p0-10-re-estimators)."
+    },
+    "k_min": {
+      "type": "integer",
+      "minimum": 2,
+      "default": 2,
+      "description": "Minimum number of studies with usable effect data required to pool an outcome group. Raise this above the architectural floor of 2 to require more evidence before trusting a pooled estimate; an outcome group below this threshold falls back to narrative synthesis, same as today's k<2 gate."
+    },
+    "pooling_unit": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "identity_fields": {
+          "type": "array",
+          "items": {"type": "string"},
+          "minItems": 1,
+          "description": "Fields that must match across studies for their effect estimates to be treated as the same pooling unit (e.g. [\"dataset\", \"acceleration\", \"metric_definition\"] for a benchmark-tabulation review). Schema only in Phase 0 -- the core predicate that refuses pooling across non-identical units arrives later (docs/PLAN.md M5)."
+        }
+      },
+      "description": "Optional; declares what \"the same outcome\" means for this review beyond the outcome name and measure type. Most clinical reviews omit this."
+    },
+    "signed_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the reviewer signed this plan. Compared against the earliest raw/*.json search-run timestamp to decide whether pooling was actually prespecified (model_source \"protocol\") or added after study selection (model_source \"post_hoc\", rendered per PRISMA 2020 item 24c)."
+    },
+    "justification": {
+      "type": "string",
+      "description": "One or two sentences on why this model (and, if set, this k_min/pooling_unit) was chosen -- not required by the schema, but expected by review-protocol's elicitation."
+    },
+    "retrospective": {
+      "type": "boolean",
+      "default": false,
+      "description": "Set true only for a legacy topic migrated after search/screening already happened, where signed_at cannot honestly predate the first search run. Suppresses the post_hoc auto-detection; the report must still disclose that pooling was not prespecified."
+    }
+  }
+}

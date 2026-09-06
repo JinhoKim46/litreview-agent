@@ -138,7 +138,7 @@ Once `protocol.json` and `search_plan.json` both exist and are verified, present
 
 > **Review initialized: `results/<TOPIC>/`**
 >
-> - **Title:** [title from protocol.json] - **Framework:** [framework] — [one-line summary of the framework fields] - **Scope:** [Global | National/Regional: <region>], [N] coverage gap(s) noted - **Eligibility gates set:** population, study design, publication type, date range, language - **Search plan:** confirmed query strings for all six sources (OpenAlex, Crossref, Semantic Scholar, PubMed, Europe PMC, arXiv)
+> - **Title:** [title from protocol.json] - **Framework:** [framework] — [one-line summary of the framework fields] - **Scope:** [Global | National/Regional: <region>], [N] coverage gap(s) noted - **Eligibility gates set:** population, study design, publication type, date range, language - **Search plan:** confirmed query strings for all six sources (OpenAlex, Crossref, Semantic Scholar, PubMed, Europe PMC, arXiv) - **Synthesis plan:** [prespecified <fixed|random>-effects model, signed <date> | not set — /prisma-synthesize will need a --model override or a later /prisma-init update if this review ends up pooling anything]
 >
 > **Next:** run `/prisma-search` to run the connector CLIs against the confirmed search plan and build the deduplicated record ledger.
 
