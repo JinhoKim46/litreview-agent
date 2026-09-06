@@ -75,6 +75,7 @@ ALLOWED_PERMISSIONS = {
     "Bash(python3 tools/label_gate.py:*)",
     "Bash(python3 tools/charting_gate.py:*)",
     "Bash(python3 tools/classification_gate.py:*)",
+    "Bash(python3 tools/chart_summary.py:*)",
     "Bash(gh repo view:*)",
 }
 

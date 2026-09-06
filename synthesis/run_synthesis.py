@@ -794,6 +794,36 @@ def main():
         print(f"Error: {exc}", file=sys.stderr)
         return 1
 
+    if families_allowed is not None and "pairwise_iv" not in families_allowed and "descriptive" in families_allowed:
+        # A descriptive-only manifest (today: scoping_review,
+        # systematic_mapping_study -- both families_allowed == ["descriptive"]):
+        # dispatch to the descriptive synthesis engine instead of ever
+        # reaching resolve_synthesis_plan(), which would otherwise refuse via
+        # DESCRIPTIVE_NOT_IMPLEMENTED. This condition reads "descriptive-only",
+        # not "descriptive-capable" -- a future manifest allowing both
+        # pairwise_iv and descriptive would need this rewritten to consult the
+        # review's actual chosen synthesis_family instead of inferring it from
+        # families_allowed; no such manifest ships yet. resolve_synthesis_plan()
+        # and run()'s own DESCRIPTIVE_NOT_IMPLEMENTED/SWIM_NOT_IMPLEMENTED
+        # raises stay reserved for any caller that bypasses main() entirely,
+        # and for synthesis_family="swim", still genuinely unimplemented.
+        from tools.chart_summary import ChartSummaryError
+        from tools.chart_summary import run as run_chart_summary
+
+        try:
+            result = run_chart_summary(args.topic)
+        except ChartSummaryError as exc:
+            print(f"Error: {exc}", file=sys.stderr)
+            return 1
+        n_facets = len(result["category_frequencies"])
+        print(
+            f"capture_mode={result['capture_mode']} (synthesis_family=\"descriptive\", no pooling). "
+            f"{result['n_studies']} studies tabulated across {n_facets} field(s)/facet(s), "
+            f"{len(result['cross_tabs'])} cross-tab(s). Wrote descriptive_summary.json to "
+            f"{safe_topic_path(args.topic, 'synthesis')}"
+        )
+        return 0
+
     try:
         plan = resolve_synthesis_plan(args.topic, args.model, safe_topic_path, families_allowed=families_allowed)
     except (SynthesisPlanError, jsonschema.exceptions.ValidationError) as exc:
