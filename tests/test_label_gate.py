@@ -284,6 +284,48 @@ class BlockerTests(unittest.TestCase):
         self.assertNotIn("references_verified", names)
 
 
+class ChartingBlockerTests(unittest.TestCase):
+    SLUG = "label-gate-charting-blocker-test-topic"
+
+    def setUp(self):
+        self.topic_dir = path_policy.RESULTS_ROOT / self.SLUG
+        if self.topic_dir.exists():
+            shutil.rmtree(self.topic_dir)
+        os.makedirs(self.topic_dir, exist_ok=True)
+        _write_json(str(self.topic_dir / "protocol.json"), {"signed_at": "2026-01-01T00:00:00Z", "method": {"id": "scoping_review"}})
+        _write_json(str(self.topic_dir / "manuscript" / "references_verified.json"), {"verified": True})
+
+    def tearDown(self):
+        if self.topic_dir.exists():
+            shutil.rmtree(self.topic_dir)
+
+    def test_no_charting_table_does_not_block(self):
+        # No studies charted yet -- an absent, unfrozen table is vacuously fine.
+        blockers = label_gate.compute_blockers(self.SLUG)
+        names = {b["blocker"] for b in blockers}
+        self.assertNotIn("charting_table_matches_frozen_fields", names)
+
+    def test_frozen_table_with_matching_rows_does_not_block(self):
+        _write_json(str(self.topic_dir / "charting_table.json"), {
+            "charting_form_frozen": True, "fields": ["year"],
+            "studies": [{"record_id": "r1", "data": {"year": 2024}}],
+        })
+        blockers = label_gate.compute_blockers(self.SLUG)
+        names = {b["blocker"] for b in blockers}
+        self.assertNotIn("charting_table_matches_frozen_fields", names)
+
+    def test_frozen_table_with_drifted_row_blocks(self):
+        # A row written without ever calling charting_gate.check_gate first --
+        # the write path has no other enforcement, so this is what catches it.
+        _write_json(str(self.topic_dir / "charting_table.json"), {
+            "charting_form_frozen": True, "fields": ["year"],
+            "studies": [{"record_id": "bad1", "data": {"year": 2024, "venue": "extra"}}],
+        })
+        blockers = label_gate.compute_blockers(self.SLUG)
+        names = {b["blocker"] for b in blockers}
+        self.assertIn("charting_table_matches_frozen_fields", names)
+
+
 class ForbiddenFormLintTests(unittest.TestCase):
     def setUp(self):
         from tools.method import list_manifests

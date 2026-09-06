@@ -29,18 +29,23 @@ State the resolved `<TOPIC>` back to the reviewer before proceeding.
 
 ---
 
-## Step 0.5: Confirm This Review's Capture Stage Is Extraction
+## Step 0.5: Confirm This Review's Capture Stage, and Route Charting Elsewhere
 
-`/prisma-extract` only builds `extraction_table.json`, which is what a method manifest's `capture.mode: "extraction"` policy calls for (`methods/systematic_review.json`). A different method (a scoping review's `capture.mode: "charting"`, a systematic mapping study's `"classification"`) uses a different capture stage entirely — running this command's extraction logic against one of those would silently produce the wrong artifact instead of the one that review actually needs.
+`/prisma-extract`'s own steps below build `extraction_table.json`, which is what a method manifest's `capture.mode: "extraction"` policy calls for (`methods/systematic_review.json`). A different method uses a different capture stage entirely — running this command's extraction logic against one of those would silently produce the wrong artifact instead of the one that review actually needs.
 
 Run this exact command via the `Bash` tool (pre-allowlisted — `Bash(python3 tools/method.py:*)`):
 
 ```bash
-python3 tools/method.py --topic <TOPIC> --require-capture-mode extraction
+python3 tools/method.py --topic <TOPIC>
 ```
 
-1. If it exits non-zero (prints `"refused": true`), **stop the entire command.** Tell the reviewer plainly which method this review is using (`method_id` in the printed JSON) and that `/prisma-extract` doesn't apply to it — point at `docs/ROADMAP.md`'s method taxonomy for what does (as of this writing, charting/classification support for scoping reviews and systematic mapping studies has no shipped command yet; say so rather than imply one exists). Never attempt to "extract" from a charting- or classification-mode review anyway just because the reviewer wants a table.
-2. If it exits `0`, continue to Step 1. This is the deterministic decision this step exists to make — do not second-guess it by reading `protocol.json` yourself and deciding capture mode "seems fine."
+Read the printed `capture_mode`:
+
+1. **`"extraction"`**: continue to Step 1 below, unchanged.
+2. **`"charting"`** (`methods/scoping_review.json`): do not run any of this file's remaining steps. Load and follow `.claude/skills/evidence-mapping/SKILL.md` instead — it builds `charting_table.json` with its own pilot/freeze/chart workflow. Tell the reviewer plainly that this review is a scoping review and charting (not extraction) is the applicable stage, then hand off to that skill for the rest of this run.
+3. **`"classification"`** (`methods/systematic_mapping_study.json`) or any other value: **stop the entire command.** No classification-stage skill or command exists yet — tell the reviewer plainly which method this review uses and that no command supports its capture stage yet, pointing at `docs/ROADMAP.md`'s method taxonomy rather than implying one exists. Never attempt to "extract" from a classification-mode review anyway just because the reviewer wants a table.
+
+This is a deterministic decision `tools/method.py` makes — do not second-guess it by reading `protocol.json` yourself and deciding capture mode "seems fine."
 
 ---
 
