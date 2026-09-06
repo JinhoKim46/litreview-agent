@@ -64,6 +64,8 @@ ALLOWED_PERMISSIONS = {
     "Bash(python3 tools/security_guards.py:*)",
     "Bash(python3 -m unittest discover:*)",
     "Bash(python3 tools/export_report.py:*)",
+    "Bash(python3 tools/ledger.py:*)",
+    "Bash(python3 tools/flow_counts.py:*)",
     "Bash(gh repo view:*)",
 }
 
