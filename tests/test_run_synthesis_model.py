@@ -7,6 +7,7 @@ this replaces is covered by tests/test_synthesis_heterogeneity.py's
 regression guard.
 """
 import json
+import math
 import os
 import sys
 import tempfile
@@ -118,6 +119,27 @@ class ResolveSynthesisPlanTests(unittest.TestCase):
             plan = resolve_synthesis_plan("t", None, _fake_safe_topic_path(tmp))
             self.assertEqual(plan["k_min"], 5)
 
+    def test_explicit_pm_and_hksj_preserved(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            os.makedirs(os.path.join(tmp, "raw"))
+            _write_plan(tmp, model="random", signed_at="2026-01-01T00:00:00Z",
+                        tau2_estimator="pm", ci_method="hksj")
+            plan = resolve_synthesis_plan("t", None, _fake_safe_topic_path(tmp))
+            self.assertEqual(plan["tau2_estimator"], "pm")
+            self.assertEqual(plan["ci_method"], "hksj")
+
+    def test_invalid_tau2_estimator_in_plan_raises_schema_error(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            _write_plan(tmp, model="random", signed_at="2026-01-01T00:00:00Z", tau2_estimator="reml")
+            with self.assertRaises(jsonschema.exceptions.ValidationError):
+                resolve_synthesis_plan("t", None, _fake_safe_topic_path(tmp))
+
+    def test_invalid_ci_method_in_plan_raises_schema_error(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            _write_plan(tmp, model="random", signed_at="2026-01-01T00:00:00Z", ci_method="bootstrap")
+            with self.assertRaises(jsonschema.exceptions.ValidationError):
+                resolve_synthesis_plan("t", None, _fake_safe_topic_path(tmp))
+
 
 def _rr_study(record_id, events_t, total_t, events_c, total_c):
     return {
@@ -177,6 +199,61 @@ class RunModelAndSensitivityTests(unittest.TestCase):
             het = next(h for h in result["heterogeneity"] if h["outcome"] == "PONV")
             self.assertFalse(het["pooled"])
             self.assertIn("need >= 5", het["reason"])
+
+    def test_tau2_estimator_and_ci_method_threaded_through(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = self._fixture_path(tmp)
+            result = run(path, os.path.join(tmp, "out"), model="random", tau2_estimator="pm", ci_method="hksj")
+            es = next(e for e in result["effect_sizes"] if e["outcome"] == "PONV")
+            self.assertEqual(es["tau2_estimator"], "pm")
+            self.assertEqual(es["ci_method"], "hksj")
+            self.assertEqual(es["pooled_effect"]["tau2_estimator"], "pm")
+            self.assertEqual(es["pooled_effect"]["ci_method"], "hksj")
+            # the sensitivity (fixed) pool uses the same prespecified
+            # estimator/ci_method -- never silently reverts to defaults
+            self.assertEqual(es["sensitivity"]["tau2_estimator"], "pm")
+            self.assertEqual(es["sensitivity"]["ci_method"], "hksj")
+            het = next(h for h in result["heterogeneity"] if h["outcome"] == "PONV")
+            self.assertEqual(het["tau2_estimator"], "pm")
+            self.assertEqual(het["ci_method"], "hksj")
+
+    def test_default_tau2_estimator_and_ci_method_are_dl_and_normal(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = self._fixture_path(tmp)
+            result = run(path, os.path.join(tmp, "out"), model="fixed")  # no override -- defaults
+            es = next(e for e in result["effect_sizes"] if e["outcome"] == "PONV")
+            self.assertEqual(es["tau2_estimator"], "dl")
+            self.assertEqual(es["ci_method"], "normal")
+
+    def test_prediction_interval_present_for_random_model_at_k_three(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = self._fixture_path(tmp)  # 3 studies -- k=3 >= PI_MIN_K
+            result = run(path, os.path.join(tmp, "out"), model="random")
+            es = next(e for e in result["effect_sizes"] if e["outcome"] == "PONV")
+            self.assertIsNotNone(es["pooled_effect"]["pi_low"])
+            self.assertIsNotNone(es["pooled_effect"]["pi_high"])
+            self.assertIsNotNone(es["display_pi_low"])
+            self.assertIsNotNone(es["display_pi_high"])
+            # RR scale -- display PI must be exponentiated like the CI/estimate
+            self.assertAlmostEqual(math.exp(es["pooled_effect"]["pi_low"]), es["display_pi_low"], places=9)
+
+    def test_prediction_interval_absent_for_fixed_model(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = self._fixture_path(tmp)
+            result = run(path, os.path.join(tmp, "out"), model="fixed")
+            es = next(e for e in result["effect_sizes"] if e["outcome"] == "PONV")
+            self.assertIsNone(es["pooled_effect"]["pi_low"])
+            self.assertIsNone(es["display_pi_low"])
+
+    def test_forest_plot_svg_written_when_prediction_interval_present(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = self._fixture_path(tmp)
+            result = run(path, os.path.join(tmp, "out"), model="random")
+            es = next(e for e in result["effect_sizes"] if e["outcome"] == "PONV")
+            self.assertTrue(os.path.exists(es["forest_plot_svg"]))
+            with open(es["forest_plot_svg"]) as f:
+                svg = f.read()
+            self.assertIn("Prediction Interval", svg)
 
 
 if __name__ == "__main__":

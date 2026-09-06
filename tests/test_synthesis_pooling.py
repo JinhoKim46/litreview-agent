@@ -28,6 +28,8 @@ import os
 import sys
 import unittest
 
+from scipy import stats
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from synthesis.pooling import pool_effects
@@ -158,6 +160,219 @@ class PoolEffectsWorkedExampleTests(unittest.TestCase):
                 result = pool_effects(effects, variances, model)
                 self.assertLess(result["ci_low"], result["pooled_effect"])
                 self.assertLess(result["pooled_effect"], result["ci_high"])
+
+
+class PauleMandelTests(unittest.TestCase):
+    """Paule-Mandel tau2 has no closed form -- it's defined as the tau2 that
+    solves Q(tau2) = k-1 (DerSimonian & Kacker 2007 Appendix 8). Rather than
+    re-implementing the iterative solver independently (duplicating
+    statsmodels' own algorithm risks the same bug in both places), these
+    tests verify the returned tau2_pm actually satisfies that defining
+    equation -- an independent correctness check on the *property* PM tau2
+    must have, not a re-derivation of how to compute it."""
+
+    def _q_at(self, effects, variances, tau2):
+        w = [1 / (v + tau2) for v in variances]
+        sum_w = sum(w)
+        mean = sum(wi * e for wi, e in zip(w, effects)) / sum_w
+        return sum(wi * (e - mean) ** 2 for wi, e in zip(w, effects))
+
+    def test_pm_tau2_satisfies_defining_equation_fig3(self):
+        effects, variances = _log_rr_inputs(FIG3_STUDIES)
+        result = pool_effects(effects, variances, "random", tau2_estimator="pm")
+        self.assertEqual(result["tau2_estimator"], "pm")
+        df = len(effects) - 1
+        self.assertAlmostEqual(self._q_at(effects, variances, result["tau2"]), df, delta=1e-4)
+
+    def test_pm_tau2_satisfies_defining_equation_fig4(self):
+        effects, variances = _log_rr_inputs(FIG4_STUDIES)
+        result = pool_effects(effects, variances, "random", tau2_estimator="pm")
+        df = len(effects) - 1
+        self.assertAlmostEqual(self._q_at(effects, variances, result["tau2"]), df, delta=1e-4)
+
+    def test_pm_differs_from_dl_on_heterogeneous_data(self):
+        effects, variances = _log_rr_inputs(FIG3_STUDIES)
+        dl = pool_effects(effects, variances, "random", tau2_estimator="dl")
+        pm = pool_effects(effects, variances, "random", tau2_estimator="pm")
+        # Not required to differ by any particular amount, but on this
+        # genuinely heterogeneous worked example they should not coincide --
+        # if they did, that would suggest tau2_estimator is being ignored.
+        self.assertNotAlmostEqual(dl["tau2"], pm["tau2"], places=3)
+
+    def test_pm_fixed_effect_pool_still_reports_zero_tau2(self):
+        # tau2_estimator only matters for the random branch -- a fixed pool
+        # has no between-study variance to estimate either way.
+        effects, variances = _log_rr_inputs(FIG4_STUDIES)
+        result = pool_effects(effects, variances, "fixed", tau2_estimator="pm")
+        self.assertEqual(result["tau2"], 0.0)
+
+    def test_invalid_tau2_estimator_raises(self):
+        with self.assertRaises(ValueError):
+            pool_effects([0.1, 0.2], [0.01, 0.02], "random", tau2_estimator="reml")
+
+
+class NegativeTau2TruncationTests(unittest.TestCase):
+    """statsmodels' DL/chi2 branch does not floor tau2 at 0 internally
+    (unlike its Paule-Mandel iterative solver, which does) -- for
+    sufficiently homogeneous data this can produce a negative raw tau2.
+    Cochrane Handbook 10.10.4.2 (and every widely used implementation)
+    truncates a negative between-study-variance estimate to 0, at which
+    point the random-effects weights equal the fixed-effects weights
+    exactly -- so the truncated random pool must equal the fixed pool."""
+
+    def test_homogeneous_subset_truncates_and_matches_fixed(self):
+        effects, variances = _log_rr_inputs(FIG4_STUDIES[:4])  # triggers negative raw DL tau2
+        fixed = pool_effects(effects, variances, "fixed")
+        random = pool_effects(effects, variances, "random")
+        self.assertTrue(random["tau2_truncated"])
+        self.assertEqual(random["tau2"], 0.0)
+        self.assertEqual(random["pooled_effect"], fixed["pooled_effect"])
+        self.assertEqual(random["se"], fixed["se"])
+        self.assertEqual(random["ci_low"], fixed["ci_low"])
+        self.assertEqual(random["ci_high"], fixed["ci_high"])
+
+    def test_fixed_model_tau2_truncated_always_false(self):
+        effects, variances = _log_rr_inputs(FIG4_STUDIES[:4])
+        result = pool_effects(effects, variances, "fixed")
+        self.assertFalse(result["tau2_truncated"])
+
+    def test_heterogeneous_data_not_truncated(self):
+        effects, variances = _log_rr_inputs(FIG3_STUDIES)  # genuinely heterogeneous -- tau2 > 0
+        result = pool_effects(effects, variances, "random")
+        self.assertFalse(result["tau2_truncated"])
+        self.assertGreater(result["tau2"], 0.0)
+
+    def test_pm_estimator_never_reports_truncation(self):
+        # Paule-Mandel's own iterative solver already floors at 0 -- this
+        # module's truncation logic only ever fires for tau2_estimator="dl".
+        effects, variances = _log_rr_inputs(FIG4_STUDIES[:4])
+        result = pool_effects(effects, variances, "random", tau2_estimator="pm")
+        self.assertFalse(result["tau2_truncated"])
+        self.assertGreaterEqual(result["tau2"], 0.0)
+
+
+class HksjConfidenceIntervalTests(unittest.TestCase):
+    """The modified HKSJ CI uses an estimated-scale SE (statsmodels'
+    var_hksj_re/var_hksj_fe) and a t-distribution critical value with
+    df=k-1, instead of the fixed-scale SE + normal critical value the
+    "normal" ci_method uses. Verified against the exact formula statsmodels
+    documents for var_hksj_re/var_hksj_fe (Hartung & Knapp; Sidik & Jonkman),
+    independently recomputed here from the same raw effects/variances."""
+
+    def _hksj_se(self, effects, variances, tau2):
+        w = [1 / (v + tau2) for v in variances]
+        sum_w = sum(w)
+        w_rel = [wi / sum_w for wi in w]
+        mean = sum(wi * e for wi, e in zip(w, effects)) / sum_w
+        df = len(effects) - 1
+        var_hksj = sum(wi * (e - mean) ** 2 for wi, e in zip(w_rel, effects)) / df
+        return var_hksj ** 0.5
+
+    def test_hksj_se_matches_independent_formula_random(self):
+        effects, variances = _log_rr_inputs(FIG3_STUDIES)
+        result = pool_effects(effects, variances, "random", ci_method="hksj")
+        expected_se = self._hksj_se(effects, variances, result["tau2"])
+        self.assertAlmostEqual(result["se"], expected_se, places=9)
+
+    def test_hksj_se_differs_from_normal_se(self):
+        effects, variances = _log_rr_inputs(FIG3_STUDIES)
+        normal = pool_effects(effects, variances, "random", ci_method="normal")
+        hksj = pool_effects(effects, variances, "random", ci_method="hksj")
+        self.assertNotAlmostEqual(normal["se"], hksj["se"], places=6)
+
+    def test_hksj_uses_t_distribution_not_normal(self):
+        # With df=k-1 and k=8 (FIG3), t.isf(0.025, 7) > norm.isf(0.025) --
+        # the HKSJ half-width-to-SE ratio must exceed the normal 1.959964
+        # multiplier, confirming the t-critical value (not the normal one)
+        # is actually being used.
+        effects, variances = _log_rr_inputs(FIG3_STUDIES)
+        result = pool_effects(effects, variances, "random", ci_method="hksj")
+        half_width = (result["ci_high"] - result["ci_low"]) / 2
+        implied_multiplier = half_width / result["se"]
+        self.assertGreater(implied_multiplier, 1.959964)
+
+    def test_ci_caution_below_five_studies(self):
+        effects, variances = _log_rr_inputs(FIG4_STUDIES[:4])  # k=4
+        result = pool_effects(effects, variances, "random", ci_method="hksj")
+        self.assertIsNotNone(result["ci_caution"])
+        self.assertIn("k=4", result["ci_caution"])
+
+    def test_no_ci_caution_at_or_above_five_studies(self):
+        effects, variances = _log_rr_inputs(FIG4_STUDIES)  # k=7
+        result = pool_effects(effects, variances, "random", ci_method="hksj")
+        self.assertIsNone(result["ci_caution"])
+
+    def test_no_ci_caution_for_normal_method_regardless_of_k(self):
+        effects, variances = _log_rr_inputs(FIG4_STUDIES[:3])  # k=3, would warn under hksj
+        result = pool_effects(effects, variances, "random", ci_method="normal")
+        self.assertIsNone(result["ci_caution"])
+
+    def test_invalid_ci_method_raises(self):
+        with self.assertRaises(ValueError):
+            pool_effects([0.1, 0.2], [0.01, 0.02], "random", ci_method="bootstrap")
+
+
+class PredictionIntervalTests(unittest.TestCase):
+    """95% prediction interval for a new study's true effect (Higgins,
+    Thompson & Spiegelhalter 2009): pooled +/- t(df=k-2, 0.025) *
+    sqrt(tau2 + se^2). Verified against that formula, independently applied
+    here with scipy directly rather than via pool_effects' own computation."""
+
+    def test_pi_matches_formula_when_k_at_least_three(self):
+        effects, variances = _log_rr_inputs(FIG4_STUDIES)  # k=7
+        result = pool_effects(effects, variances, "random")
+        expected_half_width = stats.t.isf(0.025, len(effects) - 2) * math.sqrt(result["tau2"] + result["se"] ** 2)
+        self.assertAlmostEqual(result["pi_high"] - result["pooled_effect"], expected_half_width, places=9)
+        self.assertAlmostEqual(result["pooled_effect"] - result["pi_low"], expected_half_width, places=9)
+
+    def test_pi_none_below_three_studies(self):
+        effects, variances = _log_rr_inputs(FIG4_STUDIES[:2])  # k=2
+        result = pool_effects(effects, variances, "random")
+        self.assertIsNone(result["pi_low"])
+        self.assertIsNone(result["pi_high"])
+
+    def test_pi_present_at_exactly_three_studies(self):
+        effects, variances = _log_rr_inputs(FIG4_STUDIES[:3])  # k=3, df=1
+        result = pool_effects(effects, variances, "random")
+        self.assertIsNotNone(result["pi_low"])
+        self.assertIsNotNone(result["pi_high"])
+
+    def test_pi_none_for_fixed_effect_model(self):
+        # A fixed-effect model assumes no between-study variance -- predicting
+        # a new study's true effect from it is not a meaningful question.
+        effects, variances = _log_rr_inputs(FIG4_STUDIES)
+        result = pool_effects(effects, variances, "fixed")
+        self.assertIsNone(result["pi_low"])
+        self.assertIsNone(result["pi_high"])
+
+    def test_pi_brackets_pooled_effect(self):
+        effects, variances = _log_rr_inputs(FIG3_STUDIES)
+        result = pool_effects(effects, variances, "random")
+        self.assertLess(result["pi_low"], result["pooled_effect"])
+        self.assertLess(result["pooled_effect"], result["pi_high"])
+
+    def test_pi_wider_than_ci(self):
+        # The PI must always be wider than the CI for the mean -- it adds
+        # tau2 (between-study variance) on top of the CI's se^2 alone.
+        effects, variances = _log_rr_inputs(FIG3_STUDIES)
+        result = pool_effects(effects, variances, "random")
+        self.assertGreater(result["pi_high"] - result["pi_low"], result["ci_high"] - result["ci_low"])
+
+
+class DlRegressionUnchangedTests(unittest.TestCase):
+    """Explicit defaults (tau2_estimator="dl", ci_method="normal") must be
+    byte-identical to calling pool_effects with the old 3-positional-arg
+    signature -- the new keyword-only parameters must never change existing
+    callers' behavior."""
+
+    def test_explicit_defaults_match_bare_call(self):
+        for studies in (FIG3_STUDIES, FIG4_STUDIES):
+            effects, variances = _log_rr_inputs(studies)
+            for model in ("fixed", "random"):
+                bare = pool_effects(effects, variances, model)
+                explicit = pool_effects(effects, variances, model, tau2_estimator="dl", ci_method="normal")
+                for key in ("pooled_effect", "se", "ci_low", "ci_high", "tau2"):
+                    self.assertEqual(bare[key], explicit[key], key)
 
 
 class PoolEffectsEdgeCaseTests(unittest.TestCase):
