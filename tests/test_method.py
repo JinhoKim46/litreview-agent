@@ -28,8 +28,12 @@ class ListManifestsTests(unittest.TestCase):
         self.assertEqual(manifest["capture"]["mode"], "charting")
         self.assertEqual(manifest["synthesis"]["families_allowed"], ["descriptive"])
         self.assertEqual(manifest["appraisal"]["requirement"], "optional_with_justification")
-        # §2.4: scoping reviews are never downgraded for single screening.
-        self.assertEqual(manifest["label_rules"]["requires"], [])
+        # §2.4: scoping reviews are never downgraded for single screening --
+        # the only requires[] check is min_index_families, which always
+        # resolves to "not_recorded" (a disclosure, never a downgrade),
+        # never second_reviewer_involvement_in_selection or any other
+        # hard-gate check.
+        self.assertEqual(manifest["label_rules"]["requires"], [{"check": "min_index_families", "value": 2}])
         self.assertEqual(manifest["label_rules"]["label"], "scoping review")
 
     def test_systematic_mapping_study_manifest_loads_and_validates(self):
@@ -40,7 +44,7 @@ class ListManifestsTests(unittest.TestCase):
         self.assertEqual(manifest["capture"]["mode"], "classification")
         self.assertEqual(manifest["search"]["controlled_vocab"], "none")
         self.assertEqual(manifest["synthesis"]["families_allowed"], ["descriptive"])
-        self.assertEqual(manifest["label_rules"]["requires"], [])
+        self.assertEqual(manifest["label_rules"]["requires"], [{"check": "min_index_families", "value": 2}])
 
     def test_schema_and_routing_files_never_treated_as_manifests(self):
         manifests = method.list_manifests()

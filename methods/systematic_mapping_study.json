@@ -2,7 +2,7 @@
   "id": "systematic_mapping_study",
   "label": "Systematic mapping study",
   "aliases": ["SMS", "systematic map", "mapping review"],
-  "version": "1.0.0",
+  "version": "1.1.0",
   "family": "mapping",
   "question_frameworks": ["Petersen RQs", "Wieringa research types"],
   "search": {
@@ -27,7 +27,7 @@
   ],
   "label_rules": {
     "label": "systematic mapping study",
-    "requires": [],
+    "requires": [{"check": "min_index_families", "value": 2}],
     "profile_labels": {},
     "otherwise": {},
     "disclosures": [

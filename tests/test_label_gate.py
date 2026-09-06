@@ -208,9 +208,11 @@ class LabelGateFixtureTests(unittest.TestCase):
 
     def test_scoping_review_never_downgraded_for_single_screening(self):
         # docs/PLAN.md M3 / §2.4: "Scoping/mapping reviews are never
-        # downgraded for single screening" -- unlike systematic_review,
-        # scoping_review's label_rules.requires is empty, so a single
-        # screener changes nothing about the label itself.
+        # downgraded for single screening" -- scoping_review's only
+        # requires[] check is min_index_families, which always resolves to
+        # "not_recorded" and is never a hard-gate check, so a single
+        # screener changes nothing about the label; it surfaces only as a
+        # disclosure.
         _write_json(str(self.topic_dir / "protocol.json"), {"signed_at": "2026-01-01T00:00:00Z", "method": {"id": "scoping_review"}})
         self._write_ledger([
             {"record_id": "r1", "stage": "title_abstract", "decision": "include", "by": "solo-reviewer", "role": "decision"},
@@ -218,6 +220,7 @@ class LabelGateFixtureTests(unittest.TestCase):
         result = label_gate.compute_label(self.SLUG)
         self.assertEqual(result["label"], "scoping review")
         self.assertEqual(result["missing"], [])
+        self.assertIn("min_index_families", result["disclosures"])
 
     def test_systematic_mapping_study_never_downgraded_for_single_screening(self):
         _write_json(str(self.topic_dir / "protocol.json"), {"signed_at": "2026-01-01T00:00:00Z", "method": {"id": "systematic_mapping_study"}})
