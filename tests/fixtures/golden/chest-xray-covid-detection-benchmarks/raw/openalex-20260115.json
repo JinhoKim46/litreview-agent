@@ -1,0 +1,13 @@
+{
+  "meta": {"source": "openalex", "query": "(\"COVID-19\" OR \"SARS-CoV-2\") AND (\"chest radiograph\" OR \"chest X-ray\") AND (\"deep learning\" OR \"convolutional neural network\")", "retrieved": 2, "total_available": 2, "truncated": false, "fetched_at": "2026-01-15T00:00:00Z"},
+  "results": [
+    {"id": "CX1", "title": "Deep Learning for COVID-19 Detection on the COVIDx Chest Radiograph Dataset",
+     "authors": ["Nguyen T", "Park S"], "year": 2021, "venue": "IEEE Access",
+     "doi": "10.9000/cx001", "abstract": "A convolutional neural network trained and evaluated on the COVIDx dataset...",
+     "url": "https://doi.org/10.9000/cx001"},
+    {"id": "CX2", "title": "A Convolutional Neural Network Benchmark on the COVIDx Dataset for COVID-19 Screening",
+     "authors": ["Silva R"], "year": 2021, "venue": "Scientific Reports",
+     "doi": "10.9000/cx002", "abstract": "Benchmarking several CNN architectures on the COVIDx dataset...",
+     "url": "https://doi.org/10.9000/cx002"}
+  ]
+}

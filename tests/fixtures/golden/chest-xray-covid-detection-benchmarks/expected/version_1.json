@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "date": "REDACTED-FOR-GOLDEN-TEST",
+  "record_ids": [
+    "openalex:CX1",
+    "openalex:CX2"
+  ],
+  "n_records": 2,
+  "n_included": 2
+}

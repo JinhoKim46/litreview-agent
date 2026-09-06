@@ -1,0 +1,28 @@
+{
+  "id": "image_reconstruction",
+  "label": "MRI / medical image reconstruction (reproducibility & benchmarking)",
+  "version": "1.0.0",
+  "source_expectations": [
+    {"source": "OpenAlex", "role": "bibliographic", "standard": "PRISMA 2020 Item 6 (multidisciplinary bibliographic coverage)", "reachable_via": "openalex"},
+    {"source": "Crossref", "role": "bibliographic", "standard": "PRISMA 2020 Item 6 (DOI-registered scholarly metadata)", "reachable_via": "crossref"},
+    {"source": "Semantic Scholar", "role": "bibliographic", "standard": "PRISMA 2020 Item 6 (broad engineering/ML-literature coverage)", "reachable_via": "semanticscholar"},
+    {"source": "arXiv", "role": "preprint", "standard": "preprint-heavy field norm for reconstruction-methods papers (ISMRM/MICCAI-adjacent)", "reachable_via": "arxiv"},
+    {"source": "IEEE Xplore", "role": "bibliographic", "standard": "conduct: cross-check IEEE-indexed medical-imaging engineering venues", "reachable_via": null},
+    {"source": "A benchmark/challenge leaderboard (e.g. fastMRI, Grand Challenge)", "role": "grey", "standard": "benchmark/challenge-leaderboard reproducibility check", "reachable_via": null}
+  ],
+  "controlled_vocab": "none",
+  "search": {"primary_strategies_allowed": ["database"]},
+  "question_template": "does reconstruction method A, compared with method B, improve reconstruction-quality metric C on dataset D under acceleration/undersampling condition E?",
+  "framework_glosses": {
+    "Population": "imaging modality / anatomy / acquisition setting",
+    "Intervention": "reconstruction method or algorithm",
+    "Comparison": "baseline reconstruction method or fully-sampled reference",
+    "Outcome": "reconstruction-quality metric (e.g. PSNR, SSIM, NMSE) or downstream diagnostic performance"
+  },
+  "default_capture_fields": ["year", "modality", "acceleration_factor", "sampling_pattern", "dataset_id", "test_split", "reconstruction_method", "main_metric", "code_available"],
+  "appraisal_instruments_by_design": {},
+  "confidence_framework": "none",
+  "pooling_unit_identity_proposal": ["dataset", "acceleration", "mask", "coil_setting", "metric_definition"],
+  "preprint_eligibility_default": true,
+  "label_rule_additions": []
+}

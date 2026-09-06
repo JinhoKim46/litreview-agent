@@ -1,0 +1,13 @@
+{
+  "from_version": 1,
+  "to_version": 2,
+  "from_date": "REDACTED-FOR-GOLDEN-TEST",
+  "to_date": "REDACTED-FOR-GOLDEN-TEST",
+  "new_records": 1,
+  "new_record_ids": [
+    "openalex:CX3"
+  ],
+  "removed_records": 0,
+  "removed_record_ids": [],
+  "included_delta": 1
+}

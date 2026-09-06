@@ -85,6 +85,34 @@ def latest_raw_meta(topic_dir):
     return per_source
 
 
+def since_last_version(topic_dir):
+    """{"from_version", "to_version", "from_date", "to_date", "new_records",
+    "new_record_ids", "removed_records", "removed_record_ids",
+    "included_delta"} comparing this topic's last two recorded
+    protocol.json.versions[] entries (tools/versioning.py, docs/ROADMAP.md
+    M5's living-review mode) -- None if fewer than two versions have been
+    recorded yet (nothing to diff against). Reuses each version's own
+    stored record_id snapshot rather than re-deriving a historical record
+    set from records.jsonl, which only ever holds the *current* state --
+    a record present in an earlier version but reclassified as a
+    duplicate since would otherwise be invisible to this diff."""
+    protocol = load_json(topic_dir / "protocol.json")
+    versions = (protocol or {}).get("versions") or []
+    if len(versions) < 2:
+        return None
+    prev, latest = versions[-2], versions[-1]
+    prev_ids, latest_ids = set(prev.get("record_ids", [])), set(latest.get("record_ids", []))
+    new_ids = sorted(latest_ids - prev_ids)
+    removed_ids = sorted(prev_ids - latest_ids)
+    return {
+        "from_version": prev["version"], "to_version": latest["version"],
+        "from_date": prev["date"], "to_date": latest["date"],
+        "new_records": len(new_ids), "new_record_ids": new_ids,
+        "removed_records": len(removed_ids), "removed_record_ids": removed_ids,
+        "included_delta": latest.get("n_included", 0) - prev.get("n_included", 0),
+    }
+
+
 def compute(topic_dir):
     protocol = load_json(topic_dir / "protocol.json")
     search_plan = load_json(topic_dir / "search_plan.json")
@@ -177,6 +205,7 @@ def compute(topic_dir):
 
     return dict(
         topic=topic_dir.name, protocol=protocol, per_source=per_source,
+        delta=since_last_version(topic_dir),
         truncated_sources=truncated_sources, identified_total=identified_total,
         duplicates_removed=duplicates_removed, records_screened=records_screened,
         excluded_title_abstract=excluded_ta, sought_for_retrieval=sought_for_retrieval,
@@ -226,6 +255,20 @@ def print_full(s):
     ms = f"drafted ({s['manuscript_words']} words)" if s["manuscript_exists"] else "not drafted"
     print(f"  Manuscript: {ms}")
     print()
+
+    if s["delta"]:
+        d = s["delta"]
+        print(f"## Living-mode delta (version {d['from_version']} [{d['from_date']}] -> "
+              f"version {d['to_version']} [{d['to_date']}])")
+        print(f"  New records since last version: {d['new_records']}")
+        for rid in d["new_record_ids"][:20]:
+            print(f"    - {rid}")
+        if len(d["new_record_ids"]) > 20:
+            print(f"    ... and {len(d['new_record_ids']) - 20} more")
+        if d["removed_records"]:
+            print(f"  Records no longer canonical since last version (e.g. reclassified as duplicates): {d['removed_records']}")
+        print(f"  Included count change since last version: {d['included_delta']:+d}")
+        print()
 
     warnings = []
     if s["full_text_excludes_missing_reason"]:

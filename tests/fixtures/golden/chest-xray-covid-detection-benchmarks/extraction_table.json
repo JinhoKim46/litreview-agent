@@ -1,0 +1,94 @@
+{
+  "framework_version": "1.0.0",
+  "topic": "chest-xray-covid-detection-benchmarks",
+  "studies": [
+    {
+      "record_id": "openalex:CX1",
+      "author_year": "Nguyen & Park (2021)",
+      "country": "Vietnam",
+      "study_design": "diagnostic accuracy study",
+      "population": "Chest radiographs from the COVIDx benchmark dataset",
+      "intervention": "Custom CNN classifier for COVID-19 vs. non-COVID-19",
+      "comparator": "ResNet-50 baseline classifier",
+      "outcomes_measured": ["diagnostic accuracy"],
+      "sample_size": {"total": 200, "intervention": 200, "comparator": 200},
+      "key_findings": "The proposed CNN outperformed the ResNet-50 baseline on the COVIDx test split.",
+      "funding_source": null,
+      "notes": null,
+      "dataset_id": "covidx",
+      "test_split": "test",
+      "reports": [{"citation": "Nguyen T & Park S (2021). Deep Learning for COVID-19 Detection on the COVIDx Chest Radiograph Dataset. IEEE Access.",
+                   "doi": "10.9000/cx001", "url": "https://doi.org/10.9000/cx001"}],
+      "effect_data": [
+        {"outcome": "diagnostic accuracy", "measure_type": "RR", "timepoint": "held-out test split",
+         "intervention_arm": {"label": "proposed CNN", "events": 180, "total": 200},
+         "comparator_arm": {"label": "ResNet-50 baseline", "events": 150, "total": 200},
+         "source": {"quote": "The proposed model correctly classified 180/200 test cases versus 150/200 for the ResNet-50 baseline.",
+                    "locator": "Table 3", "notes": null}}
+      ],
+      "risk_of_bias": {
+        "tool": "RoB1",
+        "domains": {
+          "sequence_generation": {"judgement": "unclear", "support": "No randomization applicable (benchmark dataset split)."},
+          "allocation_concealment": {"judgement": "unclear", "support": "Not applicable to a fixed benchmark split."},
+          "blinding_participants_personnel": {"judgement": "low", "support": "Automated classification, no human blinding needed."},
+          "blinding_outcome_assessment": {"judgement": "low", "support": "Ground-truth labels fixed by dataset curators."},
+          "incomplete_outcome_data": {"judgement": "low", "support": "Full test split evaluated, no missing cases."},
+          "selective_reporting": {"judgement": "unclear", "support": "No pre-registered analysis plan found."},
+          "other_bias": {"judgement": "low", "support": "No other concerns identified."}
+        },
+        "overall_judgement": "unclear risk",
+        "assessed_by": "claude (single-rater first pass)",
+        "assessed_at": "2026-01-20T00:00:00Z"
+      },
+      "extraction_source": {"method": "interview", "url": null, "fetched_at": null},
+      "extracted_at": "2026-01-20T00:00:00Z",
+      "by": "claude (single extractor pass)",
+      "verified_by": null
+    },
+    {
+      "record_id": "openalex:CX2",
+      "author_year": "Silva (2021)",
+      "country": "Brazil",
+      "study_design": "diagnostic accuracy study",
+      "population": "Chest radiographs from the COVIDx benchmark dataset",
+      "intervention": "EfficientNet-based classifier for COVID-19 vs. non-COVID-19",
+      "comparator": "ResNet-50 baseline classifier",
+      "outcomes_measured": ["diagnostic accuracy"],
+      "sample_size": {"total": 190, "intervention": 190, "comparator": 190},
+      "key_findings": "The EfficientNet model outperformed the ResNet-50 baseline on the same COVIDx test split.",
+      "funding_source": null,
+      "notes": null,
+      "dataset_id": "covidx",
+      "test_split": "test",
+      "reports": [{"citation": "Silva R (2021). A Convolutional Neural Network Benchmark on the COVIDx Dataset for COVID-19 Screening. Scientific Reports.",
+                   "doi": "10.9000/cx002", "url": "https://doi.org/10.9000/cx002"}],
+      "effect_data": [
+        {"outcome": "diagnostic accuracy", "measure_type": "RR", "timepoint": "held-out test split",
+         "intervention_arm": {"label": "EfficientNet", "events": 170, "total": 190},
+         "comparator_arm": {"label": "ResNet-50 baseline", "events": 140, "total": 190},
+         "source": {"quote": "EfficientNet correctly classified 170/190 cases versus 140/190 for the ResNet-50 baseline on the same test split.",
+                    "locator": "Table 2", "notes": null}}
+      ],
+      "risk_of_bias": {
+        "tool": "RoB1",
+        "domains": {
+          "sequence_generation": {"judgement": "unclear", "support": "No randomization applicable (benchmark dataset split)."},
+          "allocation_concealment": {"judgement": "unclear", "support": "Not applicable to a fixed benchmark split."},
+          "blinding_participants_personnel": {"judgement": "low", "support": "Automated classification, no human blinding needed."},
+          "blinding_outcome_assessment": {"judgement": "low", "support": "Ground-truth labels fixed by dataset curators."},
+          "incomplete_outcome_data": {"judgement": "low", "support": "Full test split evaluated, no missing cases."},
+          "selective_reporting": {"judgement": "unclear", "support": "No pre-registered analysis plan found."},
+          "other_bias": {"judgement": "low", "support": "No other concerns identified."}
+        },
+        "overall_judgement": "unclear risk",
+        "assessed_by": "claude (single-rater first pass)",
+        "assessed_at": "2026-01-20T00:00:00Z"
+      },
+      "extraction_source": {"method": "interview", "url": null, "fetched_at": null},
+      "extracted_at": "2026-01-20T00:00:00Z",
+      "by": "claude (single extractor pass)",
+      "verified_by": null
+    }
+  ]
+}

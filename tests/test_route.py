@@ -303,7 +303,7 @@ class PackSourceCoverageTests(unittest.TestCase):
         self.assertIn("ACM Digital Library", unreachable_sources)
 
     def test_unshipped_pack_id_returns_none(self):
-        self.assertIsNone(route.pack_source_coverage("medical_imaging_prediction"))
+        self.assertIsNone(route.pack_source_coverage("some_future_pack_not_yet_shipped"))
 
 
 class MainCliPackFieldsTests(unittest.TestCase):
