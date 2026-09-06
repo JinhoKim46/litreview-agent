@@ -1,0 +1,133 @@
+{
+  "table_version": "1.0.0",
+  "_comment": "Versioned decision table for tools/route.py (docs/PLAN.md M2; references/docs/design/multi-method-consensus.md §2.2). First-matching-row wins. A row whose target has no shipped methods/*.json manifest yet (checked dynamically against tools/method.list_manifests(), not hardcoded here) is evaluated as a refusal regardless of its own 'then' -- see tools/route.py's SHIPPED-only gate. Rows R4 and R6 from the consensus doc's pseudocode are flattened into ordered sub-rows (R4a-R4d, R6a-R6f) so first-match-wins is expressible as a flat, testable list instead of nested branches; the flattening preserves the original evaluation order exactly.",
+  "rows": [
+    {
+      "id": "R0",
+      "source": "q0.human_judgement == update_external -> systematic_review, update_of = {citation}",
+      "when": {"q0.human_judgement": {"eq": "update_external"}},
+      "then": {"kind": "resolve", "method_id": "systematic_review", "note": "a review update (Garner 2016): new protocol + PRISMA 2020 items 3/24 disclosure; NOT living mode -- caller must supply update_of citation"}
+    },
+    {
+      "id": "R1",
+      "source": "goal ∋ update -> LIVING(base) if a completed base exists in results/<TOPIC>/ else ASK(\"which completed review?\")",
+      "when": {"goal": {"contains": "update"}},
+      "then": {"kind": "living_or_ask", "base_exists_key": "base_exists", "ask": "which completed review?"}
+    },
+    {
+      "id": "R2",
+      "source": "goal ∋ overview or evidence_type == existing reviews -> REFUSE{umbrella_review (v2)}; offer scoping_review",
+      "when": {"any": [{"goal": {"contains": "overview"}}, {"evidence_type": {"eq": "existing_reviews"}}]},
+      "then": {"kind": "refuse", "reason": "umbrella_review (v2)", "pointer": "PRIOR 2022", "offer": ["scoping_review"], "explain": "describes reviews, does not appraise them"}
+    },
+    {
+      "id": "R3",
+      "source": "goal ∩ {orient, prior_work, background} ≠ ∅ or question_focus == forming -> reconnaissance",
+      "when": {"any": [{"goal": {"intersects": ["orient", "prior_work", "background"]}}, {"question_focus": {"eq": "forming"}}]},
+      "then": {"kind": "resolve", "method_id": "reconnaissance", "output_profiles_from_goal": {"prior_work": "prior_work_check", "background": "background_section"}}
+    },
+    {
+      "id": "R4a",
+      "source": "goal ∋ map: evidence_type == algorithm/benchmark -> systematic_mapping_study if venue_default == cs_se",
+      "when": {"all": [{"goal": {"contains": "map"}}, {"evidence_type": {"eq": "algorithm"}}, {"venue_default": {"eq": "cs_se"}}]},
+      "then": {"kind": "resolve", "method_id": "systematic_mapping_study", "note": "user may switch"}
+    },
+    {
+      "id": "R4b",
+      "source": "goal ∋ map: evidence_type == algorithm/benchmark -> else scoping_review if venue_default != cs_se",
+      "when": {"all": [{"goal": {"contains": "map"}}, {"evidence_type": {"eq": "algorithm"}}]},
+      "then": {"kind": "resolve", "method_id": "scoping_review", "note": "user may switch"}
+    },
+    {
+      "id": "R4c",
+      "source": "goal ∋ map: matrix dimensions requested -> REFUSE{egm (v2)} offer scoping_review",
+      "when": {"all": [{"goal": {"contains": "map"}}, {"matrix_dimensions_requested": {"eq": true}}]},
+      "then": {"kind": "refuse", "reason": "evidence_and_gap_map (v2)", "pointer": "Campbell EGM guidance (White et al. 2020)", "offer": ["scoping_review"]}
+    },
+    {
+      "id": "R4d",
+      "source": "goal ∋ map: else -> scoping_review",
+      "when": {"goal": {"contains": "map"}},
+      "then": {"kind": "resolve", "method_id": "scoping_review"}
+    },
+    {
+      "id": "R5",
+      "source": "goal ∋ answer and question_focus == forming -> scoping_review, explain(\"your question is not yet answerable; map first\")",
+      "_flagged": "As literally ordered in the consensus doc, R3's own 'or question_focus == forming' clause is unconditional on goal, so it already matches every forming case before evaluation reaches any later row -- not just this one. R5 is the most visible casualty (always shadowed), but the same clause also shadows R4's map-specific sub-cases (a 'map' goal with question_focus=forming resolves via R3 to reconnaissance, never reaching R4a-R4d's algorithm/venue logic) and, most seriously, R6a's qualitative REFUSE (an 'answer' goal with evidence_type=qualitative and question_focus=forming resolves via R3 to reconnaissance instead of hitting R6a's hard refusal, which exists specifically so a qualitative question never resolves to anything but a refusal -- see the fallback rule below: routing must never fall sideways for a question type the tool cannot report correctly). Left exactly as specified (not silently reordered on a guess about intent) since routing behaviour decides which review type a reviewer is told to run, and for the R6a case, whether a qualitative question fails closed at all; flagged in the PR body for a human to disambiguate whether R3's forming clause should exclude goal ∋ answer and/or goal ∋ map.",
+      "when": {"all": [{"goal": {"contains": "answer"}}, {"question_focus": {"eq": "forming"}}]},
+      "then": {"kind": "resolve", "method_id": "scoping_review", "explain": "your question is not yet answerable; map first"}
+    },
+    {
+      "id": "R6a",
+      "source": "goal ∋ answer: evidence_type == qualitative -> REFUSE{meta_aggregation (later)}; offer scoping_review only -- never SR",
+      "when": {"all": [{"goal": {"contains": "answer"}}, {"evidence_type": {"eq": "qualitative"}}]},
+      "then": {"kind": "refuse", "reason": "meta_aggregation (later)", "pointer": "ENTREQ 2012 / JBI Manual", "offer": ["scoping_review"], "never": ["systematic_review"]}
+    },
+    {
+      "id": "R6b",
+      "source": "goal ∋ answer: evidence_type == mixed -> REFUSE{mixed_methods (later)}; offer \"two linked topics: SR + scoping\"",
+      "when": {"all": [{"goal": {"contains": "answer"}}, {"evidence_type": {"eq": "mixed"}}]},
+      "then": {"kind": "refuse", "reason": "mixed_methods_systematic_review (later)", "pointer": "PRISMA 2020 + ENTREQ; JBI MMSR", "offer": ["systematic_review", "scoping_review"], "explain": "two linked topics: SR + scoping"}
+    },
+    {
+      "id": "R6c",
+      "source": "goal ∋ answer: evidence_type == test-accuracy/model -> REFUSE{dta_narrative (v2)}; offer scoping_review",
+      "when": {"all": [{"goal": {"contains": "answer"}}, {"evidence_type": {"eq": "test_accuracy_or_model"}}]},
+      "then": {"kind": "refuse", "reason": "dta_narrative (v2)", "pointer": "PRISMA-DTA 2018 / TRIPOD-SRMA 2023", "offer": ["scoping_review"]}
+    },
+    {
+      "id": "R6d",
+      "source": "goal ∋ answer: evidence_type == algorithm/benchmark -> scoping_review or systematic_mapping_study (v1)",
+      "when": {"all": [{"goal": {"contains": "answer"}}, {"evidence_type": {"eq": "algorithm"}}, {"venue_default": {"eq": "cs_se"}}]},
+      "then": {"kind": "resolve", "method_id": "systematic_mapping_study", "note": "v1 fallback; v2 routes to systematic_review + structured_survey (pooling forbidden). venue_default reused from R4a/b as the same disambiguator -- not explicit in the source pseudocode, flagged for reviewer confirmation."}
+    },
+    {
+      "id": "R6d2",
+      "source": "goal ∋ answer: evidence_type == algorithm/benchmark -> else scoping_review (v1)",
+      "when": {"all": [{"goal": {"contains": "answer"}}, {"evidence_type": {"eq": "algorithm"}}]},
+      "then": {"kind": "resolve", "method_id": "scoping_review", "note": "v1 fallback; v2 routes to systematic_review + structured_survey (pooling forbidden)."}
+    },
+    {
+      "id": "R6e",
+      "source": "goal ∋ answer: evidence_type in {trials, observational}: expects_pooling == yes -> systematic_review, family = pairwise_iv",
+      "when": {"all": [{"goal": {"contains": "answer"}}, {"evidence_type": {"in": ["trials", "observational"]}}, {"expects_pooling": {"eq": "yes"}}]},
+      "then": {"kind": "resolve", "method_id": "systematic_review", "synthesis_family": "pairwise_iv", "note": "plan signed at protocol"}
+    },
+    {
+      "id": "R6f",
+      "source": "goal ∋ answer: evidence_type in {trials, observational}: else -> systematic_review, family = structured_narrative (swim if rows are directional effects)",
+      "when": {"all": [{"goal": {"contains": "answer"}}, {"evidence_type": {"in": ["trials", "observational"]}}]},
+      "then": {"kind": "resolve", "method_id": "systematic_review", "synthesis_family": "structured_narrative", "note": "swim is a capture-time reclassification (directional-effect rows), not a routing decision"}
+    }
+  ],
+  "profile_offers": {
+    "source": "R7 profile offers (SR only), applied after the primary rows resolve a result",
+    "rules": [
+      {
+        "id": "R7-afternoon-answer",
+        "source": "time_budget == afternoon and goal ∋ answer -> reconnaissance ONLY, explain(...)",
+        "when": {"all": [{"result.method_id": {"eq": "systematic_review"}}, {"time_budget": {"eq": "afternoon"}}, {"goal": {"contains": "answer"}}]},
+        "then": {"kind": "override", "method_id": "reconnaissance", "explain": "you can find what exists today; deciding whether it works takes weeks -- here is the path to that if you want it later"}
+      },
+      {
+        "id": "R7-single-reviewer",
+        "source": "reviewers == 1 -> offer single_reviewer (verification sample menu); predicted label shown now",
+        "when": {"all": [{"result.method_id": {"eq": "systematic_review"}}, {"reviewers": {"eq": 1}}]},
+        "then": {"kind": "offer_profile", "profile": "single_reviewer"}
+      },
+      {
+        "id": "R7-rapid",
+        "source": "time_budget <= weeks -> offer rapid (RRMG shortcuts menu)",
+        "when": {"all": [{"result.method_id": {"eq": "systematic_review"}}, {"time_budget": {"in": ["afternoon", "week"]}}]},
+        "then": {"kind": "offer_profile", "profile": "rapid"}
+      }
+    ]
+  },
+  "appraisal_intent_note": {
+    "id": "R8",
+    "source": "appraisal_intent == yes and RESULT in {scoping_review, systematic_mapping_study, reconnaissance} -> keep RESULT; explain(...)",
+    "when": {"all": [{"appraisal_intent": {"eq": "yes"}}, {"result.method_id": {"in": ["scoping_review", "systematic_mapping_study", "reconnaissance"]}}]},
+    "then": {"kind": "annotate", "explain_template": "{method} does not appraise; if you need certainty claims you need an SR, which costs more"}
+  },
+  "fallback_rule": "Routing may only fall down the claims ladder (-> scoping -> reconnaissance) or refuse. It never falls sideways into an SR label for a question type the tool cannot synthesise or report correctly (qualitative, mixed, review-of-reviews, diagnostic accuracy in v1). A fallback is recorded as fallback_reason and printed verbatim in the manuscript's Methods."
+}
