@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://prisma-flow.local/schemas/relevance_tags_table.schema.json",
+  "title": "relevance_tags_table.json",
+  "description": "A reconnaissance topic's tagged-candidate table (docs/ROADMAP.md M4). Written by the reconnaissance-brief skill once a method manifest's capture.mode is \"relevance_tags\" -- see methods/_schema.json's capture.mode enum and tools/method.py's resolve(). Unlike charting_table.json / classification_table.json, there is no frozen field/facet form here: a reconnaissance brief tags each candidate with free-text relevance facets rather than co-developing and freezing a fixed form, so this schema has no freeze-gate concept at all.",
+  "type": "object",
+  "required": ["framework_version", "topic", "studies"],
+  "additionalProperties": false,
+  "properties": {
+    "framework_version": {"type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$"},
+    "topic": {"type": "string"},
+    "studies": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["record_id", "facet_tags", "by"],
+        "additionalProperties": false,
+        "properties": {
+          "record_id": {"type": "string"},
+          "facet_tags": {
+            "type": "array",
+            "items": {"type": "string"},
+            "description": "Free-text relevance facets this candidate is closest on (e.g. \"population\", \"method\") -- the \"closest on: [facet]\" tags a prior-work-check output prints, never a frozen/co-developed field list."
+          },
+          "claim": {
+            "type": ["object", "null"],
+            "default": null,
+            "additionalProperties": false,
+            "description": "At most one quoted claim with provenance per candidate, the same provenance shape extraction_table.json / charting_table.json rows use.",
+            "properties": {
+              "quote": {"type": ["string", "null"]},
+              "page": {"type": ["string", "null"]},
+              "hash": {"type": ["string", "null"], "description": "sha256 of the exact source text `quote` was taken from, so a later reviewer can verify it wasn't altered."}
+            }
+          },
+          "by": {"type": "string"}
+        }
+      }
+    }
+  }
+}

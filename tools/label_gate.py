@@ -338,6 +338,11 @@ FORBIDDEN_FORM_PATTERNS = {
     "no_prior_work": [r"\bno\s+prior\s+work\b", r"\ball\s+relevant\s+studies\b"],
     "first_to": [r"\bfirst\s+to\b", r"\bwe\s+are\s+the\s+first\b"],
     "novelty": [r"\bnovel(?:ty)?\b", r"\bproves\b", r"\bsaturat\w*\b"],
+    # docs/ROADMAP.md M4 (reconnaissance): a brief never describes itself as
+    # having run the formal screening/eligibility process only a real
+    # evidence-synthesis method's ledger and label conduct-floor can earn.
+    "screening_vocabulary": [r"\btitle-abstract\s+screen(?:ing|ed)?\b", r"\bfull-text\s+screen(?:ing|ed)?\b", r"\bscreened\s+(?:for\s+)?(?:inclusion|eligibility)\b"],
+    "eligibility_vocabulary": [r"\beligibility\s+criteria\b", r"\binclusion\s+criteria\b", r"\bexclusion\s+criteria\b"],
 }
 
 

@@ -396,6 +396,45 @@ class ForbiddenFormLintTests(unittest.TestCase):
             label_gate.lint_text("text", self.manifest, context="bogus")
 
 
+class ReconnaissanceForbiddenFormLintTests(unittest.TestCase):
+    """docs/ROADMAP.md M4: reconnaissance's own forbidden_forms
+    (screening_vocabulary, eligibility_vocabulary) are declared in the
+    manifest and must have real patterns wired in FORBIDDEN_FORM_PATTERNS --
+    an unknown form name in a manifest silently matches nothing rather than
+    erroring (see lint_text's FORBIDDEN_FORM_PATTERNS.get(form, [])), which
+    would make the declaration a lie if these patterns didn't exist."""
+
+    def setUp(self):
+        from tools.method import list_manifests
+        self.manifest = list_manifests()["reconnaissance"]
+
+    def test_hard_failure_on_screening_vocabulary(self):
+        result = label_gate.lint_text("Records underwent full-text screening against our criteria.",
+                                       self.manifest, context="templated_output")
+        self.assertTrue(result["hard_failures"])
+        self.assertEqual(result["hard_failures"][0]["form"], "screening_vocabulary")
+
+    def test_hard_failure_on_eligibility_vocabulary(self):
+        result = label_gate.lint_text("Candidates were assessed against explicit inclusion criteria.",
+                                       self.manifest, context="templated_output")
+        self.assertTrue(result["hard_failures"])
+        self.assertEqual(result["hard_failures"][0]["form"], "eligibility_vocabulary")
+
+    def test_hard_failure_still_fires_on_no_prior_work_and_saturation(self):
+        # ROADMAP's literal exit criterion: "never claims no prior work or
+        # saturation" -- both already covered by the base no_prior_work/
+        # novelty patterns reconnaissance inherits.
+        no_prior = label_gate.lint_text("There is no prior work on this topic.", self.manifest, context="templated_output")
+        self.assertEqual(no_prior["hard_failures"][0]["form"], "no_prior_work")
+        saturation = label_gate.lint_text("The search reached saturation after 40 records.", self.manifest, context="templated_output")
+        self.assertEqual(saturation["hard_failures"][0]["form"], "novelty")
+
+    def test_ordinary_prior_work_language_does_not_trip_the_lint(self):
+        text = "Closest on population: three prior studies address a similar cohort."
+        result = label_gate.lint_text(text, self.manifest, context="templated_output")
+        self.assertEqual(result["hard_failures"], [])
+
+
 class WriteLabelJsonTests(unittest.TestCase):
     SLUG = "label-gate-write-test-topic"
 
