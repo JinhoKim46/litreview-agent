@@ -128,6 +128,42 @@ class KnownItemRecallTests(unittest.TestCase):
             result = search_preflight.known_item_recall(tmp)
             self.assertEqual(len(result["missing"]), 1)
 
+    def test_all_recon_db_provenance_flags_non_independent_gold_set(self):
+        # docs/ROADMAP.md M4: a promoted reconnaissance topic's gold set is
+        # circular until an externally-sourced known item is added.
+        with tempfile.TemporaryDirectory() as tmp:
+            _write_json(Path(tmp) / "protocol.json", {"known_items": [
+                {"id_type": "doi", "id": "10.1/x", "provenance": "recon-db"},
+            ]})
+            self._write_records(tmp, [{"record_id": "crossref:10.1/x", "doi": "10.1/x"}])
+            result = search_preflight.known_item_recall(tmp)
+            self.assertTrue(result["non_independent_gold_set"])
+            self.assertEqual(result["checked_excluding_recon_seeds"], 0)
+            self.assertEqual(result["found_excluding_recon_seeds"], 0)
+            self.assertEqual(result["found"][0]["provenance"], "recon-db")
+
+    def test_one_external_known_item_clears_non_independent_gold_set(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            _write_json(Path(tmp) / "protocol.json", {"known_items": [
+                {"id_type": "doi", "id": "10.1/x", "provenance": "recon-db"},
+                {"id_type": "doi", "id": "10.1/y"},  # no provenance -- independently sourced
+            ]})
+            self._write_records(tmp, [
+                {"record_id": "crossref:10.1/x", "doi": "10.1/x"},
+                {"record_id": "crossref:10.1/y", "doi": "10.1/y"},
+            ])
+            result = search_preflight.known_item_recall(tmp)
+            self.assertFalse(result["non_independent_gold_set"])
+            self.assertEqual(result["checked_excluding_recon_seeds"], 1)
+            self.assertEqual(result["found_excluding_recon_seeds"], 1)
+
+    def test_no_known_items_never_flags_non_independent_gold_set(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            _write_json(Path(tmp) / "protocol.json", {})
+            self._write_records(tmp, [])
+            result = search_preflight.known_item_recall(tmp)
+            self.assertFalse(result["non_independent_gold_set"])
+
 
 class SearchStatusTests(unittest.TestCase):
     def test_unacknowledged_missing_known_items_excludes_justified_ones(self):
@@ -148,6 +184,17 @@ class SearchStatusTests(unittest.TestCase):
             status = search_preflight.search_status(tmp)
             self.assertEqual(status["unacknowledged_incomplete_sources"], [])
             self.assertEqual(status["unacknowledged_missing_known_items"], [])
+            self.assertNotIn("non_independent_gold_set_notice", status)
+
+    def test_all_recon_db_known_items_prints_notice(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            _write_json(Path(tmp) / "protocol.json", {"known_items": [
+                {"id_type": "doi", "id": "10.1/x", "provenance": "recon-db"},
+            ]})
+            with open(Path(tmp) / "records.jsonl", "w"):
+                pass
+            status = search_preflight.search_status(tmp)
+            self.assertIn("non-independent gold set", status["non_independent_gold_set_notice"])
 
 
 class MainCliTests(unittest.TestCase):

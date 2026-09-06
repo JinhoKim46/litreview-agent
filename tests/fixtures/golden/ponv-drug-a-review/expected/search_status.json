@@ -18,6 +18,7 @@
       {
         "id_type": "doi",
         "id": "10.1111/aaa",
+        "provenance": null,
         "matched_record_id": "crossref:C2001"
       }
     ],
@@ -25,10 +26,14 @@
       {
         "id_type": "doi",
         "id": "10.9999/zzz",
+        "provenance": null,
         "note": "grey-literature conference report cited in a related review",
         "expected_missing_reason": "grey literature, not indexed by any enabled connector"
       }
-    ]
+    ],
+    "checked_excluding_recon_seeds": 2,
+    "found_excluding_recon_seeds": 1,
+    "non_independent_gold_set": false
   },
   "unacknowledged_missing_known_items": []
 }

@@ -15,12 +15,19 @@ measured checks instead of an unverified impression.
 
 2. **Known-item recall** — `protocol.json.known_items` (optional; a list
    of `{"id_type": "doi"|"pmid", "id": "...", "note": "...",
-   "expected_missing_reason": "..."}`) are DOIs/PMIDs the reviewer already
-   knows are relevant, checked against `records.jsonl` by the same
-   normalization `tools/dedup.py` uses for its doi/pmid dedup tiers. A
-   known item that isn't found is "unacknowledged" unless its own
+   "expected_missing_reason": "...", "provenance": "..."}`) are DOIs/PMIDs
+   the reviewer already knows are relevant, checked against `records.jsonl`
+   by the same normalization `tools/dedup.py` uses for its doi/pmid dedup
+   tiers. A known item that isn't found is "unacknowledged" unless its own
    `expected_missing_reason` is set (e.g. "grey-literature report, not
-   indexed by any enabled source").
+   indexed by any enabled source"). A known item promoted from a
+   reconnaissance topic (docs/ROADMAP.md M4; `tools/promote_reconnaissance.py`)
+   carries `provenance: "recon-db"` -- checking recall against those alone
+   would be circular (they were found by the same search being evaluated),
+   so they're reported separately and excluded from the "real" recall
+   count; `non_independent_gold_set` is true whenever every known item on
+   record is `recon-db`-sourced, cleared once at least one externally
+   sourced known item exists.
 
 Recall classification here is deliberately simple (found vs missing):
 richer index-miss-vs-string-miss classification (was this a translation
@@ -109,14 +116,27 @@ def _index_records_by_doi_and_pmid(records):
 
 
 def known_item_recall(topic_dir):
-    """{"checked": int, "found": [...], "missing": [...]} -- each entry
-    carries id_type/id/note (and matched_record_id for "found", or the
-    original expected_missing_reason for "missing")."""
+    """{"checked": int, "found": [...], "missing": [...],
+    "checked_excluding_recon_seeds": int, "found_excluding_recon_seeds":
+    int, "non_independent_gold_set": bool} -- each found/missing entry
+    carries id_type/id/note/provenance (and matched_record_id for "found",
+    or the original expected_missing_reason for "missing").
+
+    `_excluding_recon_seeds` counts and `non_independent_gold_set` treat a
+    known item with `provenance: "recon-db"` (promoted from a
+    reconnaissance topic, tools/promote_reconnaissance.py) as a seed, not
+    independent evidence the search actually works: checking recall
+    against seeds alone would be circular, since the same search that
+    produced them is the one being evaluated. `non_independent_gold_set`
+    is true exactly when every known item on record is a recon-db seed
+    (and at least one known item exists at all)."""
     topic_dir = Path(topic_dir)
     protocol = _load_json(topic_dir / "protocol.json") or {}
     known_items = protocol.get("known_items") or []
     if not known_items:
-        return {"checked": 0, "found": [], "missing": []}
+        return {"checked": 0, "found": [], "missing": [],
+                "checked_excluding_recon_seeds": 0, "found_excluding_recon_seeds": 0,
+                "non_independent_gold_set": False}
 
     records = []
     records_path = topic_dir / "records.jsonl"
@@ -127,7 +147,7 @@ def known_item_recall(topic_dir):
 
     found, missing = [], []
     for item in known_items:
-        id_type, raw_id = item.get("id_type"), item.get("id")
+        id_type, raw_id, provenance = item.get("id_type"), item.get("id"), item.get("provenance")
         if id_type == "doi":
             key = ("doi", normalize_doi(raw_id))
         elif id_type == "pmid":
@@ -136,11 +156,19 @@ def known_item_recall(topic_dir):
             key = (None, None)  # unrecognized id_type -- can never match, reported as missing
         matched_record_id = index.get(key)
         if matched_record_id:
-            found.append({"id_type": id_type, "id": raw_id, "matched_record_id": matched_record_id})
+            found.append({"id_type": id_type, "id": raw_id, "provenance": provenance, "matched_record_id": matched_record_id})
         else:
-            missing.append({"id_type": id_type, "id": raw_id, "note": item.get("note"),
+            missing.append({"id_type": id_type, "id": raw_id, "provenance": provenance, "note": item.get("note"),
                              "expected_missing_reason": item.get("expected_missing_reason")})
-    return {"checked": len(known_items), "found": found, "missing": missing}
+
+    non_seed_items = [i for i in known_items if i.get("provenance") != "recon-db"]
+    non_seed_found = [f for f in found if f.get("provenance") != "recon-db"]
+    return {
+        "checked": len(known_items), "found": found, "missing": missing,
+        "checked_excluding_recon_seeds": len(non_seed_items),
+        "found_excluding_recon_seeds": len(non_seed_found),
+        "non_independent_gold_set": bool(known_items) and not non_seed_items,
+    }
 
 
 def search_status(topic_dir):
@@ -153,12 +181,19 @@ def search_status(topic_dir):
     recall = known_item_recall(topic_dir)
     unacknowledged_items = [i for i in recall["missing"] if not i.get("expected_missing_reason")]
 
-    return {
+    result = {
         "sources": statuses,
         "unacknowledged_incomplete_sources": sorted(unacknowledged_sources),
         "known_item_recall": recall,
         "unacknowledged_missing_known_items": unacknowledged_items,
     }
+    if recall["non_independent_gold_set"]:
+        result["non_independent_gold_set_notice"] = (
+            "non-independent gold set: every known item on record came from this topic's own "
+            "reconnaissance search (provenance: \"recon-db\") -- recall is not yet validated against "
+            "anything external. Add an externally-sourced known item to clear this notice."
+        )
+    return result
 
 
 def main(argv: list[str] | None = None) -> int:

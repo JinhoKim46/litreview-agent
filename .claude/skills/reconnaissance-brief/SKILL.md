@@ -1,7 +1,7 @@
 ---
 name: reconnaissance-brief
 description: "Tag a reconnaissance topic's records for relevance into results/<TOPIC>/relevance_tags_table.json, then draft a landscape brief (and, optionally, a related-work section and a supplementary search log). Use whenever a review's resolved method manifest declares capture.mode: \"relevance_tags\" (methods/reconnaissance.json) -- /prisma-extract's Step 0.5 routes here instead of running extraction for that manifest. Has no freeze gate at all, unlike its two siblings: does not cover a scoping review's charting pilot/freeze workflow (capture.mode: \"charting\" -- see .claude/skills/evidence-mapping/SKILL.md) or a systematic mapping study's keywording/freeze/calibration workflow (capture.mode: \"classification\" -- see .claude/skills/study-classification/SKILL.md)."
-framework_version: 1.0.0
+framework_version: 1.0.1
 ---
 
 # Reconnaissance Brief (Relevance Tagging)
@@ -60,5 +60,5 @@ Every reference the brief cites still needs independent verification before the 
 - **Formal eligibility screening**: this method has none -- `/prisma-screen`'s ledger-based include/exclude workflow is for methods with `capture.mode` in `{extraction, charting, classification}`, never this one.
 - **Appraisal**: `appraisal.requirement: "none"` -- there is no quality-appraisal step for a reconnaissance topic at all, not even an optional one.
 - **Synthesis / pooling**: `synthesis.families_allowed: []` -- nothing is ever pooled or descriptively synthesized here; the corpus-description table in Phase 2 is a simple tally, not a synthesis-family output, and `/prisma-synthesize` does not apply to this method.
-- **Promotion to a full review** (same-topic hand-off via `handoff/`, the non-independent gold-set disclosure once a scoping/systematic review starts from this topic) is a distinct mechanism, not part of tagging or drafting -- see `docs/ROADMAP.md` M4 and whichever command implements the hand-off.
+- **Promotion to a full review** (same-topic hand-off via `handoff/`, the non-independent gold-set disclosure once a scoping/systematic review starts from this topic) is a distinct mechanism this skill never runs itself -- `python3 tools/promote_reconnaissance.py --topic <TOPIC> --new-method-id <id> --reason "<text>"` archives this topic's recon-stage artifacts to `recon/`, writes `handoff/`, and folds any recoverable gold-set candidate into `protocol.json.known_items[]` with `provenance: "recon-db"`.
 - **Charting** (`capture.mode: "charting"`) and **classification** (`capture.mode: "classification"`) are distinct workflows covered by `.claude/skills/evidence-mapping/SKILL.md` and `.claude/skills/study-classification/SKILL.md`, not this one.
