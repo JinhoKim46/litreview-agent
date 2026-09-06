@@ -31,7 +31,7 @@ A complete walkthrough from "I just cloned this" to "I have a drafted manuscript
   claude --version
   ```
 
-- **Python 3.10 or later.**
+- **Python 3.11 or later.**
 
   ```bash
   python3 --version   # macOS/Linux
