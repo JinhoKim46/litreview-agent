@@ -3,9 +3,11 @@
 Wraps statsmodels.stats.meta_analysis.combine_effects, which already
 implements inverse-variance fixed-effect pooling and DerSimonian-Laird
 random-effects pooling correctly -- the pooling formulas are not
-reimplemented here. `model` ("fixed" or "random") is decided upstream by
-synthesis.heterogeneity.choose_model and passed in verbatim; this module
-just reports the estimate for whichever model was chosen.
+reimplemented here. `model` ("fixed" or "random") is prespecified by the
+reviewer in synthesis_plan.json (schemas/synthesis_plan.schema.json), never
+chosen from this pair's own heterogeneity statistics; synthesis/run_synthesis.py
+calls this function once for the prespecified (primary) model and once more
+for the other model, reporting the latter as a sensitivity analysis.
 """
 import numpy as np
 from statsmodels.stats.meta_analysis import combine_effects
@@ -17,8 +19,8 @@ def pool_effects(effects, variances, model):
     Args:
         effects: per-study point estimates (e.g. log-OR, mean difference), same scale.
         variances: per-study variance of each effect estimate. Must be > 0.
-        model: "fixed" or "random" -- typically synthesis.heterogeneity.choose_model's
-            output for this same (effects, variances) pair.
+        model: "fixed" or "random" -- prespecified in synthesis_plan.json, never
+            derived from this same (effects, variances) pair's own statistics.
 
     Returns:
         dict with keys:

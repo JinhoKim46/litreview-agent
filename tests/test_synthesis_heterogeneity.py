@@ -23,7 +23,8 @@ import unittest
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from synthesis.heterogeneity import choose_model, compute_heterogeneity
+from synthesis import heterogeneity
+from synthesis.heterogeneity import compute_heterogeneity
 
 # Fig. 3: "Forest plot analyzed by two different models using the same data"
 # -- heterogeneous data. (experimental_events, experimental_total, control_events, control_total)
@@ -70,7 +71,6 @@ class ComputeHeterogeneityWorkedExampleTests(unittest.TestCase):
         self.assertAlmostEqual(result["Q"], 60.69, delta=1.0)
         self.assertAlmostEqual(result["I2"], 88.0, delta=1.0)
         self.assertLess(result["p_value"], 0.00001)
-        self.assertEqual(choose_model(result["I2"], result["p_value"]), "random")
 
     def test_fig4_homogeneous_data_matches_paper(self):
         effects, variances = _log_rr_inputs(FIG4_STUDIES)
@@ -80,7 +80,6 @@ class ComputeHeterogeneityWorkedExampleTests(unittest.TestCase):
         self.assertAlmostEqual(result["Q"], 10.45, delta=1.0)
         self.assertAlmostEqual(result["I2"], 43.0, delta=1.5)
         self.assertAlmostEqual(result["p_value"], 0.11, delta=0.02)
-        self.assertEqual(choose_model(result["I2"], result["p_value"]), "fixed")
 
 
 class ComputeHeterogeneityEdgeCaseTests(unittest.TestCase):
@@ -110,18 +109,14 @@ class ComputeHeterogeneityEdgeCaseTests(unittest.TestCase):
                 compute_heterogeneity([0.2, 0.3], [0.02, bad])
 
 
-class ChooseModelTests(unittest.TestCase):
-    def test_high_i2_triggers_random(self):
-        self.assertEqual(choose_model(60, 0.5), "random")
+class NoModelSelectionSymbolTests(unittest.TestCase):
+    """Regression guard for the Phase 0 correctness fix (docs/PLAN.md): the
+    module must never re-offer a function that picks fixed vs random from
+    I2/Q -- that decision is prespecified in synthesis_plan.json instead
+    (schemas/synthesis_plan.schema.json)."""
 
-    def test_significant_q_triggers_random(self):
-        self.assertEqual(choose_model(10, 0.05), "random")
-
-    def test_neither_triggers_fixed(self):
-        self.assertEqual(choose_model(0, 0.9), "fixed")
-
-    def test_i2_boundary_of_50_is_not_random(self):
-        self.assertEqual(choose_model(50, 0.5), "fixed")
+    def test_choose_model_removed(self):
+        self.assertFalse(hasattr(heterogeneity, "choose_model"))
 
 
 if __name__ == "__main__":

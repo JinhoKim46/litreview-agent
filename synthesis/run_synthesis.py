@@ -13,8 +13,11 @@ pooling math lives in synthesis/pooling.py and synthesis/heterogeneity.py
   3. Applies the poolability gate per outcome group, with every excluded
      study and every non-pooled outcome carrying a recorded reason --
      never a silent drop.
-  4. Calls heterogeneity.compute_heterogeneity + choose_model, then
-     pooling.pool_effects, for every group that clears the gate.
+  4. Calls heterogeneity.compute_heterogeneity (descriptive only), then
+     pooling.pool_effects with the model prespecified in synthesis_plan.json
+     (schemas/synthesis_plan.schema.json) -- never a model chosen from this
+     group's own heterogeneity statistics. The non-primary model is always
+     pooled too and reported as a sensitivity analysis.
   5. Renders forest/funnel plots via synthesis/plots.py.
   6. Aggregates each contributing study's `risk_of_bias` block (written by
      /prisma-extract, never re-derived here) into rob_table.json, and
@@ -57,19 +60,32 @@ An outcome present in `outcomes_measured` but absent from every
 see `flatten_rows`.
 """
 import argparse
+import glob
 import json
 import math
 import os
 import re
 import sys
+from datetime import datetime, timezone
+
+import jsonschema
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from synthesis.heterogeneity import choose_model, compute_heterogeneity
+from synthesis.heterogeneity import compute_heterogeneity
 from synthesis.pooling import pool_effects
 from synthesis.plots import forest_plot, funnel_plot, rob_traffic_light_plot
 
 Z95 = 1.959964  # normal-approximation 95% CI multiplier, matches pool_effects' own CI method
+
+REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+SYNTHESIS_PLAN_SCHEMA_PATH = os.path.join(REPO_ROOT, "schemas", "synthesis_plan.schema.json")
+
+
+class SynthesisPlanError(ValueError):
+    """A topic's synthesis_plan.json is missing, invalid, or ambiguous, and
+    no --model override resolves it -- /prisma-synthesize must stop rather
+    than guess a pooling model (docs/PLAN.md decision 6)."""
 
 # Canonical RoB1 domain order (Cochrane Handbook Ch.8 / quality-appraisal/01-risk-of-bias.md),
 # short headers for the traffic-light plot's columns -- the manuscript's figure caption spells
@@ -97,6 +113,87 @@ def slugify(name):
     return re.sub(r"[^a-z0-9]+", "-", name.lower()).strip("-") or "outcome"
 
 
+def _parse_iso8601(ts):
+    return datetime.fromisoformat(ts.replace("Z", "+00:00"))
+
+
+def _plan_predates_first_run(signed_at, raw_dir):
+    """True if `signed_at` (the synthesis plan's signature timestamp) is at
+    or before the earliest search run's timestamp under `raw_dir` -- i.e.
+    pooling was genuinely prespecified before study selection began. No raw
+    files at all means no search has run yet, which trivially predates it.
+
+    Prefers each raw file's own `meta.fetched_at` (the connector's own
+    record of when it ran); falls back to the file's mtime if a raw file is
+    unreadable or missing that field, rather than raising -- a malformed or
+    partial raw file must never silently exempt a plan from this check."""
+    raw_files = glob.glob(os.path.join(raw_dir, "*.json"))
+    if not raw_files:
+        return True
+    earliest = None
+    for path in raw_files:
+        ts = None
+        try:
+            with open(path) as f:
+                doc = json.load(f)
+            ts = _parse_iso8601(doc.get("meta", {}).get("fetched_at", ""))
+        except Exception:
+            ts = None
+        if ts is None:
+            ts = datetime.fromtimestamp(os.path.getmtime(path), tz=timezone.utc)
+        if earliest is None or ts < earliest:
+            earliest = ts
+    return _parse_iso8601(signed_at) <= earliest
+
+
+def resolve_synthesis_plan(topic, model_override, safe_topic_path_fn):
+    """Resolve the pooling model and its provenance for this run.
+
+    Returns a dict with (at least) "model", "model_source" ("protocol" |
+    "post_hoc" | "cli_override"), "tau2_estimator", "ci_method", "k_min".
+    Raises SynthesisPlanError if no synthesis_plan.json exists for this
+    topic and no --model override was given -- /prisma-synthesize must
+    refuse to guess (docs/PLAN.md decision 6), never silently fall back to
+    picking a model from the data's own heterogeneity statistics.
+    """
+    with open(SYNTHESIS_PLAN_SCHEMA_PATH) as f:
+        schema = json.load(f)
+
+    plan_path = safe_topic_path_fn(topic, "synthesis_plan.json")
+    plan = None
+    if os.path.exists(plan_path):
+        with open(plan_path) as f:
+            plan = json.load(f)
+        jsonschema.validate(plan, schema)
+
+    if model_override:
+        resolved = dict(plan) if plan else {}
+        resolved["model"] = model_override
+        resolved["model_source"] = "cli_override"
+    elif plan is None:
+        raise SynthesisPlanError(
+            f"no synthesis_plan.json found for topic {topic!r} and no --model override given. "
+            "Prespecify a pooling model at protocol time (review-protocol's /prisma-init "
+            "elicitation writes synthesis_plan.json), or pass --model {fixed,random} "
+            "explicitly for a one-off run. See schemas/synthesis_plan.schema.json."
+        )
+    elif plan.get("retrospective"):
+        # Explicit human override for a legacy topic migrated after search/
+        # screening already happened -- signed_at cannot honestly predate
+        # the first run, so don't auto-detect post_hoc for it.
+        resolved = dict(plan)
+        resolved["model_source"] = "protocol"
+    else:
+        raw_dir = str(safe_topic_path_fn(topic, "raw"))
+        resolved = dict(plan)
+        resolved["model_source"] = "protocol" if _plan_predates_first_run(plan["signed_at"], raw_dir) else "post_hoc"
+
+    resolved.setdefault("tau2_estimator", "dl")
+    resolved.setdefault("ci_method", "normal")
+    resolved.setdefault("k_min", POOL_MIN_K)
+    return resolved
+
+
 # Historically this framework mislabeled its RoB1 (Cochrane 2011 six-domain)
 # output as "RoB2" -- see quality-appraisal/01-risk-of-bias.md. Extraction
 # tables written before that correction still carry the old label; accept it
@@ -121,6 +218,14 @@ def normalize_risk_of_bias(rob, study_id):
             file=sys.stderr,
         )
         tool = "RoB1"
+    if tool == "unsupported":
+        print(
+            f"warning: {study_id}: risk_of_bias.tool=\"unsupported\" (design fits neither RoB1 "
+            "nor NOS) counts as not-low-risk in proportion_low_risk -- this study needs a "
+            "design-appropriate instrument this framework doesn't yet implement "
+            "(see .claude/skills/quality-appraisal/01-risk-of-bias.md)",
+            file=sys.stderr,
+        )
     normalized = dict(rob, tool=tool)
     if "instrument" not in normalized and tool in INSTRUMENT_BY_TOOL:
         normalized["instrument"] = INSTRUMENT_BY_TOOL[tool]
@@ -291,9 +396,20 @@ def convert_effect(effect_data):
 
 
 def is_low_risk(rob):
+    """None means "no assessment at all" (excluded from proportion_low_risk's
+    denominator by build_rob_entry -- genuinely unassessed). "unsupported"
+    (quality-appraisal/01-risk-of-bias.md Part 3: a design neither RoB1 nor
+    NOS covers) is deliberately different -- it IS an assessment (the study
+    was looked at and no instrument applies), so it fails closed as False
+    rather than being dropped from the denominator like a missing
+    assessment would be. Silently excluding it would let an
+    unsupported-design study's contribution to a pooled estimate escape the
+    GRADE risk-of-bias domain entirely."""
     if not rob:
         return None
     tool = rob.get("tool")
+    if tool == "unsupported":
+        return False
     judgement = (rob.get("overall_judgement") or "").lower()
     if tool == "RoB1":
         return "low risk" in judgement
@@ -366,9 +482,13 @@ def build_grade_draft(outcome_name, rows, model_used, k, het, effect_summary):
     }
 
 
-def process_outcome_group(outcome_name, measure, rows, out_dir, slug):
-    """rows: all rows for this (outcome, measure_type) pair. Returns
-    (effect_sizes_entry, heterogeneity_entry, grade_entry, rob_entry)."""
+def process_outcome_group(outcome_name, measure, rows, out_dir, slug, model, model_source, k_min=POOL_MIN_K):
+    """rows: all rows for this (outcome, measure_type) pair. `model` is the
+    prespecified primary pooling model ("fixed" or "random", from
+    synthesis_plan.json) -- never chosen from this group's own heterogeneity
+    statistics. The other model is always pooled too and reported under
+    effect_sizes_entry["sensitivity"]. Returns (effect_sizes_entry,
+    heterogeneity_entry, grade_entry, rob_entry)."""
     study_effects, excluded = [], []
     for row in rows:
         try:
@@ -385,9 +505,9 @@ def process_outcome_group(outcome_name, measure, rows, out_dir, slug):
     rob_entry = build_rob_entry(outcome_name, rows)
     k = len(study_effects)
 
-    if k < POOL_MIN_K:
+    if k < k_min:
         reason = (f"only {k} study/studies with usable effect data for this outcome+measure "
-                  f"(need >= {POOL_MIN_K} to pool)" + (f"; excluded: {excluded}" if excluded else ""))
+                  f"(need >= {k_min} to pool)" + (f"; excluded: {excluded}" if excluded else ""))
         effect_sizes_entry = {"outcome": outcome_name, "measure_type": measure, "pooled": False, "studies": study_effects, "excluded": excluded}
         heterogeneity_entry = {"outcome": outcome_name, "measure_type": measure, "pooled": False, "reason": reason}
         grade_entry = build_grade_draft(outcome_name, rows, "narrative", len(rows), None, None)
@@ -396,12 +516,19 @@ def process_outcome_group(outcome_name, measure, rows, out_dir, slug):
     effects = [s["effect"] for s in study_effects]
     variances = [s["variance"] for s in study_effects]
     het = compute_heterogeneity(effects, variances)
-    model = choose_model(het["I2"], het["p_value"])
     pooled = pool_effects(effects, variances, model)
+    sensitivity_model = "fixed" if model == "random" else "random"
+    sensitivity_pooled = pool_effects(effects, variances, sensitivity_model)
 
-    display_pooled = math.exp(pooled["pooled_effect"]) if measure in LOG_SCALE_MEASURES else pooled["pooled_effect"]
-    display_ci_low = math.exp(pooled["ci_low"]) if measure in LOG_SCALE_MEASURES else pooled["ci_low"]
-    display_ci_high = math.exp(pooled["ci_high"]) if measure in LOG_SCALE_MEASURES else pooled["ci_high"]
+    def to_display(value):
+        return math.exp(value) if measure in LOG_SCALE_MEASURES else value
+
+    display_pooled = to_display(pooled["pooled_effect"])
+    display_ci_low = to_display(pooled["ci_low"])
+    display_ci_high = to_display(pooled["ci_high"])
+    sensitivity_pooled["display_estimate"] = to_display(sensitivity_pooled["pooled_effect"])
+    sensitivity_pooled["display_ci_low"] = to_display(sensitivity_pooled["ci_low"])
+    sensitivity_pooled["display_ci_high"] = to_display(sensitivity_pooled["ci_high"])
 
     for s in study_effects:
         s["ci_low"] = s["effect"] - Z95 * s["se"]
@@ -423,16 +550,19 @@ def process_outcome_group(outcome_name, measure, rows, out_dir, slug):
         funnel_plot(studies=[{"effect": s["effect"], "se": s["se"]} for s in study_effects], out_path=funnel_path)
 
     effect_sizes_entry = {
-        "outcome": outcome_name, "measure_type": measure, "pooled": True, "model": model,
+        "outcome": outcome_name, "measure_type": measure, "pooled": True,
+        "model": model, "model_source": model_source,
         "scale": "log" if measure in LOG_SCALE_MEASURES else "natural",
         "studies": study_effects, "excluded": excluded,
         "pooled_effect": pooled, "display_estimate": display_pooled,
         "display_ci_low": display_ci_low, "display_ci_high": display_ci_high,
+        "sensitivity": sensitivity_pooled,
         "forest_plot_svg": forest_path, "funnel_plot_svg": funnel_path,
     }
     heterogeneity_entry = {
         "outcome": outcome_name, "measure_type": measure, "pooled": True,
-        "k": k, "Q": het["Q"], "df": het["df"], "p_value": het["p_value"], "I2": het["I2"], "model": model,
+        "k": k, "Q": het["Q"], "df": het["df"], "p_value": het["p_value"], "I2": het["I2"],
+        "model": model, "model_source": model_source,
     }
     effect_summary = {"measure": measure, "estimate": display_pooled, "ci_low": display_ci_low, "ci_high": display_ci_high}
     grade_entry = build_grade_draft(outcome_name, rows, model, k, het, effect_summary)
@@ -474,7 +604,14 @@ def _atomic_write_json(path, data):
     os.replace(tmp_path, path)
 
 
-def run(extraction_table_path, out_dir):
+def run(extraction_table_path, out_dir, model, model_source="protocol", k_min=POOL_MIN_K):
+    """`model` is the prespecified primary pooling model ("fixed" or
+    "random") -- required, never derived here from the data. `model_source`
+    records where it came from ("protocol", "post_hoc", or "cli_override";
+    see resolve_synthesis_plan) and is echoed into every pooled outcome's
+    effect_sizes.json/heterogeneity.json entry."""
+    if model not in ("fixed", "random"):
+        raise ValueError(f"model must be 'fixed' or 'random', got {model!r}")
     os.makedirs(out_dir, exist_ok=True)
     studies = load_studies(extraction_table_path)
     rows = flatten_rows(studies)
@@ -493,7 +630,7 @@ def run(extraction_table_path, out_dir):
 
     for (outcome_name, measure), group_rows in sorted(groups.items()):
         slug = slugify(f"{outcome_name}-{measure}")
-        es, het, grade, rob = process_outcome_group(outcome_name, measure, group_rows, out_dir, slug)
+        es, het, grade, rob = process_outcome_group(outcome_name, measure, group_rows, out_dir, slug, model, model_source, k_min)
         effect_sizes.append(es)
         heterogeneity.append(het)
         grade_table.append(grade)
@@ -535,20 +672,46 @@ def main():
                               "and results/<topic>/synthesis/ itself -- never accepts a free-form path "
                               "(PRODUCT_READINESS_AUDIT.md P0-1: this permission is pre-approved, so "
                               "the CLI must not let any argument direct a write outside results/<topic>/)")
+    parser.add_argument("--model", choices=["fixed", "random"], default=None,
+                         help="Override the prespecified pooling model for this run only (recorded "
+                              "as model_source=cli_override in every pooled outcome). Omit to use "
+                              "results/<topic>/synthesis_plan.json, signed at protocol time.")
     args = parser.parse_args()
     try:
         extraction_table_path = safe_topic_path(args.topic, "extraction_table.json")
-        out_dir = safe_topic_path(args.topic, "synthesis")
     except UnsafePathError as exc:
         print(f"Error: {exc}", file=sys.stderr)
         return 1
-    result = run(str(extraction_table_path), str(out_dir))
+
+    try:
+        plan = resolve_synthesis_plan(args.topic, args.model, safe_topic_path)
+    except (SynthesisPlanError, jsonschema.exceptions.ValidationError) as exc:
+        message = exc.message if isinstance(exc, jsonschema.exceptions.ValidationError) else str(exc)
+        print(f"Error: {message}", file=sys.stderr)
+        return 1
+
+    try:
+        if plan["model_source"] == "post_hoc":
+            out_dir = safe_topic_path(args.topic, "synthesis", "post_hoc")
+        else:
+            out_dir = safe_topic_path(args.topic, "synthesis")
+    except UnsafePathError as exc:
+        print(f"Error: {exc}", file=sys.stderr)
+        return 1
+
+    result = run(str(extraction_table_path), str(out_dir), model=plan["model"], model_source=plan["model_source"], k_min=plan["k_min"])
     pooled_n = sum(1 for h in result["heterogeneity"] if h["pooled"])
     narrative_n = sum(1 for h in result["heterogeneity"] if not h["pooled"])
     rob_plot_note = f"rob_traffic_light.svg ({result['rob_traffic_light_svg']})" if result["rob_traffic_light_svg"] else \
         "rob_traffic_light.svg NOT written (no RoB1-assessed study had a full domains breakdown)"
-    print(f"{len(result['heterogeneity'])} outcome group(s): {pooled_n} pooled, {narrative_n} narrative fallback. "
+    print(f"model={plan['model']} (model_source={plan['model_source']}). "
+          f"{len(result['heterogeneity'])} outcome group(s): {pooled_n} pooled, {narrative_n} narrative fallback. "
           f"Wrote effect_sizes.json, heterogeneity.json, rob_table.json, grade_table.json, {rob_plot_note} to {out_dir}")
+    if plan["model_source"] == "post_hoc":
+        print(f"NOTE: synthesis_plan.json was signed after the first search run for this topic -- "
+              f"pooling was not prespecified. Outputs are written under {out_dir} and must be reported "
+              f"as \"specified after study selection\" (PRISMA 2020 item 24c), not as the review's a "
+              f"priori analysis plan.", file=sys.stderr)
     for grade in result["grade_table"]:
         if grade["final_certainty"] == "needs_review":
             print(f"  NEEDS REVIEW before report: GRADE indirectness/imprecision for outcome {grade['outcome']!r}")
@@ -643,7 +806,9 @@ def _selfcheck():
             json.dump(fixture, f)
         out_dir = os.path.join(tmp, "synthesis")
 
-        result = run(fixture_path, out_dir)
+        # model is prespecified (never derived from the data), same as
+        # resolve_synthesis_plan would resolve from a signed synthesis_plan.json.
+        result = run(fixture_path, out_dir, model="random", model_source="protocol")
 
         het_by_outcome = {h["outcome"]: h for h in result["heterogeneity"]}
 
@@ -651,12 +816,16 @@ def _selfcheck():
         ponv = het_by_outcome["PONV"]
         assert ponv["pooled"] is True, ponv
         assert ponv["k"] == 3, ponv
-        assert ponv["model"] in ("fixed", "random"), ponv
+        assert ponv["model"] == "random", ponv
+        assert ponv["model_source"] == "protocol", ponv
         es_ponv = next(e for e in result["effect_sizes"] if e["outcome"] == "PONV")
         assert any(s["continuity_correction_applied"] for s in es_ponv["studies"]), "expected beta2021's zero cell to trigger continuity correction"
         assert 0 < es_ponv["display_estimate"] < 5, es_ponv["display_estimate"]
         assert os.path.exists(es_ponv["forest_plot_svg"]) and os.path.getsize(es_ponv["forest_plot_svg"]) > 0
         assert es_ponv["funnel_plot_svg"] is None, "k=3 must not trigger a funnel plot (needs >=10)"
+        # sensitivity always reports the *other* model, computed on the same data.
+        assert es_ponv["sensitivity"]["model"] == "fixed", es_ponv["sensitivity"]
+        assert "display_estimate" in es_ponv["sensitivity"], es_ponv["sensitivity"]
 
         # length of stay: single study -> narrative fallback with a reason.
         los = het_by_outcome["length of stay"]
@@ -705,7 +874,7 @@ def _selfcheck():
         no_domains_path = os.path.join(tmp, "extraction_table_no_domains.json")
         with open(no_domains_path, "w") as f:
             json.dump(no_domains_fixture, f)
-        no_domains_result = run(no_domains_path, os.path.join(tmp, "synthesis_no_domains"))
+        no_domains_result = run(no_domains_path, os.path.join(tmp, "synthesis_no_domains"), model="fixed", model_source="protocol")
         assert no_domains_result["rob_traffic_light_svg"] is None, no_domains_result["rob_traffic_light_svg"]
 
         # Zero-total edge case must raise a recorded reason, not crash the group.
