@@ -21,14 +21,14 @@
     },
     "family": {
       "type": "string",
-      "enum": ["systematic", "mapping", "exploratory"],
-      "description": "Broad shape of the method, used for routing and for which stage names apply -- not the same as synthesis.families_allowed, which is about pooling."
+      "enum": ["systematic", "scoping", "mapping", "exploratory"],
+      "description": "Broad shape of the method, used for routing and for which stage names apply -- not the same as synthesis.families_allowed, which is about pooling. \"scoping\" (docs/PLAN.md M3) is distinct from \"mapping\": a scoping review charts studies against a co-developed pack form (capture.mode: charting), while a systematic mapping study classifies them against a frozen facet scheme (capture.mode: classification) -- verified no deterministic tool reads this field yet, so adding a value here is additive and safe."
     },
     "question_frameworks": {
       "type": "array",
       "items": {"type": "string"},
       "default": [],
-      "description": "Research-question frameworks review-protocol may elicit for this method (e.g. PICO, PICo, SPIDER, PCC)."
+      "description": "Research-question frameworks review-protocol may elicit for this method (e.g. PICO, PICo, SPIDER, PCC, or a non-framework label like \"Petersen RQs\"/\"Wieringa research types\" for a systematic mapping study)."
     },
     "search": {
       "type": "object",
@@ -38,7 +38,13 @@
         "mode": {"type": "string", "enum": ["protocol_driven", "orienting"]},
         "min_index_families": {"type": "integer", "minimum": 0},
         "primary_strategies_default": {"type": "array", "items": {"type": "string"}, "default": ["database"]},
-        "known_item_recall": {"type": "string", "enum": ["fail_closed", "waivable_with_reason", "advisory"]}
+        "known_item_recall": {"type": "string", "enum": ["fail_closed", "waivable_with_reason", "advisory"]},
+        "controlled_vocab": {
+          "type": "string",
+          "enum": ["some", "none"],
+          "default": "some",
+          "description": "Whether this field has an established controlled vocabulary (MeSH-like) to search against. \"none\" (typical for CS/SE mapping studies) is meant to trigger a QGS (quasi-gold-standard) sensitivity check at S3 (references/docs/design/multi-method-consensus.md §3.2) -- schema only for now, same as synthesis_plan.schema.json's pooling_unit in Phase 0: no tool computes this check yet, so a manifest may declare it without anything enforcing it until a follow-up PR wires search_preflight.py to read it."
+        }
       }
     },
     "screening": {

@@ -1,0 +1,56 @@
+{
+  "id": "systematic_mapping_study",
+  "label": "Systematic mapping study",
+  "aliases": ["SMS", "systematic map", "mapping review"],
+  "version": "1.0.0",
+  "family": "mapping",
+  "question_frameworks": ["Petersen RQs", "Wieringa research types"],
+  "search": {
+    "mode": "protocol_driven",
+    "min_index_families": 2,
+    "primary_strategies_default": ["database", "snowballing"],
+    "known_item_recall": "waivable_with_reason",
+    "controlled_vocab": "none"
+  },
+  "screening": {"recommend_reviewers": 2, "criteria_may_evolve": "versioned"},
+  "capture": {"mode": "classification", "schema": "schemas/classification_table.schema.json", "freeze_gate": true, "pilot_records": 0},
+  "appraisal": {"requirement": "optional_with_justification", "use": ["describe"]},
+  "synthesis": {
+    "families_allowed": ["descriptive"],
+    "plan_required_for": [],
+    "plan_required_at": null,
+    "proposal_defaults": {}
+  },
+  "standards": [
+    {"ref": ".claude/skills/prisma-manuscript/references/petersen-2015-mapping-guidelines.md"},
+    {"ref": ".claude/skills/prisma-manuscript/references/segress-2023-checklist.md"}
+  ],
+  "label_rules": {
+    "label": "systematic mapping study",
+    "requires": [],
+    "profile_labels": {},
+    "otherwise": {},
+    "disclosures": [
+      "reviewer_count", "search_dates", "search_age", "registration",
+      "criteria_changes", "coverage_gaps"
+    ]
+  },
+  "report_blockers": ["fulltext_exclusion_reasons_complete", "appraisal_complete", "references_verified"],
+  "forbidden_forms": ["exhaustive_search", "comprehensive_search", "no_prior_work", "first_to", "novelty"],
+  "profiles": [],
+  "living": true,
+  "microcopy": {
+    "what": "A systematic mapping study classifies a technical field by facets (e.g. research type, method family, dataset, metric), showing where evidence is dense and where it is thin -- it does not judge which method performs best.",
+    "gives": "A protocol with Petersen-style research questions, a replayable search appendix, a frozen classification scheme with disclosed calibration agreement, bubble plots and facet-count tables, and a SEGRESS-audited manuscript.",
+    "costs": "Typically 1-5 months; single-coder classification is acceptable when a delayed intra-rater re-code of at least 10 records is disclosed.",
+    "cannot_claim": "That the search was exhaustive, that anything is 'first' or 'novel', or a risk-of-bias/certainty judgement -- no appraisal instrument applies to a mapping study by default.",
+    "upgrade_to": "systematic_review",
+    "stage_names": {
+      "extract": "classify each study against the frozen scheme",
+      "appraise": "optionally rate rigour/relevance, with justification",
+      "synthesize": "build bubble plots and facet-count tables (no pooling)",
+      "report": "draft the manuscript and SEGRESS checklist"
+    }
+  },
+  "exports": ["md", "docx", "ris", "csv", "svg"]
+}
