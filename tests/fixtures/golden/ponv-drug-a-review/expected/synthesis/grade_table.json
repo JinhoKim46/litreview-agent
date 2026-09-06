@@ -1,0 +1,108 @@
+[
+  {
+    "outcome": "adverse events",
+    "n_studies": 1,
+    "starting_certainty": "high",
+    "starting_certainty_note": "All contributing studies are RCTs.",
+    "domains": {
+      "risk_of_bias": {
+        "rating": "not_serious",
+        "note": "100% of contributing studies judged low risk / good quality."
+      },
+      "inconsistency": {
+        "rating": "not_serious",
+        "note": "Single study or narrative synthesis -- no statistical heterogeneity to test."
+      },
+      "indirectness": {
+        "rating": "needs_review",
+        "note": "Compare each contributing study's population/intervention/comparator/outcome against protocol.json's PICO -- fill in per quality-appraisal/02-grade-certainty.md."
+      },
+      "imprecision": {
+        "rating": "needs_review",
+        "note": "Compare the pooled 95% CI width against the review's a priori MCID (or, for narrative outcomes, total sample size) -- fill in per quality-appraisal/02-grade-certainty.md."
+      },
+      "publication_bias": {
+        "rating": "undetected",
+        "note": "k=1 < 10: insufficient power to assess publication bias, not rated as absent."
+      }
+    },
+    "rate_up": [],
+    "final_certainty": "needs_review",
+    "effect": null,
+    "model_used": "narrative"
+  },
+  {
+    "outcome": "postoperative nausea and vomiting (PONV)",
+    "n_studies": 3,
+    "starting_certainty": "high",
+    "starting_certainty_note": "All contributing studies are RCTs.",
+    "domains": {
+      "risk_of_bias": {
+        "rating": "very_serious",
+        "note": "Only 33% of contributing studies judged low risk / good quality."
+      },
+      "inconsistency": {
+        "rating": "not_serious",
+        "note": "I2=0.4%, Q p=0.3664."
+      },
+      "indirectness": {
+        "rating": "needs_review",
+        "note": "Compare each contributing study's population/intervention/comparator/outcome against protocol.json's PICO -- fill in per quality-appraisal/02-grade-certainty.md."
+      },
+      "imprecision": {
+        "rating": "needs_review",
+        "note": "Compare the pooled 95% CI width against the review's a priori MCID (or, for narrative outcomes, total sample size) -- fill in per quality-appraisal/02-grade-certainty.md."
+      },
+      "publication_bias": {
+        "rating": "undetected",
+        "note": "k=3 < 10: insufficient power to assess publication bias, not rated as absent."
+      }
+    },
+    "rate_up": [],
+    "final_certainty": "needs_review",
+    "effect": {
+      "measure": "RR",
+      "estimate": 0.5018303995047213,
+      "ci_low": 0.22500231838589013,
+      "ci_high": 1.1192495778428415
+    },
+    "model_used": "random"
+  },
+  {
+    "outcome": "postoperative pain score",
+    "n_studies": 2,
+    "starting_certainty": "low",
+    "starting_certainty_note": "Mixed or partly-unknown study designs among contributing studies (['observational', 'rct']) -- defaulted to the more conservative observational (Low) baseline.",
+    "domains": {
+      "risk_of_bias": {
+        "rating": "very_serious",
+        "note": "Only 0% of contributing studies judged low risk / good quality."
+      },
+      "inconsistency": {
+        "rating": "not_serious",
+        "note": "I2=0.0%, Q p=0.7446."
+      },
+      "indirectness": {
+        "rating": "needs_review",
+        "note": "Compare each contributing study's population/intervention/comparator/outcome against protocol.json's PICO -- fill in per quality-appraisal/02-grade-certainty.md."
+      },
+      "imprecision": {
+        "rating": "needs_review",
+        "note": "Compare the pooled 95% CI width against the review's a priori MCID (or, for narrative outcomes, total sample size) -- fill in per quality-appraisal/02-grade-certainty.md."
+      },
+      "publication_bias": {
+        "rating": "undetected",
+        "note": "k=2 < 10: insufficient power to assess publication bias, not rated as absent."
+      }
+    },
+    "rate_up": [],
+    "final_certainty": "needs_review",
+    "effect": {
+      "measure": "MD",
+      "estimate": -0.7526620779715427,
+      "ci_low": -1.3870712303416988,
+      "ci_high": -0.11825292560138678
+    },
+    "model_used": "random"
+  }
+]

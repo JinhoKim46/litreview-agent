@@ -1,0 +1,34 @@
+{
+  "sources": {
+    "openalex": {
+      "status": "complete",
+      "retrieved": 5,
+      "total_available": 5
+    },
+    "crossref": {
+      "status": "complete",
+      "retrieved": 1,
+      "total_available": 1
+    }
+  },
+  "unacknowledged_incomplete_sources": [],
+  "known_item_recall": {
+    "checked": 2,
+    "found": [
+      {
+        "id_type": "doi",
+        "id": "10.1111/aaa",
+        "matched_record_id": "crossref:C2001"
+      }
+    ],
+    "missing": [
+      {
+        "id_type": "doi",
+        "id": "10.9999/zzz",
+        "note": "grey-literature conference report cited in a related review",
+        "expected_missing_reason": "grey literature, not indexed by any enabled connector"
+      }
+    ]
+  },
+  "unacknowledged_missing_known_items": []
+}

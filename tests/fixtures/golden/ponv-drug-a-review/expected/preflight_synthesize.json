@@ -1,0 +1,22 @@
+[
+  {
+    "name": "ledger_reason_gate",
+    "ok": true,
+    "detail": null
+  },
+  {
+    "name": "ledger_hash_chain",
+    "ok": true,
+    "detail": null
+  },
+  {
+    "name": "search_completeness_and_recall",
+    "ok": true,
+    "detail": null
+  },
+  {
+    "name": "synthesis_plan_present",
+    "ok": true,
+    "detail": null
+  }
+]

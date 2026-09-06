@@ -1,0 +1,36 @@
+[
+  {
+    "outcome": "adverse events",
+    "measure_type": "RR",
+    "pooled": false,
+    "reason": "only 1 study/studies with usable effect data for this outcome+measure (need >= 2 to pool)"
+  },
+  {
+    "outcome": "postoperative nausea and vomiting (PONV)",
+    "measure_type": "RR",
+    "pooled": true,
+    "k": 3,
+    "Q": 2.0080138721173535,
+    "df": 2,
+    "p_value": 0.36640832108373106,
+    "I2": 0.3990944598855412,
+    "model": "random",
+    "model_source": "protocol",
+    "tau2_estimator": "pm",
+    "ci_method": "hksj"
+  },
+  {
+    "outcome": "postoperative pain score",
+    "measure_type": "MD",
+    "pooled": true,
+    "k": 2,
+    "Q": 0.10610223902929977,
+    "df": 1,
+    "p_value": 0.744626081954515,
+    "I2": 0.0,
+    "model": "random",
+    "model_source": "protocol",
+    "tau2_estimator": "pm",
+    "ci_method": "hksj"
+  }
+]

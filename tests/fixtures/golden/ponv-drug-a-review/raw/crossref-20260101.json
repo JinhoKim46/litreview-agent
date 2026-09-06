@@ -1,0 +1,15 @@
+{
+  "meta": {"source": "crossref", "retrieved": 1, "total_available": 1, "truncated": false, "fetched_at": "2026-01-01T00:05:00Z"},
+  "results": [
+    {
+      "id": "C2001",
+      "title": "Effect of Drug A on PONV: A Randomized Controlled Trial",
+      "authors": ["Kim, J.H.", "Lee, S.Y."],
+      "year": 2022,
+      "venue": "J. Anesth.",
+      "doi": "10.1111/aaa",
+      "abstract": "Crossref metadata record for the same trial as openalex:W1001 (planted exact cross-source DOI duplicate).",
+      "url": "https://doi.org/10.1111/aaa"
+    }
+  ]
+}

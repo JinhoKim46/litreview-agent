@@ -1,0 +1,55 @@
+{
+  "meta": {"source": "openalex", "retrieved": 5, "total_available": 5, "truncated": false, "fetched_at": "2026-01-01T00:00:00Z"},
+  "results": [
+    {
+      "id": "W1001",
+      "title": "Effect of Drug A on Postoperative Nausea and Vomiting: A Randomized Controlled Trial",
+      "authors": ["Kim JH", "Lee SY"],
+      "year": 2022,
+      "venue": "Journal of Anesthesia",
+      "doi": "10.1111/aaa",
+      "abstract": "A randomized controlled trial of prophylactic Drug A for prevention of postoperative nausea and vomiting.",
+      "url": "https://doi.org/10.1111/aaa"
+    },
+    {
+      "id": "W1002",
+      "title": "Randomized Trial of Drug B for Prevention of Postoperative Nausea and Vomiting",
+      "authors": ["Park JY"],
+      "year": 2021,
+      "venue": "Anesthesia & Analgesia",
+      "doi": "10.1111/bbb",
+      "abstract": "A randomized trial evaluating Drug B for prevention of postoperative nausea and vomiting.",
+      "url": "https://doi.org/10.1111/bbb"
+    },
+    {
+      "id": "W1003",
+      "title": "Pain Outcomes After Drug C: A Randomized Controlled Trial",
+      "authors": ["Choi HJ"],
+      "year": 2020,
+      "venue": "Pain Medicine",
+      "doi": "10.1111/ccc",
+      "abstract": "A randomized controlled trial of Drug C examining postoperative pain and nausea outcomes.",
+      "url": "https://doi.org/10.1111/ccc"
+    },
+    {
+      "id": "W1004",
+      "title": "Cohort Study of Drug D and Postoperative Pain",
+      "authors": ["Jung MK"],
+      "year": 2019,
+      "venue": "Journal of Clinical Anesthesia",
+      "doi": "10.1111/ddd",
+      "abstract": "A prospective cohort study of Drug D and postoperative pain outcomes.",
+      "url": "https://doi.org/10.1111/ddd"
+    },
+    {
+      "id": "W1005",
+      "title": "A Randomized Trial of Drug B for Prevention of Postoperative Nausea and Vomiting",
+      "authors": ["Park JY"],
+      "year": 2021,
+      "venue": "Anesthesia & Analgesia (preprint)",
+      "doi": null,
+      "abstract": "Preprint version of a randomized trial evaluating Drug B for prevention of postoperative nausea and vomiting.",
+      "url": "https://example.org/preprint/w1005"
+    }
+  ]
+}

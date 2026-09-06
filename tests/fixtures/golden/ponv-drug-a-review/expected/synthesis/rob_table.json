@@ -1,0 +1,53 @@
+[
+  {
+    "outcome": "adverse events",
+    "studies": [
+      {
+        "study_id": "crossref:C2001",
+        "tool": "RoB1",
+        "overall_judgement": "low risk"
+      }
+    ],
+    "proportion_low_risk": 1.0,
+    "missing_assessment": []
+  },
+  {
+    "outcome": "postoperative nausea and vomiting (PONV)",
+    "studies": [
+      {
+        "study_id": "crossref:C2001",
+        "tool": "RoB1",
+        "overall_judgement": "low risk"
+      },
+      {
+        "study_id": "openalex:W1002",
+        "tool": "RoB1",
+        "overall_judgement": "high risk"
+      },
+      {
+        "study_id": "openalex:W1003",
+        "tool": "RoB1",
+        "overall_judgement": "unclear risk"
+      }
+    ],
+    "proportion_low_risk": 0.3333333333333333,
+    "missing_assessment": []
+  },
+  {
+    "outcome": "postoperative pain score",
+    "studies": [
+      {
+        "study_id": "openalex:W1003",
+        "tool": "RoB1",
+        "overall_judgement": "unclear risk"
+      },
+      {
+        "study_id": "openalex:W1004",
+        "tool": "NOS",
+        "overall_judgement": "fair quality"
+      }
+    ],
+    "proportion_low_risk": 0.0,
+    "missing_assessment": []
+  }
+]

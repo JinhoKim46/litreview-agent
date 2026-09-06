@@ -92,7 +92,7 @@ class RunEffectSizesProvenanceTests(unittest.TestCase):
                 _study_with_provenance("s2", 8, 50, 20, 50),
             ]
             path = self._fixture_path(tmp, studies)
-            result = run(path, os.path.join(tmp, "out"))
+            result = run(path, os.path.join(tmp, "out"), model="fixed", model_source="protocol")
             es = next(e for e in result["effect_sizes"] if e["outcome"] == "PONV")
             for i, study_effect in enumerate(es["studies"]):
                 expected_study = studies[i]
@@ -109,7 +109,7 @@ class RunEffectSizesProvenanceTests(unittest.TestCase):
             studies = [_study_with_provenance("s1", 12, 60, 25, 60), _study_with_provenance("s2", 8, 50, 20, 50)]
             path = self._fixture_path(tmp, studies)
             out_dir = os.path.join(tmp, "out")
-            run(path, out_dir)
+            run(path, out_dir, model="fixed", model_source="protocol")
             with open(os.path.join(out_dir, "effect_sizes.json")) as f:
                 on_disk = json.load(f)
             es = next(e for e in on_disk if e["outcome"] == "PONV")
@@ -135,7 +135,7 @@ class RunEffectSizesProvenanceTests(unittest.TestCase):
                 },
             ]
             path = self._fixture_path(tmp, bare_studies)
-            result = run(path, os.path.join(tmp, "out"))
+            result = run(path, os.path.join(tmp, "out"), model="fixed", model_source="protocol")
             es = next(e for e in result["effect_sizes"] if e["outcome"] == "PONV")
             for study_effect in es["studies"]:
                 self.assertIsNone(study_effect["source"])
@@ -150,7 +150,7 @@ class RunEffectSizesProvenanceTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             studies = [_study_with_provenance("s1", 12, 60, 25, 60)]
             path = self._fixture_path(tmp, studies)
-            result = run(path, os.path.join(tmp, "out"))
+            result = run(path, os.path.join(tmp, "out"), model="fixed", model_source="protocol")
             het = next(h for h in result["heterogeneity"] if h["outcome"] == "PONV")
             self.assertFalse(het["pooled"])
 
