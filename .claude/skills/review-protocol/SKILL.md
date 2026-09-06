@@ -1,7 +1,7 @@
 ---
 name: review-protocol
 description: "Elicit and record a systematic review's protocol: the research-question framework (PICO/PICo/SPIDER/other), eligibility criteria, and scope. Use whenever the user starts a new systematic review or meta-analysis, runs /prisma-init, mentions 'PICO', 'PICo', 'SPIDER', 'research question framework', 'eligibility criteria', 'inclusion criteria', 'exclusion criteria', 'protocol', 'PROSPERO', or asks 'is this study eligible' / 'should I include this paper' / 'does this study pass screening'. Also trigger mid-review whenever a screening or extraction step needs an eligibility ruling on a specific study, or when scope needs to change (e.g. adding a language, narrowing a population) partway through a review. Covers framework selection and elicitation questions plus the hard-gate-before-scoring eligibility check; it does not cover keyword expansion (see keyword-expansion) or manuscript drafting (see prisma-manuscript)."
-framework_version: 1.5.0
+framework_version: 1.6.0
 ---
 
 # Review Protocol
@@ -77,9 +77,16 @@ Write (or update) `results/<TOPIC>/protocol.json` with at minimum:
     "translation_used": false,
     "translation_languages": [],
     "coverage_gaps": []
+  },
+  "method": {
+    "id": "systematic_review", "version": "1.0.0", "synthesis_family": null,
+    "profile_flags": [], "modes": [], "pack": null, "output_profiles": [],
+    "routing": { "table_version": "1.0.0", "answers": {}, "q0": null, "recommended_id": "systematic_review", "chosen_id": "systematic_review", "override_reason": null, "fallback_reason": null }
   }
 }
 ```
+
+`method` is never elicited by this skill — it's decided by `/prisma-init`'s own Step 0.5 routing interview (`tools/route.py`) before this skill ever runs, and the caller passes the whole block along for this skill to write verbatim (see `schemas/protocol_method.schema.json`). If a caller invokes this skill directly without a routing result (rare — every documented path goes through `/prisma-init`), omit the `method` key entirely rather than inventing one; `tools/method.py` treats its absence as `"systematic_review"`, `recorded: false` (docs/PLAN.md M1's migration path), not an error.
 
 `field_domain` is one of `clinical_medicine` | `biomedical_technical` | `non_biomedical`, from the Phase 1 elicitation above — `keyword-expansion` reads it to decide the MeSH axis's default.
 
