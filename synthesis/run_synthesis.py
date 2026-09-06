@@ -108,16 +108,29 @@ ALL_MEASURES = DICHOTOMOUS_MEASURES | CONTINUOUS_MEASURES
 FUNNEL_MIN_K = 10
 POOL_MIN_K = 2
 
-# Synthesis families a systematic review's manifest allows (docs/PLAN.md M1;
-# methods/systematic_review.json's synthesis.families_allowed). "swim" is a
-# real, recognized family with no engine yet -- see run() -- rather than a
-# silently-ignored value or a fabricated implementation of untested
-# vote-counting statistics.
-SYNTHESIS_FAMILIES = ("pairwise_iv", "structured_narrative", "swim")
+# Synthesis families any method manifest may allow (docs/PLAN.md M1/M3;
+# methods/_schema.json's synthesis.families_allowed enum). "swim" and
+# "descriptive" are real, recognized families with no engine yet -- see
+# run() -- rather than silently-ignored values or fabricated
+# implementations of untested statistics. "descriptive" is what a scoping
+# review's manifest declares (references/docs/design/multi-method-consensus.md
+# §3.2: "R descriptive (families_allowed: [descriptive])") -- pooling is
+# forbidden for scoping reviews by design, so refusing cleanly here (rather
+# than crashing on an unrecognized family, or silently treating it as
+# "structured_narrative") is the correct M3 exit-criterion behavior:
+# "/prisma-synthesize on it refuses pooling".
+SYNTHESIS_FAMILIES = ("pairwise_iv", "structured_narrative", "swim", "descriptive")
 SWIM_NOT_IMPLEMENTED = (
     "synthesis_family=\"swim\" (Synthesis without Meta-analysis) is a recognized family "
     "with no engine in this framework yet -- export effect_sizes.json's inputs and run SWiM "
     "manually, or choose \"pairwise_iv\"/\"structured_narrative\" in synthesis_plan.json."
+)
+DESCRIPTIVE_NOT_IMPLEMENTED = (
+    "synthesis_family=\"descriptive\" (a scoping review's tabulation/charting summary, never "
+    "pooled) is a recognized family with no engine in this framework yet -- see "
+    "tools/chart_summary.py (not yet shipped, docs/PLAN.md M3) for the intended replacement; "
+    "there is no manual workaround that pools this data, since scoping reviews forbid pooling "
+    "by design."
 )
 
 
@@ -158,7 +171,7 @@ def _plan_predates_first_run(signed_at, raw_dir):
     return _parse_iso8601(signed_at) <= earliest
 
 
-def resolve_synthesis_plan(topic, model_override, safe_topic_path_fn):
+def resolve_synthesis_plan(topic, model_override, safe_topic_path_fn, families_allowed=None):
     """Resolve the pooling model and its provenance for this run.
 
     Returns a dict with (at least) "model", "model_source" ("protocol" |
@@ -167,7 +180,31 @@ def resolve_synthesis_plan(topic, model_override, safe_topic_path_fn):
     topic and no --model override was given -- /prisma-synthesize must
     refuse to guess (docs/PLAN.md decision 6), never silently fall back to
     picking a model from the data's own heterogeneity statistics.
+
+    `families_allowed` (docs/PLAN.md M3) is the resolved method manifest's
+    synthesis.families_allowed, when the caller has one to offer -- None
+    (the default; every existing caller/test passes nothing) skips this
+    check entirely, preserving prior behavior exactly. When given and it
+    excludes "pairwise_iv" (e.g. a scoping review's manifest, which allows
+    only "descriptive"), this refuses *as that method* -- citing
+    DESCRIPTIVE_NOT_IMPLEMENTED/SWIM_NOT_IMPLEMENTED -- before ever
+    reaching the generic "no synthesis_plan.json found, prespecify a
+    pooling model" message below, which would otherwise be actively wrong
+    advice for a method that forbids pooling by design. This check applies
+    even under --model (model_override): a manifest-level restriction is a
+    property of the review's method, not something a one-off CLI flag
+    should bypass.
     """
+    if families_allowed is not None and "pairwise_iv" not in families_allowed:
+        unimplemented_message = {"descriptive": DESCRIPTIVE_NOT_IMPLEMENTED, "swim": SWIM_NOT_IMPLEMENTED}
+        message = next((unimplemented_message[f] for f in families_allowed if f in unimplemented_message), None)
+        raise SynthesisPlanError(
+            message or (
+                f"this review's method only allows synthesis families {families_allowed!r}, none of "
+                "which support pairwise_iv pooling."
+            )
+        )
+
     with open(SYNTHESIS_PLAN_SCHEMA_PATH) as f:
         schema = json.load(f)
 
@@ -675,6 +712,8 @@ def run(extraction_table_path, out_dir, model, model_source="protocol", k_min=PO
         raise SynthesisPlanError(f"synthesis_family must be one of {SYNTHESIS_FAMILIES}, got {synthesis_family!r}")
     if synthesis_family == "swim":
         raise SynthesisPlanError(SWIM_NOT_IMPLEMENTED)
+    if synthesis_family == "descriptive":
+        raise SynthesisPlanError(DESCRIPTIVE_NOT_IMPLEMENTED)
     os.makedirs(out_dir, exist_ok=True)
     studies = load_studies(extraction_table_path)
     rows = flatten_rows(studies)
@@ -728,6 +767,8 @@ def main():
     # repo root not on sys.path), while the CLI path this function serves
     # only ever runs via `python3 -m synthesis.run_synthesis` from the repo
     # root (where `tools` is importable) -- see the bottom of this file.
+    from tools.method import MethodError
+    from tools.method import resolve as resolve_method
     from tools.path_policy import UnsafePathError, safe_topic_path
 
     parser = argparse.ArgumentParser(description="Group extraction_table.json by outcome, pool poolable outcomes, write synthesis/*.json + plots.")
@@ -748,7 +789,13 @@ def main():
         return 1
 
     try:
-        plan = resolve_synthesis_plan(args.topic, args.model, safe_topic_path)
+        families_allowed = resolve_method(args.topic)["manifest"]["synthesis"]["families_allowed"]
+    except MethodError as exc:
+        print(f"Error: {exc}", file=sys.stderr)
+        return 1
+
+    try:
+        plan = resolve_synthesis_plan(args.topic, args.model, safe_topic_path, families_allowed=families_allowed)
     except (SynthesisPlanError, jsonschema.exceptions.ValidationError) as exc:
         message = exc.message if isinstance(exc, jsonschema.exceptions.ValidationError) else str(exc)
         print(f"Error: {message}", file=sys.stderr)

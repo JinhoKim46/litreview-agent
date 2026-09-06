@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://prisma-flow.local/schemas/charting_table.schema.json",
+  "title": "charting_table.json",
+  "description": "A scoping review's charted-study table (docs/PLAN.md M3; references/docs/design/multi-method-consensus.md §3.1 S5, §3.3 'Scoping review'). Written by the (not-yet-shipped) evidence-mapping skill once a method manifest's capture.mode is \"charting\" -- see methods/_schema.json's capture.mode enum and tools/method.py's resolve(). Rows carry provenance the same way extraction_table.json rows do (quote/locator, by/verified_by), plus suggested_by to distinguish an LLM-drafted field from one a connector filled in automatically (year/venue/publication type), which never needs reviewer confirmation.",
+  "type": "object",
+  "required": ["framework_version", "topic", "charting_form_frozen", "studies"],
+  "additionalProperties": false,
+  "properties": {
+    "framework_version": {"type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$"},
+    "topic": {"type": "string"},
+    "charting_form_frozen": {
+      "type": "boolean",
+      "description": "False during the pilot phase (5-10 records per §3.3); once true, the fields[] below may no longer change without a new pilot round (G-Freeze)."
+    },
+    "fields": {
+      "type": "array",
+      "items": {"type": "string"},
+      "description": "The frozen charting form's field names, co-developed from the pack default and piloted before freeze -- empty while charting_form_frozen is false."
+    },
+    "studies": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["record_id", "data", "by"],
+        "additionalProperties": false,
+        "properties": {
+          "record_id": {"type": "string"},
+          "data": {
+            "type": "object",
+            "description": "One key per frozen fields[] entry; values may be any JSON type the form's field calls for.",
+            "propertyNames": {"type": "string"}
+          },
+          "source": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "quote": {"type": ["string", "null"]},
+              "page": {"type": ["string", "null"]},
+              "hash": {"type": ["string", "null"], "description": "sha256 of the exact source text `quote` was taken from, so a later reviewer can verify it wasn't altered."}
+            }
+          },
+          "suggested_by": {
+            "type": "string",
+            "enum": ["llm", "connector"],
+            "default": "llm",
+            "description": "\"connector\" fields (e.g. year, venue, publication type filled straight from records.jsonl) need no reviewer confirmation; \"llm\"-suggested fields do, per §3.1 S5's G-Values gate."
+          },
+          "by": {"type": "string"},
+          "verified_by": {"type": ["string", "null"], "default": null}
+        }
+      }
+    }
+  }
+}
