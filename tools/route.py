@@ -154,7 +154,20 @@ def _apply_row(row: dict, answers: dict) -> dict:
 def _gate_against_shipped(result: dict, shipped_method_ids: set[str]) -> dict:
     """Convert a 'resolve' whose method has no shipped manifest into a
     refusal. Never applied to 'living_or_ask' resolutions -- a living base's
-    method_id is, by definition, already a completed review's shipped method."""
+    method_id is, by definition, already a completed review's shipped method.
+
+    Also filters any 'refuse' row's own offer[] down to shipped methods --
+    a row's `then.offer` in methods/_routing.json is written against the
+    full method taxonomy (docs/ROADMAP.md), so an offer naming a method
+    with no shipped manifest yet (e.g. R6a/R6b/R6c/R2 all currently offer
+    "scoping_review", which is itself unshipped in M2) must not surface as
+    a live suggestion -- that would hand a user a dead-end recommendation
+    the tool would immediately refuse too."""
+    if result["kind"] == "refuse":
+        if result["offer"]:
+            result = dict(result)
+            result["offer"] = [m for m in result["offer"] if m in shipped_method_ids]
+        return result
     if result["kind"] != "resolve" or result["method_id"] in shipped_method_ids:
         return result
     unshipped = _base_result()
