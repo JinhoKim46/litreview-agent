@@ -178,6 +178,57 @@ class ForestPlotTest(unittest.TestCase):
         x = float(path.get("d").split()[1])
         self.assertAlmostEqual(px_to_data(x), 0, places=2)
 
+    def test_no_prediction_interval_bar_by_default(self):
+        # This suite's own setUp() calls forest_plot with no prediction_interval
+        # -- confirm no extra y-tick/row was added for it.
+        expected_labels = [s["label"] for s in STUDIES] + [POOLED["label"]]
+        self.assertEqual(_y_axis_tick_labels(self.root), expected_labels)
+        self.assertNotIn("95% Prediction Interval", _y_axis_tick_labels(self.root))
+
+
+class ForestPlotPredictionIntervalTest(unittest.TestCase):
+    def setUp(self):
+        self.tmpdir = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmpdir.cleanup)
+        self.out_path = os.path.join(self.tmpdir.name, "forest_pi.svg")
+        self.pi = {"low": 0.10, "high": 2.20}
+        plots.forest_plot(STUDIES, POOLED, self.out_path, null_value=1, prediction_interval=self.pi)
+        self.assertTrue(os.path.getsize(self.out_path) > 0)
+        self.root = _parse_svg(self.out_path)
+
+    def test_prediction_interval_row_label_appended_last(self):
+        expected = [s["label"] for s in STUDIES] + [POOLED["label"], "95% Prediction Interval"]
+        self.assertEqual(_y_axis_tick_labels(self.root), expected)
+
+    def test_prediction_interval_bar_matches_input_bounds_and_is_visually_distinct(self):
+        px_to_data = _axis_to_data_fn(self.root, "matplotlib.axis_1", "x")
+        # The PI bar uses a dashed grey style -- distinct from every study's
+        # solid-black CI line style, so it must never be counted as one more
+        # study line by code (or a reader) scanning for CI paths.
+        pi_paths = [
+            el.get("d")
+            for el in self.root.iter()
+            if el.tag == SVG_NS + "path"
+            and "stroke: #4472c4" in el.get("style", "")
+        ]
+        self.assertEqual(len(pi_paths), 1, "exactly one prediction-interval bar expected")
+        nums = [float(t) for t in pi_paths[0].replace("M", "").replace("L", "").split()]
+        x1, _y1, x2, _y2 = nums
+        self.assertAlmostEqual(px_to_data(min(x1, x2)), self.pi["low"], places=2)
+        self.assertAlmostEqual(px_to_data(max(x1, x2)), self.pi["high"], places=2)
+
+    def test_study_ci_line_count_unaffected_by_prediction_interval(self):
+        # The existing CI-line style filter (solid black, width 1.2) must
+        # still match exactly len(STUDIES) paths -- the PI bar's distinct
+        # style must never be swept into this count.
+        ci_paths = [
+            el.get("d")
+            for el in self.root.iter()
+            if el.tag == SVG_NS + "path"
+            and el.get("style", "") == "fill: none; stroke: #000000; stroke-width: 1.2; stroke-linecap: square"
+        ]
+        self.assertEqual(len(ci_paths), len(STUDIES))
+
 
 class FunnelPlotTest(unittest.TestCase):
     def setUp(self):

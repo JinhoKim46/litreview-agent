@@ -48,7 +48,7 @@ JUDGEMENT_SYMBOLS = {
 }
 
 
-def forest_plot(studies, pooled, out_path, null_value=0):
+def forest_plot(studies, pooled, out_path, null_value=0, prediction_interval=None):
     """Render a forest plot to `out_path` (SVG).
 
     studies: list of {"label": str, "effect": float, "ci_low": float, "ci_high": float},
@@ -56,12 +56,23 @@ def forest_plot(studies, pooled, out_path, null_value=0):
     pooled: {"effect": float, "ci_low": float, "ci_high": float, "label": str},
         drawn as a diamond in its own row below the studies.
     null_value: x-position of the reference line (0 for MD/SMD, 1 for OR/RR).
+    prediction_interval: optional {"low": float, "high": float} -- the 95%
+        prediction interval for a new study's true effect (only meaningful
+        for a random-effects pool with k>=3, synthesis/pooling.py's
+        pi_low/pi_high). Drawn as a thin bar in its own row below the
+        pooled diamond, visually distinct from every study's CI line (a
+        lighter color and a dashed rather than solid line) so it is never
+        mistaken for one more study. Omit (None, the default) to draw no
+        prediction-interval row at all.
     """
     n = len(studies)
-    fig_height = max(2.0, 0.5 * (n + 2))
+    has_pi = prediction_interval is not None
+    fig_height = max(2.0, 0.5 * (n + 2 + (1 if has_pi else 0)))
     fig, ax = plt.subplots(figsize=(8, fig_height))
 
-    # Row y=n..1 for studies (top to bottom), y=0 for the pooled diamond.
+    # Row y=n..1 for studies (top to bottom), y=0 for the pooled diamond,
+    # y=-1 for the prediction-interval bar (when present) -- one row below
+    # the diamond so it never overlaps.
     y_positions = list(range(n, 0, -1))
     for y, study in zip(y_positions, studies):
         ax.plot([study["ci_low"], study["ci_high"]], [y, y], color="black", linewidth=1.2, zorder=2)
@@ -82,12 +93,26 @@ def forest_plot(studies, pooled, out_path, null_value=0):
     )
     ax.add_patch(diamond)
 
+    pi_y = -1
+    if has_pi:
+        # A distinct color from the null-value reference line (plain "gray",
+        # which renders as the same #808080 the axvline below uses) so the
+        # two dashed lines are never conflated when parsing the SVG back out.
+        ax.plot(
+            [prediction_interval["low"], prediction_interval["high"]], [pi_y, pi_y],
+            color="#4472c4", linestyle="--", linewidth=1.6, zorder=2,
+        )
+
     ax.axvline(null_value, color="gray", linestyle="--", linewidth=1, zorder=1)
 
     labels = [study["label"] for study in studies] + [pooled["label"]]
-    ax.set_yticks(y_positions + [0])
+    y_ticks = y_positions + [0]
+    if has_pi:
+        labels.append("95% Prediction Interval")
+        y_ticks.append(pi_y)
+    ax.set_yticks(y_ticks)
     ax.set_yticklabels(labels)
-    ax.set_ylim(-1, n + 1)
+    ax.set_ylim((pi_y - 1) if has_pi else -1, n + 1)
     ax.set_xlabel("Effect size (95% CI)")
     ax.spines["top"].set_visible(False)
     ax.spines["right"].set_visible(False)

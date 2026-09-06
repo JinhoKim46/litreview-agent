@@ -1,7 +1,7 @@
 ---
 name: review-protocol
 description: "Elicit and record a systematic review's protocol: the research-question framework (PICO/PICo/SPIDER/other), eligibility criteria, and scope. Use whenever the user starts a new systematic review or meta-analysis, runs /prisma-init, mentions 'PICO', 'PICo', 'SPIDER', 'research question framework', 'eligibility criteria', 'inclusion criteria', 'exclusion criteria', 'protocol', 'PROSPERO', or asks 'is this study eligible' / 'should I include this paper' / 'does this study pass screening'. Also trigger mid-review whenever a screening or extraction step needs an eligibility ruling on a specific study, or when scope needs to change (e.g. adding a language, narrowing a population) partway through a review. Covers framework selection and elicitation questions plus the hard-gate-before-scoring eligibility check; it does not cover keyword expansion (see keyword-expansion) or manuscript drafting (see prisma-manuscript)."
-framework_version: 1.2.0
+framework_version: 1.3.0
 ---
 
 # Review Protocol
@@ -98,7 +98,7 @@ If Phase 1 step 5 elicited a quantitative synthesis plan, write it as its own fi
 }
 ```
 
-`tau2_estimator` and `ci_method` currently accept only `"dl"` and `"normal"` respectively — do not offer other values yet, the schema (`schemas/synthesis_plan.schema.json`) will reject them.
+`tau2_estimator` accepts `"dl"` (DerSimonian-Laird, one-step -- the default) or `"pm"` (Paule-Mandel, iterative); `ci_method` accepts `"normal"` (fixed-scale, the default) or `"hksj"` (modified Hartung-Knapp-Sidik-Jonkman, an estimated-scale CI -- `synthesis/pooling.py` flags a caution, never a refusal, when fewer than 5 studies contribute). Both only affect outcomes pooled under `model: "random"`. Ask which the reviewer prefers only if they raise it; `"dl"`/`"normal"` is a reasonable default for most reviews and need not be elicited as its own question. Neither value is retroactively changeable without re-running `/prisma-synthesize` — the schema (`schemas/synthesis_plan.schema.json`) is the source of truth for the accepted enum values.
 
 ## Running the eligibility gate mid-review
 
