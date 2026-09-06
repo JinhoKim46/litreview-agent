@@ -176,6 +176,12 @@ class CaptureModeGenericityTests(unittest.TestCase):
 
     def setUp(self):
         self.fixture_path = method.METHODS_DIR / f"{self.FIXTURE_ID}.json"
+        # addCleanup (not just tearDown) so a crash mid-test still removes
+        # this from the real methods/ directory -- left behind, it would
+        # fail a later, unrelated check_framework_version.py run (which
+        # globs methods/*.json and requires a semver "version" on each)
+        # with a confusing error about a file nobody knowingly wrote.
+        self.addCleanup(lambda: self.fixture_path.unlink(missing_ok=True))
         manifest = {
             "id": self.FIXTURE_ID, "label": "Test charting fixture", "version": "1.0.0", "family": "mapping",
             "search": {"mode": "protocol_driven", "min_index_families": 0, "known_item_recall": "advisory"},

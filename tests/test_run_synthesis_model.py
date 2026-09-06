@@ -17,7 +17,7 @@ import jsonschema
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from synthesis.run_synthesis import SynthesisPlanError, resolve_synthesis_plan, run
+from synthesis.run_synthesis import DESCRIPTIVE_NOT_IMPLEMENTED, SynthesisPlanError, resolve_synthesis_plan, run
 
 
 def _fake_safe_topic_path(base_dir):
@@ -47,6 +47,44 @@ class ResolveSynthesisPlanTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             with self.assertRaises(SynthesisPlanError):
                 resolve_synthesis_plan("t", None, _fake_safe_topic_path(tmp))
+
+    def test_families_allowed_none_skips_the_manifest_check_entirely(self):
+        # Default (no families_allowed passed) must behave exactly as
+        # before this parameter existed -- every pre-existing call site
+        # relies on this.
+        with tempfile.TemporaryDirectory() as tmp:
+            plan = resolve_synthesis_plan("t", "fixed", _fake_safe_topic_path(tmp), families_allowed=None)
+            self.assertEqual(plan["model_source"], "cli_override")
+
+    def test_manifest_without_pairwise_iv_refuses_as_that_method_not_as_missing_plan(self):
+        # docs/PLAN.md M3: a scoping review's manifest allows only
+        # "descriptive". Refusing here must cite the real reason
+        # (DESCRIPTIVE_NOT_IMPLEMENTED), not the generic "no
+        # synthesis_plan.json found, prespecify a pooling model" message --
+        # that advice is actively wrong for a method that forbids pooling
+        # by design. No synthesis_plan.json exists in this fixture, which
+        # is the realistic case for a scoping review.
+        with tempfile.TemporaryDirectory() as tmp:
+            with self.assertRaises(SynthesisPlanError) as ctx:
+                resolve_synthesis_plan("t", None, _fake_safe_topic_path(tmp), families_allowed=["descriptive"])
+            self.assertEqual(str(ctx.exception), DESCRIPTIVE_NOT_IMPLEMENTED)
+
+    def test_manifest_restriction_applies_even_under_model_override(self):
+        # A manifest-level restriction is a property of the review's
+        # method, not something a one-off --model flag should bypass.
+        with tempfile.TemporaryDirectory() as tmp:
+            with self.assertRaises(SynthesisPlanError):
+                resolve_synthesis_plan("t", "fixed", _fake_safe_topic_path(tmp), families_allowed=["descriptive"])
+
+    def test_families_allowed_including_pairwise_iv_is_unaffected(self):
+        # A systematic_review-shaped manifest (families_allowed includes
+        # pairwise_iv) must fall through to the ordinary missing-plan
+        # refusal unchanged.
+        with tempfile.TemporaryDirectory() as tmp:
+            with self.assertRaises(SynthesisPlanError) as ctx:
+                resolve_synthesis_plan("t", None, _fake_safe_topic_path(tmp),
+                                        families_allowed=["structured_narrative", "swim", "pairwise_iv"])
+            self.assertIn("no synthesis_plan.json found", str(ctx.exception))
 
     def test_override_without_any_plan(self):
         with tempfile.TemporaryDirectory() as tmp:
