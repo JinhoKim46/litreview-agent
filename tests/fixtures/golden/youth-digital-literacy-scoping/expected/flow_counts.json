@@ -1,0 +1,27 @@
+{
+  "per_source_identified": {
+    "crossref": {
+      "retrieved": 2,
+      "total_available": 2,
+      "truncated": false
+    },
+    "openalex": {
+      "retrieved": 2,
+      "total_available": 2,
+      "truncated": false
+    }
+  },
+  "truncated_sources": [],
+  "identified_total": 4,
+  "duplicates_removed": 0,
+  "records_screened": 4,
+  "excluded_title_abstract": 0,
+  "sought_for_retrieval": 4,
+  "reports_not_retrieved": 1,
+  "assessed_for_eligibility": 3,
+  "pending_full_text": 0,
+  "excluded_full_text_total": 0,
+  "excluded_full_text_reasons": {},
+  "included_final": 3,
+  "full_text_excludes_missing_reason": []
+}

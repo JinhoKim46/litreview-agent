@@ -1,0 +1,4 @@
+{
+  "rc": 0,
+  "stdout": "capture_mode=charting (synthesis_family=\"descriptive\", no pooling). 3 studies tabulated across 5 field(s)/facet(s), 0 cross-tab(s). Wrote descriptive_summary.json to <TOPIC_DIR>/synthesis\n"
+}

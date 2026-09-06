@@ -1,0 +1,37 @@
+{
+  "charting_form_frozen": true,
+  "pilot_records": 3,
+  "fields": ["year", "study_design", "setting", "intervention_type", "outcome_reported"],
+  "studies": [
+    {
+      "record_id": "openalex:O1",
+      "data": {
+        "year": 2022,
+        "study_design": "cluster RCT",
+        "setting": "secondary school",
+        "intervention_type": "curriculum-based digital literacy program",
+        "outcome_reported": "digital literacy knowledge/skill assessment"
+      }
+    },
+    {
+      "record_id": "openalex:O2",
+      "data": {
+        "year": 2021,
+        "study_design": "mixed_methods",
+        "setting": "primary school",
+        "intervention_type": "teacher-led media literacy instruction",
+        "outcome_reported": "digital literacy knowledge/skill assessment"
+      }
+    },
+    {
+      "record_id": "crossref:C1",
+      "data": {
+        "year": 2020,
+        "study_design": "cohort",
+        "setting": "after-school program",
+        "intervention_type": "coding club",
+        "outcome_reported": "digital literacy knowledge/skill assessment"
+      }
+    }
+  ]
+}

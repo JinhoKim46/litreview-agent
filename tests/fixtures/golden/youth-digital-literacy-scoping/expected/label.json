@@ -1,0 +1,10 @@
+{
+  "label": "scoping review",
+  "checks": {
+    "min_index_families": "not_recorded"
+  },
+  "missing": [],
+  "disclosures": [
+    "min_index_families"
+  ]
+}

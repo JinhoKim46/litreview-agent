@@ -1,0 +1,21 @@
+{
+  "sources": {
+    "openalex": {
+      "status": "complete",
+      "retrieved": 2,
+      "total_available": 2
+    },
+    "crossref": {
+      "status": "complete",
+      "retrieved": 2,
+      "total_available": 2
+    }
+  },
+  "unacknowledged_incomplete_sources": [],
+  "known_item_recall": {
+    "checked": 0,
+    "found": [],
+    "missing": []
+  },
+  "unacknowledged_missing_known_items": []
+}

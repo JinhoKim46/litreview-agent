@@ -1,0 +1,25 @@
+{
+  "meta": {"source": "crossref", "query": "(\"digital literacy\" OR \"media literacy\") AND (school OR youth OR adolescent)", "retrieved": 2, "total_available": 2, "truncated": false, "fetched_at": "2026-01-01T00:05:00Z", "purpose": "protocol_driven"},
+  "results": [
+    {
+      "id": "C1",
+      "title": "After-School Coding Clubs and Digital Literacy Outcomes: A Prospective Cohort Study",
+      "authors": ["Alvarez R", "Kowalski J"],
+      "year": 2020,
+      "venue": "British Journal of Educational Technology",
+      "doi": "10.2222/dl003",
+      "abstract": "A prospective cohort study comparing digital literacy outcomes for students attending after-school coding clubs versus a matched comparison group.",
+      "url": "https://doi.org/10.2222/dl003"
+    },
+    {
+      "id": "C2",
+      "title": "Parental Mediation and Youth Digital Literacy: A Cross-Sectional Survey",
+      "authors": ["Haddad L"],
+      "year": 2023,
+      "venue": "Journal of Children and Media",
+      "doi": "10.2222/dl004",
+      "abstract": "A cross-sectional survey examining the association between parental mediation strategies and adolescents' self-reported digital literacy.",
+      "url": "https://doi.org/10.2222/dl004"
+    }
+  ]
+}
