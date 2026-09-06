@@ -22,15 +22,19 @@ def _atomic_savefig(fig, out_path, **kwargs):
     os.replace(tmp_path, out_path)
 
 
-# Shared low/high/unclear (RoB2 domain-level) and low risk/some concerns/high
-# risk (three-tier overall) judgement vocabularies both map onto one
-# green/amber/red traffic-light palette -- see rob_traffic_light_plot below.
+# Shared low/high/unclear (RoB1 domain-level) and low risk/high risk/unclear
+# risk (RoB1's plain overall rollup, quality-appraisal/01-risk-of-bias.md) both
+# map onto one green/amber/red traffic-light palette -- see
+# rob_traffic_light_plot below. "some concerns" is RoB 2 vocabulary, not this
+# framework's RoB1 rollup, but is still accepted here so a stray legacy value
+# still renders amber instead of erroring.
 JUDGEMENT_COLORS = {
     "low": "#2ca02c",
     "low risk": "#2ca02c",
     "high": "#d62728",
     "high risk": "#d62728",
     "unclear": "#f2c744",
+    "unclear risk": "#f2c744",
     "some concerns": "#f2c744",
 }
 JUDGEMENT_SYMBOLS = {
@@ -39,6 +43,7 @@ JUDGEMENT_SYMBOLS = {
     "high": "−",
     "high risk": "−",
     "unclear": "?",
+    "unclear risk": "?",
     "some concerns": "?",
 }
 
@@ -116,19 +121,19 @@ def funnel_plot(studies, out_path):
 
 
 def rob_traffic_light_plot(studies, domain_labels, out_path, overall_key="overall"):
-    """Render a Cochrane-RoB2-style "traffic light" plot to `out_path` (SVG):
+    """Render a Cochrane-RoB1-style "traffic light" plot to `out_path` (SVG):
     one row per study, one column per risk-of-bias domain plus an optional
     "Overall" column, each cell a green/amber/red circle.
 
     studies: list of {"label": str, "domains": {domain_key: "low"|"high"|"unclear", ...},
-        "overall": "low risk"|"some concerns"|"high risk"} -- "overall" is optional,
+        "overall": "low risk"|"unclear risk"|"high risk"} -- "overall" is optional,
         omit `overall_key` (pass None) to skip that column entirely.
     domain_labels: ordered list of (domain_key, short_column_header) pairs, e.g.
         [("sequence_generation", "D1"), ("allocation_concealment", "D2"), ...].
         Short headers keep columns narrow; the caller is responsible for a
         legend mapping D1..Dn back to full domain names elsewhere in the
         manuscript (e.g. a table note), matching how robvis itself labels
-        RoB2 columns.
+        RoB1 columns.
     A judgement string not in JUDGEMENT_COLORS (e.g. a domain the reviewer
     hasn't assessed yet) renders as a grey "?" circle rather than raising --
     a partially-assessed study should not block plotting the rest.
@@ -184,7 +189,7 @@ if __name__ == "__main__":
         print(f"OK: forest_plot self-check passed ({os.path.getsize(out_path)} bytes)")
 
         example_rob_studies = [
-            {"label": "Smith 2019", "domains": {"d1": "low", "d2": "unclear", "d3": "low"}, "overall": "some concerns"},
+            {"label": "Smith 2019", "domains": {"d1": "low", "d2": "unclear", "d3": "low"}, "overall": "unclear risk"},
             {"label": "Jones 2020", "domains": {"d1": "high", "d2": "low", "d3": "low"}, "overall": "high risk"},
         ]
         rob_out_path = os.path.join(tmpdir, "rob_traffic_light.svg")
