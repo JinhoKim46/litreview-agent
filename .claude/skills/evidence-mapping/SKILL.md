@@ -1,7 +1,7 @@
 ---
 name: evidence-mapping
 description: "Chart a scoping review's included studies into results/<TOPIC>/charting_table.json: pilot a co-developed form on a handful of records, freeze it (G-Freeze), then chart every remaining study against the frozen form with full provenance. Use whenever a review's resolved method manifest declares capture.mode: \"charting\" (methods/scoping_review.json) -- /prisma-extract's Step 0.5 routes here instead of running extraction for that manifest. Does not cover a systematic review's risk-of-bias-weighted extraction (see prisma-extract.md's own steps for that) or a systematic mapping study's classification-scheme workflow (capture.mode: \"classification\" -- see .claude/skills/study-classification/SKILL.md for that)."
-framework_version: 1.1.0
+framework_version: 1.2.0
 ---
 
 # Evidence Mapping (Charting)
@@ -64,5 +64,5 @@ Confirm every `suggested_by: "llm"` value with the reviewer before persisting, s
 ## What this skill does not do
 
 - **Appraisal**: optional for a scoping review (`appraisal.requirement: "optional_with_justification"`). If the reviewer wants it, that's `quality-appraisal`'s job, with a recorded justification for why (§3.3) -- not this skill's.
-- **Synthesis**: descriptive tabulation/charting summary only, never pooling (`synthesis.families_allowed: ["descriptive"]`). `tools/chart_summary.py` (the S7 summary tool) does not exist yet -- `/prisma-synthesize` refuses cleanly (`DESCRIPTIVE_NOT_IMPLEMENTED`) until it does; this is a known, disclosed gap, not something to work around by hand-building a substitute.
+- **Synthesis**: descriptive tabulation/charting summary only, never pooling (`synthesis.families_allowed: ["descriptive"]`). `/prisma-synthesize` runs `tools/chart_summary.py` for this, producing `synthesis/descriptive_summary.json` (category frequencies per charted field) -- this skill never computes or writes that itself.
 - **Classification** (systematic mapping study's `capture.mode: "classification"` -- scheme freeze, keywording, calibration re-code) is a distinct workflow this skill does not cover.

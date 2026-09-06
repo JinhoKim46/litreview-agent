@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://prisma-flow.local/schemas/descriptive_summary.schema.json",
+  "title": "descriptive_summary.json",
+  "description": "Output of tools/chart_summary.py (docs/PLAN.md M3 §3.1 S7), the descriptive-synthesis engine for a scoping review's charted studies or a systematic mapping study's classified studies. Never contains a pooled effect estimate -- synthesis_family: \"descriptive\" forbids pooling by design.",
+  "type": "object",
+  "required": ["framework_version", "topic", "capture_mode", "n_studies", "category_frequencies", "cross_tabs"],
+  "additionalProperties": false,
+  "properties": {
+    "framework_version": {"type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$"},
+    "topic": {"type": "string"},
+    "capture_mode": {"type": "string", "enum": ["charting", "classification"]},
+    "n_studies": {"type": "integer", "minimum": 0},
+    "category_frequencies": {
+      "type": "object",
+      "description": "One key per charted field / classification facet name; each value is {category_value_as_string: count}.",
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": {"type": "integer", "minimum": 0}
+      }
+    },
+    "cross_tabs": {
+      "type": "array",
+      "description": "Pairwise facet cross-tabulations (classification only -- always empty for capture_mode \"charting\"); the data a bubble plot renders. Rendering the plot itself is not yet implemented.",
+      "items": {
+        "type": "object",
+        "required": ["facet_a", "facet_b", "counts"],
+        "additionalProperties": false,
+        "properties": {
+          "facet_a": {"type": "string"},
+          "facet_b": {"type": "string"},
+          "counts": {
+            "type": "object",
+            "description": "Key is \"value_a|value_b\"; value is the count of studies with that combination.",
+            "additionalProperties": {"type": "integer", "minimum": 0}
+          }
+        }
+      }
+    }
+  }
+}
