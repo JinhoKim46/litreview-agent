@@ -1,7 +1,7 @@
 ---
 name: review-protocol
 description: "Elicit and record a systematic review's protocol: the research-question framework (PICO/PICo/SPIDER/other), eligibility criteria, and scope. Use whenever the user starts a new systematic review or meta-analysis, runs /prisma-init, mentions 'PICO', 'PICo', 'SPIDER', 'research question framework', 'eligibility criteria', 'inclusion criteria', 'exclusion criteria', 'protocol', 'PROSPERO', or asks 'is this study eligible' / 'should I include this paper' / 'does this study pass screening'. Also trigger mid-review whenever a screening or extraction step needs an eligibility ruling on a specific study, or when scope needs to change (e.g. adding a language, narrowing a population) partway through a review. Covers framework selection and elicitation questions plus the hard-gate-before-scoring eligibility check; it does not cover keyword expansion (see keyword-expansion) or manuscript drafting (see prisma-manuscript)."
-framework_version: 1.4.0
+framework_version: 1.5.0
 ---
 
 # Review Protocol
@@ -84,6 +84,16 @@ Write (or update) `results/<TOPIC>/protocol.json` with at minimum:
 `field_domain` is one of `clinical_medicine` | `biomedical_technical` | `non_biomedical`, from the Phase 1 elicitation above — `keyword-expansion` reads it to decide the MeSH axis's default.
 
 This file is read verbatim by `/prisma-search` (to build `search_plan.json`), `/prisma-screen` (to run the eligibility gate on each candidate record — see `02-eligibility-criteria.md`), and `/prisma-report` (Methods §2.2/§2.3). Never re-elicit these values from memory later in the pipeline — always read them from this file.
+
+### G-Protocol: sign the protocol
+
+Once `protocol.json` is written (or updated) with every field above populated, stamp the sign-off — this is the human gate that fixes the moment the plan predated the first search, which `tools/label_gate.py`'s systematic-review conduct floor and `synthesis/run_synthesis.py`'s `model_source` (`"protocol"` vs. `"post_hoc"`) both depend on:
+
+```bash
+python3 tools/sign_protocol.py --topic <TOPIC> --signed-by "<reviewer name from CLAUDE.local.md, or 'reviewer' if unknown>"
+```
+
+(Pre-allowlisted — `Bash(python3 tools/sign_protocol.py:*)`.) This independently re-verifies the protocol is actually complete (title, objective, framework fields, every eligibility gate's required value, scope mode) before writing `signed_at`/`signed_by` — do not skip this call because you've already confirmed the fields conversationally; the script is the deterministic gate, not a formality. If it refuses (a field is missing or empty), go back and fill that field rather than signing an incomplete protocol. It is idempotent and never re-dates an already-signed protocol, so it's safe to call again on a resumed/updated review — a genuine post-hoc plan change stays disclosed via `amendments[]` (see "Handling scope changes" below), never by silently moving `signed_at` forward.
 
 If Phase 1 step 5 elicited a quantitative synthesis plan, write it as its own file, `results/<TOPIC>/synthesis_plan.json` (never a `protocol.json` sub-object — `synthesis/run_synthesis.py` reads it directly by that path):
 
