@@ -218,6 +218,14 @@ def normalize_risk_of_bias(rob, study_id):
             file=sys.stderr,
         )
         tool = "RoB1"
+    if tool == "unsupported":
+        print(
+            f"warning: {study_id}: risk_of_bias.tool=\"unsupported\" (design fits neither RoB1 "
+            "nor NOS) counts as not-low-risk in proportion_low_risk -- this study needs a "
+            "design-appropriate instrument this framework doesn't yet implement "
+            "(see .claude/skills/quality-appraisal/01-risk-of-bias.md)",
+            file=sys.stderr,
+        )
     normalized = dict(rob, tool=tool)
     if "instrument" not in normalized and tool in INSTRUMENT_BY_TOOL:
         normalized["instrument"] = INSTRUMENT_BY_TOOL[tool]
@@ -388,9 +396,20 @@ def convert_effect(effect_data):
 
 
 def is_low_risk(rob):
+    """None means "no assessment at all" (excluded from proportion_low_risk's
+    denominator by build_rob_entry -- genuinely unassessed). "unsupported"
+    (quality-appraisal/01-risk-of-bias.md Part 3: a design neither RoB1 nor
+    NOS covers) is deliberately different -- it IS an assessment (the study
+    was looked at and no instrument applies), so it fails closed as False
+    rather than being dropped from the denominator like a missing
+    assessment would be. Silently excluding it would let an
+    unsupported-design study's contribution to a pooled estimate escape the
+    GRADE risk-of-bias domain entirely."""
     if not rob:
         return None
     tool = rob.get("tool")
+    if tool == "unsupported":
+        return False
     judgement = (rob.get("overall_judgement") or "").lower()
     if tool == "RoB1":
         return "low risk" in judgement
