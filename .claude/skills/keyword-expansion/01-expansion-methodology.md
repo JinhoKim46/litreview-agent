@@ -1,5 +1,5 @@
 ---
-framework_version: 1.2.0
+framework_version: 1.2.1
 ---
 
 # Keyword Expansion Methodology
@@ -10,7 +10,7 @@ This document is the full methodology behind `SKILL.md`'s six steps: how candida
 
 ## 1. Seed Terms → Candidate Expansions
 
-For each PICO/PICo/SPIDER concept, the seed term(s) the reviewer supplied during `/prisma-init` are expanded along four independent axes. Generate candidates for **all four axes for every seed term** — don't skip an axis because the first one already found something.
+For each PICO/PICo/SPIDER concept, the seed term(s) the reviewer supplied during `/litreview-init` are expanded along four independent axes. Generate candidates for **all four axes for every seed term** — don't skip an axis because the first one already found something.
 
 **a. Synonyms and spelling variants.** Draw on general domain knowledge: American/British spelling (`randomized`/`randomised`, `anesthesia`/ `anaesthesia`), common abbreviations and their expansions (`COPD` ↔ `chronic obstructive pulmonary disease`), brand/generic naming where relevant, and near-synonyms actually used in the literature (`exercise therapy` / `physical therapy` / `physiotherapy` are not interchangeable in every domain — propose them separately, let the reviewer judge fit rather than merging them into one bucket for the model).
 
@@ -98,7 +98,7 @@ Triggered by `protocol.json.scope.mode` being `"national"` or `"regional"` (read
    "translation_used": true,
    "translation_languages": ["ko"]
    ```
-Set `translation_used: false` (and leave `translation_languages: []`) when the reviewer declines translation for a national/regional review — this is a legitimate choice (e.g. a review restricted to English-language publications by explicit eligibility criterion) but it must be visible in `protocol.json`, not silently absent, since `/prisma-report` drafts the Methods §2.4 language-scope sentence directly from this field.
+Set `translation_used: false` (and leave `translation_languages: []`) when the reviewer declines translation for a national/regional review — this is a legitimate choice (e.g. a review restricted to English-language publications by explicit eligibility criterion) but it must be visible in `protocol.json`, not silently absent, since `/litreview-report` drafts the Methods §2.4 language-scope sentence directly from this field.
 
 ---
 
@@ -112,7 +112,7 @@ A source can have no meaningful local-language index for a region even after tra
 - **Semantic Scholar** — strongest for English-language CS/biomedical literature; regional/local-language journals outside major aggregators are inconsistently crawled.
 - **OpenAlex** and **Europe PMC** — the broadest multilingual coverage of the six, but still aggregate from upstream sources (Crossref, PubMed, institutional repositories) and inherit those sources' regional gaps rather than independently indexing local journals.
 
-When a gap applies, write it to `protocol.json.scope.coverage_gaps` (schema in §6) naming the specific source and the specific limitation — not a generic "may have limited coverage" note. If the reviewer has (or can get) access to a source that does cover the gap (e.g. a national database like KoreaMed, LILACS, or a Scopus/Web of Science institutional subscription), suggest `/prisma-add-source` rather than leaving the gap unaddressed; if not, the gap entry itself becomes the manuscript's honest Limitations sentence.
+When a gap applies, write it to `protocol.json.scope.coverage_gaps` (schema in §6) naming the specific source and the specific limitation — not a generic "may have limited coverage" note. If the reviewer has (or can get) access to a source that does cover the gap (e.g. a national database like KoreaMed, LILACS, or a Scopus/Web of Science institutional subscription), suggest `/litreview-add-source` rather than leaving the gap unaddressed; if not, the gap entry itself becomes the manuscript's honest Limitations sentence.
 
 ---
 
@@ -120,7 +120,7 @@ When a gap applies, write it to `protocol.json.scope.coverage_gaps` (schema in �
 
 Before confirming the final term set, ask the reviewer: "Are there 3-5 papers you already know should turn up in this search — ones you'd be surprised or concerned to miss?" This is optional (some reviews start from a genuinely blank slate), but when the reviewer has any prior familiarity with the literature, it is the cheapest real check on whether the Boolean strings actually work, rather than just looking plausible.
 
-For each paper offered, record its DOI or PMID (whichever is available — prefer DOI) as an entry in `protocol.json.known_items` (schema in §6), with a one-phrase `note` on why it's expected (e.g. "the seminal RCT this review is partly built around"). `tools/search_preflight.py` checks these against `records.jsonl` after each search run (`/prisma-search` Step 7c) and flags any that aren't found — a **string-miss** (the term set didn't actually capture a paper it should have) is exactly the kind of recall failure a plausible-looking Boolean string can hide. If a known item turns out to be genuinely unindexed by every enabled source (rather than a term-set problem), the reviewer records why on that entry (`expected_missing_reason`) rather than leaving it an open question every future search run re-flags.
+For each paper offered, record its DOI or PMID (whichever is available — prefer DOI) as an entry in `protocol.json.known_items` (schema in §6), with a one-phrase `note` on why it's expected (e.g. "the seminal RCT this review is partly built around"). `tools/search_preflight.py` checks these against `records.jsonl` after each search run (`/litreview-search` Step 7c) and flags any that aren't found — a **string-miss** (the term set didn't actually capture a paper it should have) is exactly the kind of recall failure a plausible-looking Boolean string can hide. If a known item turns out to be genuinely unindexed by every enabled source (rather than a term-set problem), the reviewer records why on that entry (`expected_missing_reason`) rather than leaving it an open question every future search run re-flags.
 
 ---
 
@@ -229,4 +229,4 @@ the rest of `protocol.json` belongs to `review-protocol`)
 }
 ```
 
-`sources.<name>.query_string` is the exact field `connectors/_shared.py`'s `resolve_query()` reads when a connector is invoked with `--query-file results/<TOPIC>/search_plan.json --source-key <name>` — keep the key names identical to the connector module names (`pubmed`, `openalex`, `crossref`, `semanticscholar`, `europepmc`, `arxiv`) so `/prisma-search` and `rerun_search.sh` can address them without a lookup table.
+`sources.<name>.query_string` is the exact field `connectors/_shared.py`'s `resolve_query()` reads when a connector is invoked with `--query-file results/<TOPIC>/search_plan.json --source-key <name>` — keep the key names identical to the connector module names (`pubmed`, `openalex`, `crossref`, `semanticscholar`, `europepmc`, `arxiv`) so `/litreview-search` and `rerun_search.sh` can address them without a lookup table.

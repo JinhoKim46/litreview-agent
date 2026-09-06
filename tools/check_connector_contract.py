@@ -70,7 +70,7 @@ def _run_cli(module, argv):
 
     Uses each connector's real `main()` -> write_output/--out path (rather
     than calling an internal search function directly) so this exercises the
-    exact CLI surface `/prisma-search` shells out to, not just the mapping
+    exact CLI surface `/litreview-search` shells out to, not just the mapping
     logic underneath it. All six connectors accept `main()` with no arguments
     and fall back to `sys.argv[1:]` via argparse, so patching sys.argv is the
     one invocation shape that works uniformly across all of them despite

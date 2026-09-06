@@ -50,10 +50,10 @@ ARXIV_RESULT_WINDOW = 30000    # API ceiling on start + max_results
 
 _COURTESY_DELAY_SECONDS = 3.0
 # ponytail: best-effort file-based cross-process throttle (one arXiv request
-# per CLI invocation is typical; /prisma-search's rerun_search.sh is what
+# per CLI invocation is typical; /litreview-search's rerun_search.sh is what
 # actually chains many). Not concurrency-safe against parallel processes
 # racing the same file -- upgrade to fcntl.flock if that ever matters.
-_RATE_LIMIT_STATE_FILE = os.path.join(tempfile.gettempdir(), "prisma_arxiv_last_request")
+_RATE_LIMIT_STATE_FILE = os.path.join(tempfile.gettempdir(), "litreview_agent_arxiv_last_request")
 
 
 class ArxivError(Exception):

@@ -4,7 +4,7 @@
 docs/PLAN.md M2 / references/docs/design/multi-method-consensus.md §2.4
 ("downgrade honestly" rule): the label a report is allowed to print is
 *computed from recorded conduct*, never typed by a user or a prompt, using
-the same code at routing (predictive), /prisma-status, and /prisma-report
+the same code at routing (predictive), /litreview-status, and /litreview-report
 (definitive). Each requires[] check in a method manifest's label_rules
 resolves to True, False, or "not_recorded" -- never silently defaulted to
 one or the other:
@@ -13,7 +13,7 @@ one or the other:
     recorded conduct meets the check, and did.
   * "not_recorded" means the mechanism to record the underlying fact does
     not exist yet for this review (e.g. no connector declares
-    `index_family`, or /prisma-init's routing interview hasn't been wired
+    `index_family`, or /litreview-init's routing interview hasn't been wired
     up yet) -- a framework limitation, not the reviewer's fault.
 
 Only the two checks the framework can *always* determine from data that
@@ -123,7 +123,7 @@ def check_min_index_families(topic_dir, protocol, manifest, value):
 def check_registry_lookup_recorded(topic_dir, protocol, manifest, value):
     routing = (protocol or {}).get("method", {}).get("routing")
     if routing is None:
-        return "not_recorded"  # /prisma-init's routing interview isn't wired up for this review yet
+        return "not_recorded"  # /litreview-init's routing interview isn't wired up for this review yet
     q0 = routing.get("q0") or {}
     return bool(q0.get("registry_lookup"))
 
@@ -174,7 +174,7 @@ def compute_label(topic: str, *, topic_dir=None) -> dict:
     """Evaluate the resolved method manifest's label_rules against `topic`'s
     recorded conduct. Returns {"label", "checks", "missing", "disclosures"}.
     Callable at G-Route (predictive, before most artifacts exist), at
-    /prisma-status, and at /prisma-report (definitive) -- same code path
+    /litreview-status, and at /litreview-report (definitive) -- same code path
     every time, per §2.4.
 
     `disclosures` here lists which requires[] *checks* came back

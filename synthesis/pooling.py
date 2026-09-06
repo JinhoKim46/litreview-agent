@@ -1,4 +1,4 @@
-"""Pooled effect-size estimation for /prisma-synthesize.
+"""Pooled effect-size estimation for /litreview-synthesize.
 
 Wraps statsmodels.stats.meta_analysis.combine_effects, which already
 implements inverse-variance fixed-effect pooling, DerSimonian-Laird and

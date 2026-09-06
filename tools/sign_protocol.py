@@ -52,7 +52,7 @@ def _protocol_path(topic_dir: Path) -> Path:
 def check_completeness(protocol: dict) -> list[str]:
     """Returns the dotted paths of every field required before signing that
     is missing or empty (an empty list means ready to sign). Mirrors
-    prisma-init.md Step 5's own documented "what's a gap vs. legitimately
+    litreview-init.md Step 5's own documented "what's a gap vs. legitimately
     null" list -- registration.id, eligibility.date_range.to and
     scope.region are never checked here, since a null value there is
     correct, not incomplete."""

@@ -23,8 +23,8 @@ produced it -- never hand-edit a file under expected/.
 Writes to a throwaway topic directory under the real (gitignored) results/
 tree, using the same tools every command actually uses, and removes it in
 tearDown -- this is what makes the test "golden": it exercises the exact
-code paths a live review's /prisma-search -> /prisma-screen -> /prisma-
-extract -> /prisma-synthesize sequence would, not a reimplementation of
+code paths a live review's /litreview-search -> /litreview-screen ->
+/litreview-extract -> /litreview-synthesize sequence would, not a reimplementation of
 them.
 """
 import contextlib
@@ -147,7 +147,7 @@ class GoldenPipelineTest(unittest.TestCase):
         verify_rc = ledger.main(["--topic", SLUG, "verify"])
         self.assertEqual(verify_rc, 0)
 
-        # ---- Stage 3: flow counts (matches /prisma-report's own aggregation) ----
+        # ---- Stage 3: flow counts (matches /litreview-report's own aggregation) ----
         fc = flow_counts.flow_counts(self.topic_dir)
         self.assertEqual(fc, _load_expected("flow_counts.json"))
         self.assertEqual(fc["included_final"], 4)

@@ -1,10 +1,10 @@
 ---
-framework_version: 1.2.0
+framework_version: 1.2.1
 ---
 
 # Screening Sheet Workflow
 
-Exact algorithms, file formats, and parsing rules for `/prisma-screen export` and `/prisma-screen import`. `SKILL.md` is the trigger/entry point; this file is what you actually follow step by step. Every snippet below is stdlib-only Python (`json`, `csv`, `sys`, `pathlib`, `datetime`) run via `python3` - no new dependency, nothing that needs `requirements.txt` touched.
+Exact algorithms, file formats, and parsing rules for `/litreview-screen export` and `/litreview-screen import`. `SKILL.md` is the trigger/entry point; this file is what you actually follow step by step. Every snippet below is stdlib-only Python (`json`, `csv`, `sys`, `pathlib`, `datetime`) run via `python3` - no new dependency, nothing that needs `requirements.txt` touched.
 
 All paths below are relative to the repo root and use `<TOPIC>` for the review's slug (the same one `protocol.json` etc. live under in `results/<TOPIC>/`).
 
@@ -22,7 +22,7 @@ One JSON object per line, one line per **distinct study** (duplicates are marked
  "url": "https://...", "source": "openalex", "duplicate_of": null}
 ```
 
-`record_id` is whatever stable string `/prisma-search`'s dedup step assigned - this workflow never re-derives, renumbers, or reformats it, only round-trips it verbatim. **Contract this workflow requires and `/prisma-search` must honor:** `record_id` contains no whitespace (the Markdown fallback parser in §9.3 splits on it). `duplicate_of` is `null` for a canonical record and the canonical record's `record_id` for a duplicate; duplicates are **excluded from screening entirely** (they were never really two studies). Missing optional fields (`doi`, `venue`) are `null`, not absent keys - treat absence the same as `null`.
+`record_id` is whatever stable string `/litreview-search`'s dedup step assigned - this workflow never re-derives, renumbers, or reformats it, only round-trips it verbatim. **Contract this workflow requires and `/litreview-search` must honor:** `record_id` contains no whitespace (the Markdown fallback parser in §9.3 splits on it). `duplicate_of` is `null` for a canonical record and the canonical record's `record_id` for a duplicate; duplicates are **excluded from screening entirely** (they were never really two studies). Missing optional fields (`doi`, `venue`) are `null`, not absent keys - treat absence the same as `null`.
 
 ### `results/<TOPIC>/screening_decisions.jsonl` (append-only, this workflow's ledger)
 
@@ -46,11 +46,11 @@ One JSON object per **decision event** (not per record - a record can appear mul
 
 ### `results/<TOPIC>/protocol.json` (optional input, for `ai_suggestion` only)
 
-Written by `/prisma-init` via the `review-protocol` skill. This workflow reads `protocol.json.eligibility_criteria` if present (an array of `{"criterion": "...", "gate": "population|design|publication_type|date|language|other"}` objects) purely to generate the advisory `ai_suggestion`. If `protocol.json` doesn't exist yet, or has no `eligibility_criteria`, every `ai_suggestion` is `null` - export still works, it just has nothing to suggest against. **Never block export on a missing protocol.**
+Written by `/litreview-init` via the `review-protocol` skill. This workflow reads `protocol.json.eligibility_criteria` if present (an array of `{"criterion": "...", "gate": "population|design|publication_type|date|language|other"}` objects) purely to generate the advisory `ai_suggestion`. If `protocol.json` doesn't exist yet, or has no `eligibility_criteria`, every `ai_suggestion` is `null` - export still works, it just has nothing to suggest against. **Never block export on a missing protocol.**
 
 ### `results/<TOPIC>/possible_duplicates.jsonl` (optional input, informational only)
 
-Written by `/prisma-search`'s fuzzy-dedup pass (title-similarity check within same-year canonical records that didn't already match on doi/pmid/title-author-year - see that command's Step 7b). One JSON object per line:
+Written by `/litreview-search`'s fuzzy-dedup pass (title-similarity check within same-year canonical records that didn't already match on doi/pmid/title-author-year - see that command's Step 7b). One JSON object per line:
 
 ```json
 {"record_id_a": "openalex:W123", "record_id_b": "crossref:10.1234/xyz", "similarity": 0.93, "detected_at": "2026-09-04T12:00:00Z"}
@@ -111,7 +111,7 @@ Write a one-line rationale alongside the label (e.g. `"exclude — animal study,
 
 ## 4a. Keyword tagging and corpus overview (advisory only, never a decision or a finding)
 
-Two additional pieces of advisory output, both computed the same way as `ai_suggestion` - case-insensitive substring matching against a **fixed keyword taxonomy**, run inside the same export subprocess, never an LLM re-reading each abstract. This is a deliberate choice, not a shortcut taken for lack of a better option: matching every one of a review's candidate abstracts with real semantic judgment would mean reading all of them back into the conversation, which is exactly the context-blowup this skill's "one rule" exists to prevent. A keyword match is honest about being a keyword match - it never claims to report a study's actual finding (a specific result value), only which topics/metrics/methods the title or abstract *mentions*. Never let `ai_keywords` or the corpus overview be read by a reviewer (or by `/prisma-report` later) as a substitute for `/prisma-extract`'s actual data extraction from full text.
+Two additional pieces of advisory output, both computed the same way as `ai_suggestion` - case-insensitive substring matching against a **fixed keyword taxonomy**, run inside the same export subprocess, never an LLM re-reading each abstract. This is a deliberate choice, not a shortcut taken for lack of a better option: matching every one of a review's candidate abstracts with real semantic judgment would mean reading all of them back into the conversation, which is exactly the context-blowup this skill's "one rule" exists to prevent. A keyword match is honest about being a keyword match - it never claims to report a study's actual finding (a specific result value), only which topics/metrics/methods the title or abstract *mentions*. Never let `ai_keywords` or the corpus overview be read by a reviewer (or by `/litreview-report` later) as a substitute for `/litreview-extract`'s actual data extraction from full text.
 
 Both the per-record match and the corpus overview are computed by `tools/build_screening_sheet.py` from the `--taxonomy` list Claude passes in (§3 step 2/3) - Claude picks the terms, the script does the substring matching and counting.
 
@@ -125,7 +125,7 @@ Both the per-record match and the corpus overview are computed by `tools/build_s
 
 - **`--group-by source`** (default): one group per `source` value (`openalex`, `pubmed`, ...). Always available since every connector's output shape guarantees `source`.
 - **`--group-by year`**: one group per `year` value, records with `year: null` collected into a trailing `"Year unknown"` group.
-- **`--group-by theme`**: one group per `theme` field **if the record carries one** (records don't get a `theme` by default - nothing in the pipeline before this stage assigns it; a reviewer or a later `/prisma-extract` pass may tag one manually). If **no** candidate has a `theme` field, don't fabricate groups: emit a single group named `"Ungrouped (no theme tags yet)"` holding everything, and say so in the export summary so the reviewer knows `--group-by theme` had nothing to key on this run rather than silently behaving like `--group-by source`.
+- **`--group-by theme`**: one group per `theme` field **if the record carries one** (records don't get a `theme` by default - nothing in the pipeline before this stage assigns it; a reviewer or a later `/litreview-extract` pass may tag one manually). If **no** candidate has a `theme` field, don't fabricate groups: emit a single group named `"Ungrouped (no theme tags yet)"` holding everything, and say so in the export summary so the reviewer knows `--group-by theme` had nothing to key on this run rather than silently behaving like `--group-by source`.
 - **`--group-by ai_suggestion`**: one group per `ai_suggestion` label computed in §4 (`include`, `exclude`, `unclear`, `none`). Lets a reviewer triage the easy `include`/`exclude` calls first and spend their attention on the `unclear` group. Group order is fixed as `include, exclude, unclear, none` (not alphabetical - alphabetical order would scatter the one group reviewers most want to see last, `unclear`, in the middle) and is never reordered even when a label has zero records that run (just omit the empty group rather than showing a "(0 records)" heading).
 
 Group order (all other modes): alphabetical by group name, except the `theme` fallback group and the `year` unknown group always sort last.
@@ -220,7 +220,7 @@ Files:
   results/<TOPIC>/screening/title_abstract_sheet.md
 
 Edit the decision/reason columns (or checkboxes in the .md), then run
-`/prisma-screen import --stage title_abstract`. Full-text excludes will need a reason.
+`/litreview-screen import --stage title_abstract`. Full-text excludes will need a reason.
 ```
 
 Adjust counts/grouping line/paths to match the actual run; if `--group-by theme` fell back per §5, replace the "grouped by ..." line with a note that no theme tags were found. The "AI suggestion breakdown" line is always shown regardless of `--group-by` value (it's an independent count, not tied to the grouping choice). The "Corpus keyword overview" line is omitted only if `protocol.json` has no eligibility criteria to derive a taxonomy from (matches §4's `none`/no-protocol case) - state that plainly rather than printing an empty list.
@@ -260,7 +260,7 @@ Split the file on `^#### ` (one chunk per record block). For each chunk:
 
 ### 9.4 Validation gate — refuse the whole import, never partial
 
-Before writing **anything**, check every parsed decided row - the same rule `tools/ledger.py`'s `gate` command enforces before `/prisma-extract` runs, checked here too so a bad import is caught at the source rather than only discovered later:
+Before writing **anything**, check every parsed decided row - the same rule `tools/ledger.py`'s `gate` command enforces before `/litreview-extract` runs, checked here too so a bad import is caught at the source rather than only discovered later:
 
 > `stage == "full_text" and decision in ("exclude", "not_retrieved") and not (reason and reason.strip())`
 
@@ -272,7 +272,7 @@ Import refused: 2 rows need fixing before I can import any of this sheet.
   - crossref:10.5678/efgh: decision is "excldue" - not "include" or "exclude"
 
 Fix these rows in results/<TOPIC>/screening/full_text_sheet.csv and re-run
-/prisma-screen import --stage full_text. Nothing was written.
+/litreview-screen import --stage full_text. Nothing was written.
 ```
 
 Why whole-file refusal rather than best-effort partial import: a half-imported sheet leaves the reviewer unsure which rows landed, and re-editing then re-importing the same file is exactly the corrected-sheet case §1's aggregation rule already handles cleanly - there's no benefit to partial writes and a real risk of a silently-incomplete ledger.
@@ -320,7 +320,7 @@ Never quote a `reason` or `abstract` back into the reply - counts and the path o
 ## 10. Edge cases checklist
 
 - **Re-importing an unchanged sheet** appends duplicate-content lines; harmless by design (§1's aggregation just keeps re-confirming the same latest decision). Don't try to detect and skip "no-op" imports - that's complexity the append-only ledger doesn't need.
-- **A record disappears from `records.jsonl` between export and import** (shouldn't happen since records are append-only, but if a hand-edit removed one): still import its decision if the sheet has one - the ledger doesn't require the record to currently exist, and `/prisma-status` is where an orphaned decision would surface, not here.
+- **A record disappears from `records.jsonl` between export and import** (shouldn't happen since records are append-only, but if a hand-edit removed one): still import its decision if the sheet has one - the ledger doesn't require the record to currently exist, and `/litreview-status` is where an orphaned decision would surface, not here.
 - **Reviewer edits `title`/`abstract`/other read-only columns in the CSV:** ignored on import - only `decision`, `reason`, and the record_id-to-row mapping are read back. Never write corrected metadata into `records.jsonl` from a screening sheet; that's a different file with a different owner.
 - **Empty `screening_decisions.jsonl` or missing file on import:** treat as "0 prior decisions", create the file on first append. Same treatment on export's aggregation step.
 - **`--stage full_text` requested before any `title_abstract` includes exist:** candidate set is empty (§2); say so and stop, don't fall back to title_abstract.

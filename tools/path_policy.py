@@ -25,7 +25,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 RESULTS_ROOT = (ROOT / "results").resolve()
 
-# Same slug shape /prisma-init already derives topic directories with
+# Same slug shape /litreview-init already derives topic directories with
 # (lowercase, hyphen-separated, no leading/trailing/double hyphen) -- kept
 # here as the one place that shape is enforced for anything that resolves a
 # filesystem path from it.

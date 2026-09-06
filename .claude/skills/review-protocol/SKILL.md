@@ -1,12 +1,12 @@
 ---
 name: review-protocol
-description: "Elicit and record a systematic review's protocol: the research-question framework (PICO/PICo/SPIDER/other), eligibility criteria, and scope. Use whenever the user starts a new systematic review or meta-analysis, runs /prisma-init, mentions 'PICO', 'PICo', 'SPIDER', 'research question framework', 'eligibility criteria', 'inclusion criteria', 'exclusion criteria', 'protocol', 'PROSPERO', or asks 'is this study eligible' / 'should I include this paper' / 'does this study pass screening'. Also trigger mid-review whenever a screening or extraction step needs an eligibility ruling on a specific study, or when scope needs to change (e.g. adding a language, narrowing a population) partway through a review. Covers framework selection and elicitation questions plus the hard-gate-before-scoring eligibility check; it does not cover keyword expansion (see keyword-expansion) or manuscript drafting (see prisma-manuscript)."
-framework_version: 1.6.0
+description: "Elicit and record a systematic review's protocol: the research-question framework (PICO/PICo/SPIDER/other), eligibility criteria, and scope. Use whenever the user starts a new systematic review or meta-analysis, runs /litreview-init, mentions 'PICO', 'PICo', 'SPIDER', 'research question framework', 'eligibility criteria', 'inclusion criteria', 'exclusion criteria', 'protocol', 'PROSPERO', or asks 'is this study eligible' / 'should I include this paper' / 'does this study pass screening'. Also trigger mid-review whenever a screening or extraction step needs an eligibility ruling on a specific study, or when scope needs to change (e.g. adding a language, narrowing a population) partway through a review. Covers framework selection and elicitation questions plus the hard-gate-before-scoring eligibility check; it does not cover keyword expansion (see keyword-expansion) or manuscript drafting (see prisma-manuscript)."
+framework_version: 1.6.1
 ---
 
 # Review Protocol
 
-This skill turns a systematic-review idea into a written, machine-readable protocol: a research-question framework record and a set of hard eligibility gates. It is the first thing `/prisma-init` runs, and the thing `/prisma-screen` and `/prisma-extract` call back into whenever a specific study needs an eligibility ruling.
+This skill turns a systematic-review idea into a written, machine-readable protocol: a research-question framework record and a set of hard eligibility gates. It is the first thing `/litreview-init` runs, and the thing `/litreview-screen` and `/litreview-extract` call back into whenever a specific study needs an eligibility ruling.
 
 Read the reference files as needed:
 - `01-question-frameworks.md` — PICO/PICo/SPIDER (and related) elicitation prompts, and how to pick the right one for the review type.
@@ -44,8 +44,8 @@ If no documents are provided, or after extracting what's available, gather the r
 4. **Scope**: global or national/regional (`mode: global|national`); if national, which region and whether keyword translation will be used. Flag known coverage gaps up front if the reviewer already knows a chosen source has weak coverage for the target region/language (e.g. "PubMed has weak Korean-language coverage") — this seeds `protocol.json.scope.coverage_gaps` rather than being discovered as a surprise later.
 5. **Quantitative synthesis plan** (only if the reviewer expects to pool any outcome statistically): ask whether they anticipate several included studies reporting the same measurement for the same comparison, such that pooling would make sense. If yes:
    - Ask which pooling model is primary — **fixed-effect** (studies assumed to estimate one true effect; use when studies are clinically/methodologically similar) or **random-effects** (studies assumed to estimate related but different true effects; use when meaningful between-study variation is expected) — and a one-sentence justification. Never derive this choice from data that doesn't exist yet, and never suggest it will be decided later from the pooled studies' own heterogeneity statistics — that is exactly the correctness defect this elicitation step exists to prevent (`synthesis/heterogeneity.py`'s module docstring). Offer, but don't require, an initial guess of the minimum number of studies (`k_min`, default 2) they want before trusting a pooled estimate.
-   - Record the answer immediately as `results/<TOPIC>/synthesis_plan.json` (schema: `schemas/synthesis_plan.schema.json`), **before any search runs** — `signed_at` must be the actual current timestamp, since `/prisma-synthesize` compares it against the review's first search run to confirm the model really was prespecified rather than added after study selection (PRISMA 2020 item 13a-c and item 24c).
-   - If the reviewer isn't sure yet, don't write the file — `/prisma-synthesize` will refuse to run without either this file or an explicit one-off `--model` override, and re-running `/prisma-init` later to add it is always available.
+   - Record the answer immediately as `results/<TOPIC>/synthesis_plan.json` (schema: `schemas/synthesis_plan.schema.json`), **before any search runs** — `signed_at` must be the actual current timestamp, since `/litreview-synthesize` compares it against the review's first search run to confirm the model really was prespecified rather than added after study selection (PRISMA 2020 item 13a-c and item 24c).
+   - If the reviewer isn't sure yet, don't write the file — `/litreview-synthesize` will refuse to run without either this file or an explicit one-off `--model` override, and re-running `/litreview-init` later to add it is always available.
 
 Use bounded-choice tooling (e.g. `AskUserQuestion`) where the options are a fixed list (framework choice, study-design gate values); use open questions for things like the actual research question text and free-text population description.
 
@@ -86,11 +86,11 @@ Write (or update) `results/<TOPIC>/protocol.json` with at minimum:
 }
 ```
 
-`method` is never elicited by this skill — it's decided by `/prisma-init`'s own Step 0.5 routing interview (`tools/route.py`) before this skill ever runs, and the caller passes the whole block along for this skill to write verbatim (see `schemas/protocol_method.schema.json`). If a caller invokes this skill directly without a routing result (rare — every documented path goes through `/prisma-init`), omit the `method` key entirely rather than inventing one; `tools/method.py` treats its absence as `"systematic_review"`, `recorded: false` (docs/PLAN.md M1's migration path), not an error.
+`method` is never elicited by this skill — it's decided by `/litreview-init`'s own Step 0.5 routing interview (`tools/route.py`) before this skill ever runs, and the caller passes the whole block along for this skill to write verbatim (see `schemas/protocol_method.schema.json`). If a caller invokes this skill directly without a routing result (rare — every documented path goes through `/litreview-init`), omit the `method` key entirely rather than inventing one; `tools/method.py` treats its absence as `"systematic_review"`, `recorded: false` (docs/PLAN.md M1's migration path), not an error.
 
 `field_domain` is one of `clinical_medicine` | `biomedical_technical` | `non_biomedical`, from the Phase 1 elicitation above — `keyword-expansion` reads it to decide the MeSH axis's default.
 
-This file is read verbatim by `/prisma-search` (to build `search_plan.json`), `/prisma-screen` (to run the eligibility gate on each candidate record — see `02-eligibility-criteria.md`), and `/prisma-report` (Methods §2.2/§2.3). Never re-elicit these values from memory later in the pipeline — always read them from this file.
+This file is read verbatim by `/litreview-search` (to build `search_plan.json`), `/litreview-screen` (to run the eligibility gate on each candidate record — see `02-eligibility-criteria.md`), and `/litreview-report` (Methods §2.2/§2.3). Never re-elicit these values from memory later in the pipeline — always read them from this file.
 
 ### G-Protocol: sign the protocol
 
@@ -116,13 +116,13 @@ If Phase 1 step 5 elicited a quantitative synthesis plan, write it as its own fi
 }
 ```
 
-`tau2_estimator` accepts `"dl"` (DerSimonian-Laird, one-step -- the default) or `"pm"` (Paule-Mandel, iterative); `ci_method` accepts `"normal"` (fixed-scale, the default) or `"hksj"` (modified Hartung-Knapp-Sidik-Jonkman, an estimated-scale CI -- `synthesis/pooling.py` flags a caution, never a refusal, when fewer than 5 studies contribute). Both only affect outcomes pooled under `model: "random"`. Ask which the reviewer prefers only if they raise it; `"dl"`/`"normal"` is a reasonable default for most reviews and need not be elicited as its own question. Neither value is retroactively changeable without re-running `/prisma-synthesize` — the schema (`schemas/synthesis_plan.schema.json`) is the source of truth for the accepted enum values.
+`tau2_estimator` accepts `"dl"` (DerSimonian-Laird, one-step -- the default) or `"pm"` (Paule-Mandel, iterative); `ci_method` accepts `"normal"` (fixed-scale, the default) or `"hksj"` (modified Hartung-Knapp-Sidik-Jonkman, an estimated-scale CI -- `synthesis/pooling.py` flags a caution, never a refusal, when fewer than 5 studies contribute). Both only affect outcomes pooled under `model: "random"`. Ask which the reviewer prefers only if they raise it; `"dl"`/`"normal"` is a reasonable default for most reviews and need not be elicited as its own question. Neither value is retroactively changeable without re-running `/litreview-synthesize` — the schema (`schemas/synthesis_plan.schema.json`) is the source of truth for the accepted enum values.
 
-`synthesis_family` (docs/ROADMAP.md) accepts `"pairwise_iv"` (today's inverse-variance pairwise pooling -- the default, and the only family with a working engine) or `"structured_narrative"` (never pools any outcome, regardless of `k`). `"swim"` is a recognized enum value with no engine yet -- `/prisma-synthesize` refuses cleanly rather than fabricate untested vote-counting statistics if it's selected. Omit this field entirely unless the reviewer specifically wants narrative-only synthesis; a plan predating this field behaves identically to `"pairwise_iv"`.
+`synthesis_family` (docs/ROADMAP.md) accepts `"pairwise_iv"` (today's inverse-variance pairwise pooling -- the default, and the only family with a working engine) or `"structured_narrative"` (never pools any outcome, regardless of `k`). `"swim"` is a recognized enum value with no engine yet -- `/litreview-synthesize` refuses cleanly rather than fabricate untested vote-counting statistics if it's selected. Omit this field entirely unless the reviewer specifically wants narrative-only synthesis; a plan predating this field behaves identically to `"pairwise_iv"`.
 
 ## Running the eligibility gate mid-review
 
-When `/prisma-screen` or `/prisma-extract` (or the user directly) asks whether a specific study is eligible, follow `02-eligibility-criteria.md` exactly: run every gate in order, report a **FAIL** with the quoted source text the moment one is hit, and never silently drop a study that fails — the failure and its quote go into `screening_decisions.jsonl` with a `reason`, per PRISMA Item 16b. A study that passes every gate proceeds to relevance screening/scoring; a study that fails any gate does not.
+When `/litreview-screen` or `/litreview-extract` (or the user directly) asks whether a specific study is eligible, follow `02-eligibility-criteria.md` exactly: run every gate in order, report a **FAIL** with the quoted source text the moment one is hit, and never silently drop a study that fails — the failure and its quote go into `screening_decisions.jsonl` with a `reason`, per PRISMA Item 16b. A study that passes every gate proceeds to relevance screening/scoring; a study that fails any gate does not.
 
 ## Handling scope changes
 
@@ -130,4 +130,4 @@ If eligibility criteria change partway through a review (a narrower population, 
 
 1. Update `protocol.json` with the new criteria and bump nothing silently — tell the user which studies already screened under the old criteria may need re-screening.
 2. Never delete or edit past lines in `screening_decisions.jsonl`; a corrected decision is a **new** line, latest line wins on aggregation.
-3. Note the change and its date in `protocol.json` (e.g. an `amendments: [{date, change, reason}]` array) so `/prisma-report`'s Methods §2.1 can disclose the protocol deviation, per PRISMA Item 24c.
+3. Note the change and its date in `protocol.json` (e.g. an `amendments: [{date, change, reason}]` array) so `/litreview-report`'s Methods §2.1 can disclose the protocol deviation, per PRISMA Item 24c.

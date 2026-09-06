@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://prisma-flow.local/schemas/synthesis_plan.schema.json",
+  "$id": "https://litreview-agent.local/schemas/synthesis_plan.schema.json",
   "title": "synthesis_plan.json",
-  "description": "A systematic review's pooling model, prespecified at protocol time (PRISMA 2020 item 13a-c) so /prisma-synthesize never selects fixed vs random effects from the data's own heterogeneity statistics. Read by synthesis/run_synthesis.py; written by the review-protocol skill during /prisma-init (or hand-edited for a legacy topic, with retrospective:true).",
+  "description": "A systematic review's pooling model, prespecified at protocol time (PRISMA 2020 item 13a-c) so /litreview-synthesize never selects fixed vs random effects from the data's own heterogeneity statistics. Read by synthesis/run_synthesis.py; written by the review-protocol skill during /litreview-init (or hand-edited for a legacy topic, with retrospective:true).",
   "type": "object",
   "required": ["model", "signed_at"],
   "additionalProperties": false,

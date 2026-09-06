@@ -77,7 +77,7 @@ def source_completeness(topic_dir):
     """{source: {"status": "complete"|"truncated"|"missing", "retrieved":
     int|None, "total_available": int|None}} for every source enabled in
     search_plan.json (a source with no "enabled" key is enabled by
-    default, matching /prisma-search's own convention)."""
+    default, matching /litreview-search's own convention)."""
     topic_dir = Path(topic_dir)
     plan = _load_json(topic_dir / "search_plan.json")
     if not plan:

@@ -1,4 +1,4 @@
-"""Helper script for /prisma-synthesize: turns extraction_table.json into
+"""Helper script for /litreview-synthesize: turns extraction_table.json into
 synthesis/{effect_sizes,heterogeneity,rob_table,grade_table}.json + SVG plots.
 
 This is the "short helper script" plan section 6 calls for -- the actual
@@ -20,15 +20,15 @@ pooling math lives in synthesis/pooling.py and synthesis/heterogeneity.py
      pooled too and reported as a sensitivity analysis.
   5. Renders forest/funnel plots via synthesis/plots.py.
   6. Aggregates each contributing study's `risk_of_bias` block (written by
-     /prisma-extract, never re-derived here) into rob_table.json, and
+     /litreview-extract, never re-derived here) into rob_table.json, and
      writes a grade_table.json with the objective GRADE domains (risk of
      bias, inconsistency, publication bias) computed and the two judgement
      domains (indirectness, imprecision) left as an explicit
-     "needs_review" placeholder for /prisma-synthesize's next step to fill
+     "needs_review" placeholder for /litreview-synthesize's next step to fill
      in per quality-appraisal/02-grade-certainty.md.
 
 extraction_table.json contract this script expects -- the exact shape
-/prisma-extract.md Step 8 writes:
+/litreview-extract.md Step 8 writes:
 
     {
       "framework_version": "1.0.0",
@@ -84,7 +84,7 @@ SYNTHESIS_PLAN_SCHEMA_PATH = os.path.join(REPO_ROOT, "schemas", "synthesis_plan.
 
 class SynthesisPlanError(ValueError):
     """A topic's synthesis_plan.json is missing, invalid, or ambiguous, and
-    no --model override resolves it -- /prisma-synthesize must stop rather
+    no --model override resolves it -- /litreview-synthesize must stop rather
     than guess a pooling model (docs/PLAN.md decision 6)."""
 
 # Canonical RoB1 domain order (Cochrane Handbook Ch.8 / quality-appraisal/01-risk-of-bias.md),
@@ -118,7 +118,7 @@ POOL_MIN_K = 2
 # forbidden for scoping reviews by design, so refusing cleanly here (rather
 # than crashing on an unrecognized family, or silently treating it as
 # "structured_narrative") is the correct M3 exit-criterion behavior:
-# "/prisma-synthesize on it refuses pooling".
+# "/litreview-synthesize on it refuses pooling".
 SYNTHESIS_FAMILIES = ("pairwise_iv", "structured_narrative", "swim", "descriptive")
 SWIM_NOT_IMPLEMENTED = (
     "synthesis_family=\"swim\" (Synthesis without Meta-analysis) is a recognized family "
@@ -177,7 +177,7 @@ def resolve_synthesis_plan(topic, model_override, safe_topic_path_fn, families_a
     Returns a dict with (at least) "model", "model_source" ("protocol" |
     "post_hoc" | "cli_override"), "tau2_estimator", "ci_method", "k_min".
     Raises SynthesisPlanError if no synthesis_plan.json exists for this
-    topic and no --model override was given -- /prisma-synthesize must
+    topic and no --model override was given -- /litreview-synthesize must
     refuse to guess (docs/PLAN.md decision 6), never silently fall back to
     picking a model from the data's own heterogeneity statistics.
 
@@ -222,7 +222,7 @@ def resolve_synthesis_plan(topic, model_override, safe_topic_path_fn, families_a
     elif plan is None:
         raise SynthesisPlanError(
             f"no synthesis_plan.json found for topic {topic!r} and no --model override given. "
-            "Prespecify a pooling model at protocol time (review-protocol's /prisma-init "
+            "Prespecify a pooling model at protocol time (review-protocol's /litreview-init "
             "elicitation writes synthesis_plan.json), or pass --model {fixed,random} "
             "explicitly for a one-off run. See schemas/synthesis_plan.schema.json."
         )
@@ -289,7 +289,7 @@ def load_studies(path):
     with open(path) as f:
         doc = json.load(f)
     if not isinstance(doc, dict) or not isinstance(doc.get("studies"), list):
-        raise ValueError(f"{path} must be a JSON object with a top-level 'studies' array (see /prisma-extract.md Step 8)")
+        raise ValueError(f"{path} must be a JSON object with a top-level 'studies' array (see /litreview-extract.md Step 8)")
     studies = doc["studies"]
     for study in studies:
         rob = study.get("risk_of_bias")
@@ -509,7 +509,7 @@ def build_grade_draft(outcome_name, rows, model_used, k, het, effect_summary):
     starting, starting_note = determine_starting_certainty(rows)
 
     if rob_entry["proportion_low_risk"] is None:
-        rob_rating, rob_note = "not_assessed", "No risk-of-bias assessment available for any contributing study -- flag back to /prisma-extract."
+        rob_rating, rob_note = "not_assessed", "No risk-of-bias assessment available for any contributing study -- flag back to /litreview-extract."
     elif rob_entry["proportion_low_risk"] >= 0.75:
         rob_rating, rob_note = "not_serious", f"{rob_entry['proportion_low_risk']:.0%} of contributing studies judged low risk / good quality."
     elif rob_entry["proportion_low_risk"] >= 0.5:
@@ -1098,7 +1098,7 @@ if __name__ == "__main__":
     # `python3 synthesis/run_synthesis.py` with no args runs the self-check
     # (matches synthesis/pooling.py, heterogeneity.py, plots.py's convention);
     # `python3 -m synthesis.run_synthesis --topic <TOPIC>`
-    # (the invocation /prisma-synthesize actually uses) runs the CLI.
+    # (the invocation /litreview-synthesize actually uses) runs the CLI.
     if len(sys.argv) > 1:
         sys.exit(main())
     else:

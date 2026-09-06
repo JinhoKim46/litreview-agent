@@ -4,7 +4,7 @@ optionally flag near-duplicate pairs into `possible_duplicates.jsonl`
 (fuzzy pass, advisory only).
 
 Ported, behavior-preserving, from the inline Python heredocs
-`.claude/commands/prisma-search.md` Steps 7 and 7b used to embed directly
+`.claude/commands/litreview-search.md` Steps 7 and 7b used to embed directly
 in the prompt and instruct the LLM to "run exactly as written" -- Phase 0
 correctness fix (docs/PLAN.md defect #3): state-transition logic belongs in
 a tested `tools/` module, not inline in a command file.
@@ -57,7 +57,7 @@ def normalize_pmid(rec):
     # recoverable from a "pubmed" record's bare id, or a "europepmc" record
     # whose id is "MED:<pmid>" (Europe PMC's own MEDLINE-source prefix).
     #
-    # Bug fixed during the Phase 0 port from .claude/commands/prisma-search.md's
+    # Bug fixed during the Phase 0 port from .claude/commands/litreview-search.md's
     # inline heredoc (docs/PLAN.md defect #3): the original read rec["id"],
     # but the constructed record dict this is always called on carries only
     # "record_id" ("<source>:<native_id>") -- never a bare "id" key, on a
@@ -246,7 +246,7 @@ def flag_near_duplicates(topic_dir):
     """Fuzzy near-duplicate pass, advisory only: never rewrites a line in
     `records.jsonl`, never sets `duplicate_of` -- only appends pairs to
     `possible_duplicates.jsonl` for the reviewer to see during
-    `/prisma-screen`. Requires `records.jsonl` to already exist (run the
+    `/litreview-screen`. Requires `records.jsonl` to already exist (run the
     exact pass first)."""
     topic_dir = Path(topic_dir)
     records_path = topic_dir / "records.jsonl"

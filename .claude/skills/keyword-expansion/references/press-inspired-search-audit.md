@@ -1,10 +1,10 @@
 ---
-framework_version: 1.0.1
+framework_version: 1.0.2
 ---
 
 # Search-strategy self-audit (PRESS-inspired)
 
-A self-audit checklist for `results/<TOPIC>/search_plan.json` before a review's search is declared final (PRISMA Item 7). Offered as an optional step in `/prisma-search` — never blocking, since a solo reviewer without a second peer reviewer is still better served by auditing their own strategy than skipping the check entirely.
+A self-audit checklist for `results/<TOPIC>/search_plan.json` before a review's search is declared final (PRISMA Item 7). Offered as an optional step in `/litreview-search` — never blocking, since a solo reviewer without a second peer reviewer is still better served by auditing their own strategy than skipping the check entirely.
 
 **Provenance note:** this document is organised around the six domain categories used by the published PRESS 2015 Guideline Statement (McGowan J, Sampson M, Salzwedel DM, Cogo E, Foerster V, Lefebvre C. "PRESS Peer Review of Electronic Search Strategies: 2015 Guideline Statement." *J Clin Epidemiol*. 2016 Jul;75:40–46) — a well-established framework for structuring a search-strategy peer review. It is an **original, independently-worded adaptation** of that structure to this framework's own file schema and connectors, not a reproduction of the PRESS checklist's actual text: PRESS itself is licensed CC BY-NC-ND (no-derivatives), so its wording is deliberately not reused here. A reviewer who wants the authoritative instrument itself (e.g. for a Cochrane or JBI-registered protocol that requires citing PRESS specifically) should obtain it directly from the publisher.
 
@@ -42,6 +42,6 @@ A self-audit checklist for `results/<TOPIC>/search_plan.json` before a review's 
 
 ---
 
-## How `/prisma-search` uses this
+## How `/litreview-search` uses this
 
 Run through the six sections above against the current `search_plan.json` before executing Step 6 (or after, before declaring the search "final" for Item 7 reporting). Note any finding directly in the reviewer-facing summary — a clean self-audit is worth stating explicitly in the manuscript's Methods §2.4 ("the search strategy was self-audited against a PRESS-inspired checklist prior to execution"), the same way a real peer-reviewed search strategy would be reported.

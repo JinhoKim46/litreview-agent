@@ -1,7 +1,7 @@
 ---
 name: reconnaissance-brief
-description: "Tag a reconnaissance topic's records for relevance into results/<TOPIC>/relevance_tags_table.json, then draft a landscape brief (and, optionally, a related-work section and a supplementary search log). Use whenever a review's resolved method manifest declares capture.mode: \"relevance_tags\" (methods/reconnaissance.json) -- /prisma-extract's Step 0.5 routes here instead of running extraction for that manifest. Has no freeze gate at all, unlike its two siblings: does not cover a scoping review's charting pilot/freeze workflow (capture.mode: \"charting\" -- see .claude/skills/evidence-mapping/SKILL.md) or a systematic mapping study's keywording/freeze/calibration workflow (capture.mode: \"classification\" -- see .claude/skills/study-classification/SKILL.md)."
-framework_version: 1.0.1
+description: "Tag a reconnaissance topic's records for relevance into results/<TOPIC>/relevance_tags_table.json, then draft a landscape brief (and, optionally, a related-work section and a supplementary search log). Use whenever a review's resolved method manifest declares capture.mode: \"relevance_tags\" (methods/reconnaissance.json) -- /litreview-extract's Step 0.5 routes here instead of running extraction for that manifest. Has no freeze gate at all, unlike its two siblings: does not cover a scoping review's charting pilot/freeze workflow (capture.mode: \"charting\" -- see .claude/skills/evidence-mapping/SKILL.md) or a systematic mapping study's keywording/freeze/calibration workflow (capture.mode: \"classification\" -- see .claude/skills/study-classification/SKILL.md)."
+framework_version: 1.0.2
 ---
 
 # Reconnaissance Brief (Relevance Tagging)
@@ -14,7 +14,7 @@ Confirm `tools/method.py --topic <TOPIC> --require-capture-mode relevance_tags` 
 
 ## Phase 1: Tag each candidate for relevance
 
-Records come from the same `/prisma-search` + dedup pipeline every method shares (`records.jsonl`) -- reconnaissance's `search.mode: "orienting"` and `known_item_recall: "advisory"` mean this search is intentionally bounded and lighter-weight than a protocol-driven one, not a different pipeline. There is no separate include/exclude screening pass here: every record worth a look gets tagged, not sorted into included/excluded.
+Records come from the same `/litreview-search` + dedup pipeline every method shares (`records.jsonl`) -- reconnaissance's `search.mode: "orienting"` and `known_item_recall: "advisory"` mean this search is intentionally bounded and lighter-weight than a protocol-driven one, not a different pipeline. There is no separate include/exclude screening pass here: every record worth a look gets tagged, not sorted into included/excluded.
 
 For each candidate:
 
@@ -49,7 +49,7 @@ This prints `{"n_tagged": ..., "corpus_description": {facet_tag: count, ...}}`, 
 
 With tagging and the corpus-description table done, draft:
 
-- **`landscape_brief.md`** -- the primary output: a banner stating plainly this is a non-systematic exploratory brief, "prior work identified so far" (the tagged candidates grouped by facet, each with its quoted claim where one exists), "what this did not search" (the coverage gaps this bounded, orienting search left, same `packs/*.json`-driven mechanism `/prisma-init` already wires into `protocol.json.scope.coverage_gaps` for other methods), and any candidate gaps stated as templated questions -- never as claims of "no prior work" or that the search reached "saturation" (both hard-fail `label_gate.py`'s forbidden-form lint for this method; the base `no_prior_work`/`novelty` patterns already catch these, on top of the two recon-specific `screening_vocabulary`/`eligibility_vocabulary` patterns). Every templated sentence in this brief needs the reviewer's explicit approval before it's final -- the same per-sentence G-Claims discipline `prisma-manuscript` already uses for a systematic-review report, applied here to a much shorter document.
+- **`landscape_brief.md`** -- the primary output: a banner stating plainly this is a non-systematic exploratory brief, "prior work identified so far" (the tagged candidates grouped by facet, each with its quoted claim where one exists), "what this did not search" (the coverage gaps this bounded, orienting search left, same `packs/*.json`-driven mechanism `/litreview-init` already wires into `protocol.json.scope.coverage_gaps` for other methods), and any candidate gaps stated as templated questions -- never as claims of "no prior work" or that the search reached "saturation" (both hard-fail `label_gate.py`'s forbidden-form lint for this method; the base `no_prior_work`/`novelty` patterns already catch these, on top of the two recon-specific `screening_vocabulary`/`eligibility_vocabulary` patterns). Every templated sentence in this brief needs the reviewer's explicit approval before it's final -- the same per-sentence G-Claims discipline `prisma-manuscript` already uses for a systematic-review report, applied here to a much shorter document.
 - **`related_work_draft.md`** (optional, only if the reviewer wants prose for a paper's own related-work section rather than a standalone brief): prose citing "the search log in Supplementary S1" rather than re-deriving the search description inline.
 - **`supplementary_search_log.md`** (optional, alongside `related_work_draft.md`): the replayable record of what was actually searched -- same spirit as `search_plan.json`'s audit trail for a full review, in prose form.
 
@@ -57,8 +57,8 @@ Every reference the brief cites still needs independent verification before the 
 
 ## What this skill does not do
 
-- **Formal eligibility screening**: this method has none -- `/prisma-screen`'s ledger-based include/exclude workflow is for methods with `capture.mode` in `{extraction, charting, classification}`, never this one.
+- **Formal eligibility screening**: this method has none -- `/litreview-screen`'s ledger-based include/exclude workflow is for methods with `capture.mode` in `{extraction, charting, classification}`, never this one.
 - **Appraisal**: `appraisal.requirement: "none"` -- there is no quality-appraisal step for a reconnaissance topic at all, not even an optional one.
-- **Synthesis / pooling**: `synthesis.families_allowed: []` -- nothing is ever pooled or descriptively synthesized here; the corpus-description table in Phase 2 is a simple tally, not a synthesis-family output, and `/prisma-synthesize` does not apply to this method.
+- **Synthesis / pooling**: `synthesis.families_allowed: []` -- nothing is ever pooled or descriptively synthesized here; the corpus-description table in Phase 2 is a simple tally, not a synthesis-family output, and `/litreview-synthesize` does not apply to this method.
 - **Promotion to a full review** (same-topic hand-off via `handoff/`, the non-independent gold-set disclosure once a scoping/systematic review starts from this topic) is a distinct mechanism this skill never runs itself -- `python3 tools/promote_reconnaissance.py --topic <TOPIC> --new-method-id <id> --reason "<text>"` archives this topic's recon-stage artifacts to `recon/`, writes `handoff/`, and folds any recoverable gold-set candidate into `protocol.json.known_items[]` with `provenance: "recon-db"`.
 - **Charting** (`capture.mode: "charting"`) and **classification** (`capture.mode: "classification"`) are distinct workflows covered by `.claude/skills/evidence-mapping/SKILL.md` and `.claude/skills/study-classification/SKILL.md`, not this one.

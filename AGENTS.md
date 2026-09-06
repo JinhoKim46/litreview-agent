@@ -2,7 +2,7 @@
 framework_version: 1.0.0
 ---
 
-# Agent Guidelines: prisma-review
+# Agent Guidelines: litreview-agent
 
 This workspace runs a systematic review and meta-analysis pipeline that follows the PRISMA 2020 reporting guideline: search connectors, deduplication, screening, extraction, statistical synthesis, and manuscript generation. See [docs/ROADMAP.md](docs/ROADMAP.md) for where this is headed beyond that one method.
 

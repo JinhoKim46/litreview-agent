@@ -1,4 +1,4 @@
-# /prisma-reset - Reset Review State for a Topic
+# /litreview-reset - Reset Review State for a Topic
 
 You are resetting part or all of one review's pipeline state under `results/<TOPIC>/` back to a blank slate, so the reviewer can re-run a stage (or the whole pipeline) for that topic.
 
@@ -22,7 +22,7 @@ Run `Glob` for `results/*/` to list every existing `results/<TOPIC>/` directory.
 and **stop**.
 - Else, if no non-scope token was given at all and exactly one `results/<TOPIC>/` directory exists on disk, use it — there is nothing to disambiguate, so do not ask.
 - Else, if zero `results/*/` directories exist, tell the user:
-  > There is no `results/` data for any topic yet — nothing to reset. Run `/prisma-init "your topic"` to start a review.
+  > There is no `results/` data for any topic yet — nothing to reset. Run `/litreview-init "your topic"` to start a review.
 and **stop**. Do not continue to Step 1.
 - Else (multiple topics exist and none was named), list the topic directories found and ask:
   > **Which review should I reset?** Found: `<topic-a>`, `<topic-b>`, ...
@@ -42,9 +42,9 @@ If no recognized scope keyword is present, ask:
 >
 > - **`protocol`** — Clears the PICO/PICo/SPIDER record and the per-source search strings (`protocol.json`, `search_plan.json`). Use this to redo scoping or eligibility criteria before searching again. Everything already collected (raw results, records, screening decisions, extraction, synthesis, manuscript) is left in place, but will no longer match the new protocol until you re-run the later stages.
 >
-> - **`results`** — Clears everything under `results/<TOPIC>/` **except the manuscript**: the protocol (PICO/PICo/SPIDER record, eligibility criteria), search plan, raw connector output, deduped records, screening decisions, extraction table, and synthesis outputs. Use this to redo the review from scratch while keeping a drafted manuscript around for reference. There is no protocol left afterward — `/prisma-init` is the only way back in. The kept manuscript will describe data that no longer exists until you re-run the full pipeline and `/prisma-report` again.
+> - **`results`** — Clears everything under `results/<TOPIC>/` **except the manuscript**: the protocol (PICO/PICo/SPIDER record, eligibility criteria), search plan, raw connector output, deduped records, screening decisions, extraction table, and synthesis outputs. Use this to redo the review from scratch while keeping a drafted manuscript around for reference. There is no protocol left afterward — `/litreview-init` is the only way back in. The kept manuscript will describe data that no longer exists until you re-run the full pipeline and `/litreview-report` again.
 >
-> - **`all`** — Deletes the entire `results/<TOPIC>/` folder, manuscript included. Use this to discard the review completely and start `<TOPIC>` over from `/prisma-init`.
+> - **`all`** — Deletes the entire `results/<TOPIC>/` folder, manuscript included. Use this to discard the review completely and start `<TOPIC>` over from `/litreview-init`.
 >
 > Reply with `protocol`, `results`, or `all`.
 
@@ -106,7 +106,7 @@ The following is NOT touched:
 
 Note: manuscript/ is preserved but will describe data that no longer exists after
 this reset. Its numbers (flow diagram counts, references, forest plot) will be
-stale until you re-run the pipeline and `/prisma-report` again.
+stale until you re-run the pipeline and `/litreview-report` again.
 ```
 
 If `results/<TOPIC>/` contains nothing but an empty `manuscript/` (or is otherwise already empty outside `manuscript/`), state "Nothing to delete — `results/<TOPIC>/` has no pipeline output outside `manuscript/`." and skip Step 2.
@@ -203,10 +203,10 @@ After the reset is complete, report:
 Then tell the user what to do next based on scope:
 
 **If scope was `protocol`:**
-> The protocol is cleared for `<TOPIC>`. Run `/prisma-init "<TOPIC>"` to redo scoping, PICO/PICo/SPIDER, and keyword expansion. Everything collected under the old protocol (raw results, records, screening, extraction, synthesis, manuscript) is still on disk but will no longer match the new protocol until you re-run `/prisma-search` onward.
+> The protocol is cleared for `<TOPIC>`. Run `/litreview-init "<TOPIC>"` to redo scoping, PICO/PICo/SPIDER, and keyword expansion. Everything collected under the old protocol (raw results, records, screening, extraction, synthesis, manuscript) is still on disk but will no longer match the new protocol until you re-run `/litreview-search` onward.
 
 **If scope was `results`:**
-> All pipeline output for `<TOPIC>` is cleared except the manuscript, including the protocol — there is no `search_plan.json` left for `/prisma-search` to read. Run `/prisma-init "<TOPIC>"` to redo scoping and keyword expansion, then move through `/prisma-search` onward as usual. Re-run `/prisma-report` once the pipeline finishes to bring the manuscript back in sync.
+> All pipeline output for `<TOPIC>` is cleared except the manuscript, including the protocol — there is no `search_plan.json` left for `/litreview-search` to read. Run `/litreview-init "<TOPIC>"` to redo scoping and keyword expansion, then move through `/litreview-search` onward as usual. Re-run `/litreview-report` once the pipeline finishes to bring the manuscript back in sync.
 
 **If scope was `all`:**
-> `<TOPIC>` has been fully removed from `results/`. Run `/prisma-init "<TOPIC>"` to start that review over from scratch, or pick a different topic name if you meant to start something new.
+> `<TOPIC>` has been fully removed from `results/`. Run `/litreview-init "<TOPIC>"` to start that review over from scratch, or pick a different topic name if you meant to start something new.

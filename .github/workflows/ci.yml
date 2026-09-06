@@ -1,4 +1,4 @@
-# CI for the PRISMA review framework itself: skill/command lint, the
+# CI for the Litreview Agent framework itself: skill/command lint, the
 # connector contract shape, the fixture-based test suite, security-posture
 # guards, and (upstream only) methodology-version drift.
 #
@@ -6,7 +6,7 @@
 # Scholar/PubMed/Europe PMC/arXiv. connector-checks runs only against the
 # checked-in fixtures under tests/fixtures/ - a connector making a real HTTP
 # request in CI is a bug in that connector's test, not a feature. Live
-# connector runs stay a local, on-demand step (see /prisma-add-source's
+# connector runs stay a local, on-demand step (see /litreview-add-source's
 # "mandatory live test run" instead, which captures the fixture by hand).
 #
 # Security posture: this framework ships pre-approved Claude Code permissions

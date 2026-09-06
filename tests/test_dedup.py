@@ -1,5 +1,5 @@
 """Unit tests for tools/dedup.py -- the exact-key dedup pass (formerly the
-inline heredoc in .claude/commands/prisma-search.md Step 7) and the fuzzy
+inline heredoc in .claude/commands/litreview-search.md Step 7) and the fuzzy
 near-duplicate pass (formerly Step 7b). Phase 0 correctness fix, see
 docs/PLAN.md defect #3.
 """

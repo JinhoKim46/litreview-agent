@@ -17,7 +17,7 @@ See [docs/ROADMAP.md](docs/ROADMAP.md) for the planned direction — a PR that g
 ## What gets declined
 
 - **A specific reviewer's `results/<TOPIC>/` data.** The template ships an empty, gitignored `results/` structure. Your actual review's protocol, records, screening decisions, and manuscript belong in your fork, never upstream.
-- **A paid-access-only connector that serves one institution.** A connector hardcoded to one university's Scopus/Web of Science proxy has no principled stopping point — it belongs in a fork, exactly the way a market-specific job-portal skill belongs in a fork of a job-search tool. `/prisma-add-source` exists precisely so you can build this for yourself without needing it upstream.
+- **A paid-access-only connector that serves one institution.** A connector hardcoded to one university's Scopus/Web of Science proxy has no principled stopping point — it belongs in a fork, exactly the way a market-specific job-portal skill belongs in a fork of a job-search tool. `/litreview-add-source` exists precisely so you can build this for yourself without needing it upstream.
 - **Speculative infrastructure.** Complexity must be argued from a problem that exists, not one that might.
 - **Alternative-harness ports and duplicate workflow sources.** The Markdown command/skill specs under `.claude/` ARE the implementation; a second copy (another agent CLI, an orchestration layer, a wrapper command) drifts from the first the moment either changes. Claude Code is the reference runtime this repo is verified on; `.agents/skills/` already gives other runtimes a discoverable, non-duplicated pointer to the connector CLIs (see [AGENTS.md](AGENTS.md)).
 - **Kitchen-sink PRs.** One concern per PR.
@@ -82,8 +82,8 @@ Reviews here are empirical. A bug report is reproduced on the real path before a
 
 ## Building for your own review? You don't need a PR for that
 
-1. Fork the repo and run `/prisma-init "your topic"` — everything your review produces lands under `results/<your-topic>/`, gitignored by default.
-2. Need a source the six shipped connectors don't cover? Run `/prisma-add-source` — it scaffolds a connector matching the shipped contract, and `/prisma-search` picks it up automatically via `connectors/registry.py`.
+1. Fork the repo and run `/litreview-init "your topic"` — everything your review produces lands under `results/<your-topic>/`, gitignored by default.
+2. Need a source the six shipped connectors don't cover? Run `/litreview-add-source` — it scaffolds a connector matching the shipped contract, and `/litreview-search` picks it up automatically via `connectors/registry.py`.
 3. Institutional-access connector (Scopus, Web of Science)? Same command, same contract, credentials via environment variable only — it stays in your fork.
 
 Instance-specific reviews and institution-specific connectors are genuinely valuable — they just live in forks, where their maintainers can test them and their reviewers can use them without upstream carrying data or access requirements it can't verify.

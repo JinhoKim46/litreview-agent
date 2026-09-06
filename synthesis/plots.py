@@ -1,4 +1,4 @@
-"""Forest and funnel plots for /prisma-synthesize, rendered to SVG via matplotlib.
+"""Forest and funnel plots for /litreview-synthesize, rendered to SVG via matplotlib.
 
 No hand-rolled pooling math here -- these functions only draw numbers that
 synthesis/pooling.py and synthesis/heterogeneity.py already computed.

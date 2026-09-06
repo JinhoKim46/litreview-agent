@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://prisma-flow.local/schemas/protocol_method.schema.json",
+  "$id": "https://litreview-agent.local/schemas/protocol_method.schema.json",
   "title": "protocol.json.method",
-  "description": "Which method manifest (methods/*.json) governs this review, recorded once at protocol time. Read by tools/method.py. Absence of this whole block (a legacy protocol.json predating this schema) means \"systematic_review\", recorded=false -- see docs/PLAN.md M1's migration path, not an error. The `routing`/`signed_at`/`signed_by` fields (docs/PLAN.md M2; references/docs/design/multi-method-consensus.md §2.3) are only written once /prisma-init's Step 0.5 routing interview exists; a protocol.json written before that (or under M1) carries only `id` and, optionally, `recorded` -- every M2 field is optional for exactly that reason.",
+  "description": "Which method manifest (methods/*.json) governs this review, recorded once at protocol time. Read by tools/method.py. Absence of this whole block (a legacy protocol.json predating this schema) means \"systematic_review\", recorded=false -- see docs/PLAN.md M1's migration path, not an error. The `routing`/`signed_at`/`signed_by` fields (docs/PLAN.md M2; references/docs/design/multi-method-consensus.md §2.3) are only written once /litreview-init's Step 0.5 routing interview exists; a protocol.json written before that (or under M1) carries only `id` and, optionally, `recorded` -- every M2 field is optional for exactly that reason.",
   "type": "object",
   "required": ["id"],
   "additionalProperties": false,
@@ -15,12 +15,12 @@
     "recorded": {
       "type": "boolean",
       "default": true,
-      "description": "True when a reviewer (or /prisma-init's routing, from docs/PLAN.md M2 onward) actually chose this method before the first protocol-driven run. tools/method.py sets this false only for its own defaulted resolution when the block is absent entirely -- never hand-set false in a real protocol.json."
+      "description": "True when a reviewer (or /litreview-init's routing, from docs/PLAN.md M2 onward) actually chose this method before the first protocol-driven run. tools/method.py sets this false only for its own defaulted resolution when the block is absent entirely -- never hand-set false in a real protocol.json."
     },
     "version": {
       "type": "string",
       "pattern": "^\\d+\\.\\d+\\.\\d+$",
-      "description": "The methods/<id>.json manifest's own \"version\" at the moment this review recorded it -- lets label_gate.py and /prisma-status notice the manifest has moved on since routing, without forcing a re-route."
+      "description": "The methods/<id>.json manifest's own \"version\" at the moment this review recorded it -- lets label_gate.py and /litreview-status notice the manifest has moved on since routing, without forcing a re-route."
     },
     "synthesis_family": {
       "type": ["string", "null"],
@@ -62,7 +62,7 @@
         },
         "answers": {
           "type": "object",
-          "description": "The Q1-Q6 answers elicited by /prisma-init Step 0.5 (§2.1), verbatim, as passed to tools.route.decide(). Schema-free here -- the answer vocabulary is owned by the routing table and its reference documentation, not duplicated into this schema."
+          "description": "The Q1-Q6 answers elicited by /litreview-init Step 0.5 (§2.1), verbatim, as passed to tools.route.decide(). Schema-free here -- the answer vocabulary is owned by the routing table and its reference documentation, not duplicated into this schema."
         },
         "q0": {
           "type": ["object", "null"],

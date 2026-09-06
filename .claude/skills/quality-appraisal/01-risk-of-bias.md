@@ -1,5 +1,5 @@
 ---
-framework_version: 1.2.0
+framework_version: 1.2.1
 ---
 
 # Risk of Bias Assessment
@@ -79,4 +79,4 @@ This is not a signal to skip appraisal effort — flag the design mismatch back 
 
 ## Rolling up to the outcome level
 
-`/prisma-synthesize` aggregates the per-study overall judgements contributing to one outcome into `synthesis/rob_table.json` (see `SKILL.md`'s schema) and computes `proportion_low_risk` — the fraction of studies judged low risk / good quality. This proportion, together with whether *any* high-risk/poor-quality study drives the pooled result, is the direct input to the risk-of-bias domain of the GRADE rating in `02-grade-certainty.md`: a preponderance of high-risk-of-bias or poor-quality studies contributing to an outcome is grounds to rate down certainty by one or two levels on that domain alone.
+`/litreview-synthesize` aggregates the per-study overall judgements contributing to one outcome into `synthesis/rob_table.json` (see `SKILL.md`'s schema) and computes `proportion_low_risk` — the fraction of studies judged low risk / good quality. This proportion, together with whether *any* high-risk/poor-quality study drives the pooled result, is the direct input to the risk-of-bias domain of the GRADE rating in `02-grade-certainty.md`: a preponderance of high-risk-of-bias or poor-quality studies contributing to an outcome is grounds to rate down certainty by one or two levels on that domain alone.

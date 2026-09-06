@@ -25,7 +25,7 @@ from tools.path_policy import UnsafePathError, resolve_under_results
 # PRISMA_CONTACT_EMAIL so the User-Agent honestly names a reachable maintainer,
 # per API "polite pool" etiquette (OpenAlex/Crossref/NCBI all ask for one).
 DEFAULT_CONTACT_EMAIL = "your-email@example.com"
-TOOL_NAME = "prisma-review-connectors/0.1"
+TOOL_NAME = "litreview-agent-connectors/0.1"
 
 RETRYABLE_STATUS = {429, 500, 502, 503, 504}
 

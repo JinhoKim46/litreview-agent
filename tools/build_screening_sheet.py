@@ -280,7 +280,7 @@ def print_summary(topic: str, stage: str, groups: list[tuple[str, list[dict]]], 
     print(f"  {md_path}")
     print()
     print(f"Edit the decision/reason columns (or checkboxes in the .md), then run "
-          f"`/prisma-screen import --stage {stage}`. Full-text excludes will need a reason.")
+          f"`/litreview-screen import --stage {stage}`. Full-text excludes will need a reason.")
 
 
 def main(argv: list[str] | None = None) -> int:

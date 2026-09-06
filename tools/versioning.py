@@ -80,7 +80,7 @@ def record_version(topic_dir, topic: str) -> dict:
 
     Idempotent no-op if nothing changed since the latest recorded version
     (same canonical record_ids, same included count) -- otherwise a stray
-    repeated `/prisma-search --living` run would append an identical-content
+    repeated `/litreview-search --living` run would append an identical-content
     version entry and tools/status.py's since_last_version() would report a
     phantom zero-record delta as if a real rerun had happened."""
     protocol = _load_protocol(topic_dir)

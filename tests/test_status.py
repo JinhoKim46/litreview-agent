@@ -1,6 +1,6 @@
-"""Unit tests for tools/status.py -- the /prisma-status pipeline-progress
+"""Unit tests for tools/status.py -- the /litreview-status pipeline-progress
 report and next-command recommendation, ported from the inline heredoc
-.claude/commands/prisma-status.md Step 3 used to embed.
+.claude/commands/litreview-status.md Step 3 used to embed.
 """
 import io
 import json
@@ -154,14 +154,14 @@ class ComputeStageTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             s = status.compute(Path(tmp))
             self.assertEqual(s["stage"], "not_started")
-            self.assertIn("prisma-init", s["next_cmd"])
+            self.assertIn("litreview-init", s["next_cmd"])
 
     def test_protocol_defined_no_search(self):
         with tempfile.TemporaryDirectory() as tmp:
             _write_protocol(tmp)
             s = status.compute(Path(tmp))
             self.assertEqual(s["stage"], "protocol_defined")
-            self.assertEqual(s["next_cmd"], "/prisma-search")
+            self.assertEqual(s["next_cmd"], "/litreview-search")
 
     def test_search_incomplete_no_records(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -223,7 +223,7 @@ class ComputeStageTests(unittest.TestCase):
             ])
             s = status.compute(Path(tmp))
             self.assertEqual(s["stage"], "extraction_incomplete")
-            self.assertEqual(s["next_cmd"], "/prisma-extract")
+            self.assertEqual(s["next_cmd"], "/litreview-extract")
 
     def test_extraction_complete_no_synthesis(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -240,7 +240,7 @@ class ComputeStageTests(unittest.TestCase):
             _write_extraction(tmp, [{"record_id": "a:1"}])
             s = status.compute(Path(tmp))
             self.assertEqual(s["stage"], "extraction_complete")
-            self.assertEqual(s["next_cmd"], "/prisma-synthesize")
+            self.assertEqual(s["next_cmd"], "/litreview-synthesize")
 
     def test_synthesis_complete_no_manuscript(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -258,7 +258,7 @@ class ComputeStageTests(unittest.TestCase):
             _write_heterogeneity(tmp, [{"outcome": "x", "pooled": True}, {"outcome": "y", "pooled": False}])
             s = status.compute(Path(tmp))
             self.assertEqual(s["stage"], "synthesis_complete")
-            self.assertEqual(s["next_cmd"], "/prisma-report")
+            self.assertEqual(s["next_cmd"], "/litreview-report")
             self.assertEqual(s["pooled_outcomes"], 1)
             self.assertEqual(s["narrative_outcomes"], 1)
 
@@ -280,7 +280,7 @@ class ComputeStageTests(unittest.TestCase):
             _write_extraction(tmp, [{"record_id": "a:1"}])  # rewritten after the manuscript -> newer mtime
             s = status.compute(Path(tmp))
             self.assertEqual(s["stage"], "manuscript_drafted")
-            self.assertEqual(s["next_cmd"], "/prisma-report")
+            self.assertEqual(s["next_cmd"], "/litreview-report")
 
     def test_manuscript_up_to_date(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -406,7 +406,7 @@ class PrintCondensedTests(unittest.TestCase):
             buf = io.StringIO()
             with redirect_stdout(buf):
                 status.print_condensed(s)
-            self.assertIn("-> next: /prisma-init", buf.getvalue())
+            self.assertIn("-> next: /litreview-init", buf.getvalue())
 
     def test_shows_nothing_pending(self):
         with tempfile.TemporaryDirectory() as tmp:

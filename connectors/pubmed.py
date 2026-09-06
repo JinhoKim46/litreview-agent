@@ -45,7 +45,7 @@ class UpstreamError(Exception):
 
 
 def _base_params():
-    params = {"tool": "prisma-review-pubmed", "email": CONTACT_EMAIL}
+    params = {"tool": "litreview-agent-pubmed", "email": CONTACT_EMAIL}
     api_key = os.environ.get("NCBI_API_KEY")
     if api_key:
         params["api_key"] = api_key

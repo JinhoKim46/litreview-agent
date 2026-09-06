@@ -4,7 +4,7 @@ ledgers every time -- never hand-typed, never recalled from memory.
 
 Ported, behavior-preserving except for the "reports not retrieved" box (see
 below), from the inline `python3 -c` heredoc `.claude/commands/
-prisma-report.md` Step 8 used to embed directly in the prompt (Phase 0
+litreview-report.md` Step 8 used to embed directly in the prompt (Phase 0
 correctness fix, docs/PLAN.md defect #3).
 
 Behavior change from the original heredoc: the decision enum gained

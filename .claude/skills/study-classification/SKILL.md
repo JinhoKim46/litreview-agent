@@ -1,7 +1,7 @@
 ---
 name: study-classification
-description: "Classify a systematic mapping study's included studies into results/<TOPIC>/classification_table.json: keyword a sample to build the classification scheme, freeze it (G-Freeze), code every remaining study against the frozen facets, then run and disclose a calibration re-code. Use whenever a review's resolved method manifest declares capture.mode: \"classification\" (methods/systematic_mapping_study.json) -- /prisma-extract's Step 0.5 routes here instead of running extraction for that manifest. Does not cover a systematic review's risk-of-bias-weighted extraction or a scoping review's charting workflow (capture.mode: \"charting\" -- see .claude/skills/evidence-mapping/SKILL.md for that)."
-framework_version: 1.2.0
+description: "Classify a systematic mapping study's included studies into results/<TOPIC>/classification_table.json: keyword a sample to build the classification scheme, freeze it (G-Freeze), code every remaining study against the frozen facets, then run and disclose a calibration re-code. Use whenever a review's resolved method manifest declares capture.mode: \"classification\" (methods/systematic_mapping_study.json) -- /litreview-extract's Step 0.5 routes here instead of running extraction for that manifest. Does not cover a systematic review's risk-of-bias-weighted extraction or a scoping review's charting workflow (capture.mode: \"charting\" -- see .claude/skills/evidence-mapping/SKILL.md for that)."
+framework_version: 1.2.1
 ---
 
 # Study Classification (Keywording)
@@ -50,10 +50,10 @@ For each candidate (full-text includes not yet classified), before writing the r
 python3 tools/classification_gate.py --topic <TOPIC> --row-codes-json <path-to-the-drafted-row's-codes-dict>
 ```
 
-If this refuses (`row_facet_mismatch` non-null), the drafted codes' keys don't exactly match the frozen `facets[]` names -- fix the draft (never silently drop or invent a facet to make it match) and check again before writing. Once it passes, append the row to `classification_table.json`'s `studies[]` (`Write` tool, matching `prisma-extract.md`'s own convention of a command writing this file directly), with:
+If this refuses (`row_facet_mismatch` non-null), the drafted codes' keys don't exactly match the frozen `facets[]` names -- fix the draft (never silently drop or invent a facet to make it match) and check again before writing. Once it passes, append the row to `classification_table.json`'s `studies[]` (`Write` tool, matching `litreview-extract.md`'s own convention of a command writing this file directly), with:
 
 - `codes`: one category (or array of categories, for a multi-valued facet) per frozen facet.
-- `source`: `{quote, page, hash}` -- the exact text a code came from, mirroring `prisma-extract.md` Step 6's "refuse to write a value whose quote does not actually appear in the retrieved text" rule. `hash` may be `null` if not computed.
+- `source`: `{quote, page, hash}` -- the exact text a code came from, mirroring `litreview-extract.md` Step 6's "refuse to write a value whose quote does not actually appear in the retrieved text" rule. `hash` may be `null` if not computed.
 - `suggested_by`: `"connector"` only for a code filled straight from `records.jsonl` needing no reviewer confirmation (rare -- most facets require reading the study itself); `"llm"` for everything coded from the source text, which does need confirmation (mirroring extraction's G-Values gate).
 - `by`: who coded this record (`"claude (single coder pass)"` unless the reviewer coded it directly).
 - `verified_by`: `null` unless a second person has independently checked this specific record's codes.
@@ -80,5 +80,5 @@ The calibration file is `{"mode": "inter_rater"|"intra_rater_delayed", "sample_s
 ## What this skill does not do
 
 - **Appraisal**: optional for a mapping study (`appraisal.requirement: "optional_with_justification"`), no default instrument -- `quality-appraisal`'s job if the reviewer wants it, not this skill's.
-- **Synthesis**: descriptive facet-count tables and cross-tabulations only, never pooling (`synthesis.families_allowed: ["descriptive"]`). `/prisma-synthesize` runs `tools/chart_summary.py` for this (shared with scoping reviews), producing `synthesis/descriptive_summary.json` (facet-count tables, the pairwise cross-tabs, and a rendered bubble-plot SVG per cross-tab via `synthesis/plots.py`'s `bubble_plot()`) -- this skill never computes or renders any of that itself.
+- **Synthesis**: descriptive facet-count tables and cross-tabulations only, never pooling (`synthesis.families_allowed: ["descriptive"]`). `/litreview-synthesize` runs `tools/chart_summary.py` for this (shared with scoping reviews), producing `synthesis/descriptive_summary.json` (facet-count tables, the pairwise cross-tabs, and a rendered bubble-plot SVG per cross-tab via `synthesis/plots.py`'s `bubble_plot()`) -- this skill never computes or renders any of that itself.
 - **Charting** (a scoping review's `capture.mode: "charting"` -- pilot/freeze of a per-study data-extraction form) is a distinct workflow covered by `.claude/skills/evidence-mapping/SKILL.md`, not this one.
