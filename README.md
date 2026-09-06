@@ -124,7 +124,7 @@ prisma-review/
 ## Requirements
 
 - [Claude Code](https://claude.com/claude-code)
-- Python 3.10+ (`pip install -r requirements.txt`)
+- Python 3.11+ (`pip install -r requirements.txt`)
 - Optional: [Pandoc](https://pandoc.org/) for `--export docx|pdf` on the manuscript; the pipeline is Markdown-first and works fully without it.
 
 ## License
