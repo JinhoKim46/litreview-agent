@@ -76,7 +76,13 @@ def record_version(topic_dir, topic: str) -> dict:
     current canonical record set plus an included count read from
     tools/ledger.py's own latest decisions (never a second, parallel
     decision-counting mechanism -- the same reasoning tools/status.py and
-    tools/flow_counts.py already document relative to each other)."""
+    tools/flow_counts.py already document relative to each other).
+
+    Idempotent no-op if nothing changed since the latest recorded version
+    (same canonical record_ids, same included count) -- otherwise a stray
+    repeated `/prisma-search --living` run would append an identical-content
+    version entry and tools/status.py's since_last_version() would report a
+    phantom zero-record delta as if a real rerun had happened."""
     protocol = _load_protocol(topic_dir)
     record_ids = _canonical_record_ids(topic_dir)
 
@@ -85,6 +91,9 @@ def record_version(topic_dir, topic: str) -> dict:
     included = sum(1 for (rid, stage), e in latest.items() if stage == "full_text" and e["decision"] == "include")
 
     versions = list(protocol.get("versions") or [])
+    if versions and versions[-1]["record_ids"] == record_ids and versions[-1]["n_included"] == included:
+        return {**versions[-1], "unchanged": True}
+
     entry = {
         "version": len(versions) + 1,
         "date": datetime.now(timezone.utc).strftime("%Y-%m-%d"),

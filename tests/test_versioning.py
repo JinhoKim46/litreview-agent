@@ -66,6 +66,18 @@ class VersioningTests(unittest.TestCase):
         entry = versioning.record_version(self.topic_dir, self.SLUG)
         self.assertEqual(entry["n_included"], 1)
 
+    def test_repeat_record_with_no_change_is_idempotent_no_op(self):
+        _write_json(self.topic_dir / "protocol.json", {})
+        _write_jsonl(self.topic_dir / "records.jsonl", [{"record_id": "openalex:O1", "doi": "10.1/x"}])
+        first = versioning.record_version(self.topic_dir, self.SLUG)
+        self.assertNotIn("unchanged", first)
+
+        second = versioning.record_version(self.topic_dir, self.SLUG)
+        self.assertTrue(second["unchanged"])
+        self.assertEqual(second["version"], 1)
+        protocol = json.loads((self.topic_dir / "protocol.json").read_text())
+        self.assertEqual(len(protocol["versions"]), 1)  # no phantom version appended
+
     def test_second_recorded_version_increments_and_persists_both(self):
         _write_json(self.topic_dir / "protocol.json", {})
         _write_jsonl(self.topic_dir / "records.jsonl", [{"record_id": "openalex:O1", "doi": "10.1/x"}])
