@@ -1,10 +1,16 @@
 """Heterogeneity statistics for pooled effect sizes.
 
-Cochrane's Q and the Higgins I^2 statistic tell /prisma-synthesize whether a
-set of per-study effects is homogeneous enough for a fixed-effect pool to be
-trustworthy, or whether it should fall back to (or report as primary) a
-random-effects pool -- per kjae-2018's guidance and the standard decision
-rule (I^2 > 50% or Q-test p < 0.10 => random-effects).
+Cochrane's Q and the Higgins I^2 statistic tell /prisma-synthesize how much a
+set of per-study effects disagrees with itself -- they are reported
+alongside a pooled estimate, never used to pick the pooling model. Which
+model (fixed or random effects) is primary is prespecified by the reviewer
+at protocol time and recorded in synthesis_plan.json
+(schemas/synthesis_plan.schema.json); synthesis/run_synthesis.py always
+computes both models and reports the non-primary one as a sensitivity
+analysis. This module previously exposed a choose_model(I2, q_p_value)
+helper that auto-selected the model from these statistics -- that was a
+Phase 0 correctness defect (docs/PLAN.md), and the function has been
+removed; do not reintroduce a model-selection rule here.
 
 Q and I^2 are plain inverse-variance-weighted formulas with no numerically
 tricky parts, so they're computed directly here with numpy; only the Q
@@ -61,16 +67,6 @@ def compute_heterogeneity(effects, variances):
     return {"Q": Q, "df": df, "p_value": p_value, "I2": I2}
 
 
-def choose_model(I2, q_p_value):
-    """Fixed-vs-random-effects decision rule (kjae-2018): substantial
-    heterogeneity (I2 > 50%) or a significant Q-test (p < 0.10) => random-effects,
-    otherwise fixed-effect is an adequate summary.
-    """
-    if I2 > 50 or q_p_value < 0.10:
-        return "random"
-    return "fixed"
-
-
 if __name__ == "__main__":
     # Worked example: 5 studies, deliberately mixed effects/precisions so Q
     # and I2 land somewhere non-trivial. Expected Q/df/p/I2 are hardcoded
@@ -89,13 +85,6 @@ if __name__ == "__main__":
     assert abs(result["I2"] - 75.60) < 1e-1, result["I2"]
 
     print(f"Q={result['Q']:.4f} df={result['df']} p={result['p_value']:.4f} I2={result['I2']:.2f}%")
-    print("model choice:", choose_model(result["I2"], result["p_value"]))
-
-    # Sanity checks on the decision rule itself.
-    assert choose_model(60, 0.5) == "random"       # high I2 alone triggers random
-    assert choose_model(10, 0.05) == "random"      # significant Q alone triggers random
-    assert choose_model(0, 0.9) == "fixed"         # neither triggers -> fixed
-    assert choose_model(50, 0.5) == "fixed"        # boundary: I2 == 50 is not > 50
 
     # Single-study edge case: no heterogeneity is testable.
     single = compute_heterogeneity([0.2], [0.05])
