@@ -112,6 +112,25 @@ def check_gate(table: dict, pilot_records_required: int, row_data: dict | None =
     return result
 
 
+def verify_table(table: dict) -> list[str]:
+    """Post-hoc check: for a frozen table, every row's `data` keys must
+    equal fields[] exactly. Returns the record_ids of offending rows (empty
+    if none, or if the table isn't frozen yet -- pre-freeze pilot rows are
+    allowed to have data:{} and aren't held to a form that doesn't exist).
+    This is what makes "frozen" enforceable after the fact: the gate check
+    in check_gate() only catches a mismatch at write time if the writer
+    actually calls it first, which nothing forces -- this can be run over
+    a finished table regardless of whether that happened."""
+    if not table.get("charting_form_frozen"):
+        return []
+    frozen_fields = set(table.get("fields", []))
+    offending = []
+    for row in table.get("studies", []):
+        if set(row.get("data", {}).keys()) != frozen_fields:
+            offending.append(row.get("record_id", "<missing record_id>"))
+    return offending
+
+
 def freeze(topic_dir: Path, topic: str, fields: list[str]) -> dict:
     """Writes charting_form_frozen: true and fields[] -- the G-Freeze human
     gate itself is a conversation the command file conducts; this function
@@ -141,7 +160,7 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--topic", required=True, help="review slug under results/")
     parser.add_argument("--row-data-json", help="path to a JSON file holding a candidate row's `data` dict, to check against frozen fields[]")
-    parser.add_argument("action", nargs="?", default="gate", choices=["gate", "freeze"])
+    parser.add_argument("action", nargs="?", default="gate", choices=["gate", "freeze", "verify"])
     parser.add_argument("--fields-json", help="freeze only: path to a JSON file holding the final fields[] list to freeze")
     args = parser.parse_args(argv)
 
@@ -174,6 +193,16 @@ def main(argv: list[str] | None = None) -> int:
             return 1
         print(json.dumps({"frozen": True, "fields": table["fields"]}, indent=2))
         return 0
+
+    if args.action == "verify":
+        try:
+            table = load_charting_table(topic_dir, args.topic)
+        except ChartingGateError as exc:
+            print(f"Error: {exc}", file=sys.stderr)
+            return 1
+        offending = verify_table(table)
+        print(json.dumps({"ok": not offending, "offending_record_ids": offending}, indent=2))
+        return 0 if not offending else 1
 
     row_data = None
     if args.row_data_json:

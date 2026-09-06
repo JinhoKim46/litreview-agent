@@ -2,7 +2,7 @@
   "id": "scoping_review",
   "label": "Scoping review",
   "aliases": ["scoping study", "JBI scoping review"],
-  "version": "1.1.0",
+  "version": "1.2.0",
   "family": "scoping",
   "question_frameworks": ["PCC", "PICO", "SPIDER"],
   "search": {
@@ -34,7 +34,7 @@
       "search_age", "registration", "criteria_changes", "coverage_gaps"
     ]
   },
-  "report_blockers": ["fulltext_exclusion_reasons_complete", "appraisal_complete", "references_verified"],
+  "report_blockers": ["fulltext_exclusion_reasons_complete", "appraisal_complete", "references_verified", "charting_table_matches_frozen_fields"],
   "forbidden_forms": ["exhaustive_search", "comprehensive_search", "no_prior_work", "first_to", "novelty"],
   "profiles": [],
   "living": true,

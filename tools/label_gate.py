@@ -273,10 +273,21 @@ def _blocker_references_verified(topic_dir):
     return bool(record.get("verified")), None if record.get("verified") else "manuscript/references_verified.json exists but does not record verified: true"
 
 
+def _blocker_charting_table_matches_frozen_fields(topic_dir, manifest):
+    from tools.charting_gate import load_charting_table, verify_table
+
+    table = load_charting_table(topic_dir, manifest["id"])
+    offending = verify_table(table)
+    if offending:
+        return False, f"{len(offending)} charted row(s) no longer match the frozen fields[]: " + ", ".join(offending[:10])
+    return True, None
+
+
 BLOCKER_FUNCTIONS = {
     "fulltext_exclusion_reasons_complete": lambda topic_dir, manifest: _blocker_fulltext_exclusion_reasons_complete(topic_dir),
     "appraisal_complete": _blocker_appraisal_complete,
     "references_verified": lambda topic_dir, manifest: _blocker_references_verified(topic_dir),
+    "charting_table_matches_frozen_fields": _blocker_charting_table_matches_frozen_fields,
 }
 
 

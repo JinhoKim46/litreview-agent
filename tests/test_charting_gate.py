@@ -50,6 +50,33 @@ class CheckGateTests(unittest.TestCase):
         self.assertTrue(result["ok"])
 
 
+class VerifyTableTests(unittest.TestCase):
+    def test_unfrozen_table_is_never_flagged(self):
+        table = {"charting_form_frozen": False, "fields": [], "studies": [{"record_id": "r1", "data": {}}]}
+        self.assertEqual(charting_gate.verify_table(table), [])
+
+    def test_frozen_table_with_matching_rows_is_clean(self):
+        table = {
+            "charting_form_frozen": True,
+            "fields": ["year", "venue"],
+            "studies": [{"record_id": "r1", "data": {"year": 2024, "venue": "X"}}],
+        }
+        self.assertEqual(charting_gate.verify_table(table), [])
+
+    def test_frozen_table_with_drifted_row_is_flagged(self):
+        # Simulates a row written without ever calling check_gate first --
+        # the exact bypass this function exists to catch after the fact.
+        table = {
+            "charting_form_frozen": True,
+            "fields": ["year", "venue"],
+            "studies": [
+                {"record_id": "r1", "data": {"year": 2024, "venue": "X"}},
+                {"record_id": "r2", "data": {"year": 2024}},
+            ],
+        }
+        self.assertEqual(charting_gate.verify_table(table), ["r2"])
+
+
 class FreezeAndCliTests(unittest.TestCase):
     SLUG = "charting-gate-test-topic"
 
@@ -95,6 +122,28 @@ class FreezeAndCliTests(unittest.TestCase):
     def test_cli_refuses_for_invalid_slug(self):
         rc = charting_gate.main(["--topic", "../etc/passwd"])
         self.assertEqual(rc, 1)
+
+    def test_cli_verify_clean_table_ok(self):
+        charting_gate.freeze(self.topic_dir, self.SLUG, ["year"])
+        import contextlib
+        import io
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            rc = charting_gate.main(["--topic", self.SLUG, "verify"])
+        self.assertEqual(rc, 0)
+        self.assertEqual(json.loads(buf.getvalue())["offending_record_ids"], [])
+
+    def test_cli_verify_drifted_table_fails(self):
+        table = charting_gate.freeze(self.topic_dir, self.SLUG, ["year"])
+        table["studies"].append({"record_id": "bad1", "data": {"year": 2024, "venue": "extra"}})
+        (self.topic_dir / "charting_table.json").write_text(json.dumps(table))
+        import contextlib
+        import io
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            rc = charting_gate.main(["--topic", self.SLUG, "verify"])
+        self.assertEqual(rc, 1)
+        self.assertEqual(json.loads(buf.getvalue())["offending_record_ids"], ["bad1"])
 
 
 if __name__ == "__main__":
