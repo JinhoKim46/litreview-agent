@@ -256,5 +256,73 @@ class RunModelAndSensitivityTests(unittest.TestCase):
             self.assertIn("Prediction Interval", svg)
 
 
+class SynthesisFamilyDispatchTests(unittest.TestCase):
+    """docs/PLAN.md M1: run()'s synthesis_family dispatch."""
+
+    def _fixture_path(self, tmp):
+        fixture = {"framework_version": "1.0.0", "topic": "t", "studies": [
+            _rr_study("s1", 12, 60, 25, 60),
+            _rr_study("s2", 8, 50, 20, 50),
+            _rr_study("s3", 15, 55, 22, 55),
+        ]}
+        path = os.path.join(tmp, "extraction_table.json")
+        with open(path, "w") as f:
+            json.dump(fixture, f)
+        return path
+
+    def test_default_family_is_pairwise_iv_and_pools_as_before(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = self._fixture_path(tmp)
+            result = run(path, os.path.join(tmp, "out"), model="fixed")  # no synthesis_family -- default
+            es = next(e for e in result["effect_sizes"] if e["outcome"] == "PONV")
+            self.assertTrue(es["pooled"])
+
+    def test_structured_narrative_never_pools_regardless_of_k(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = self._fixture_path(tmp)  # k=3 -- would pool under pairwise_iv
+            result = run(path, os.path.join(tmp, "out"), model="fixed", synthesis_family="structured_narrative")
+            es = next(e for e in result["effect_sizes"] if e["outcome"] == "PONV")
+            het = next(h for h in result["heterogeneity"] if h["outcome"] == "PONV")
+            self.assertFalse(es["pooled"])
+            self.assertFalse(het["pooled"])
+            self.assertIn("structured_narrative", het["reason"])
+            self.assertEqual(len(es["studies"]), 3)  # rows are still recorded, just never pooled
+
+    def test_swim_refuses_cleanly_rather_than_fabricate_statistics(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = self._fixture_path(tmp)
+            with self.assertRaises(SynthesisPlanError) as ctx:
+                run(path, os.path.join(tmp, "out"), model="fixed", synthesis_family="swim")
+            self.assertIn("swim", str(ctx.exception).lower())
+
+    def test_invalid_synthesis_family_raises(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = self._fixture_path(tmp)
+            with self.assertRaises(SynthesisPlanError):
+                run(path, os.path.join(tmp, "out"), model="fixed", synthesis_family="not_a_real_family")
+
+    def test_resolve_synthesis_plan_defaults_synthesis_family_to_pairwise_iv(self):
+        # A plan predating this field (retrospective-plan path, docs/PLAN.md
+        # M1) must behave exactly as before -- pairwise_iv, not a crash.
+        with tempfile.TemporaryDirectory() as tmp:
+            os.makedirs(os.path.join(tmp, "raw"))
+            _write_plan(tmp, model="fixed", signed_at="2026-01-01T00:00:00Z")
+            plan = resolve_synthesis_plan("t", None, _fake_safe_topic_path(tmp))
+            self.assertEqual(plan["synthesis_family"], "pairwise_iv")
+
+    def test_resolve_synthesis_plan_preserves_explicit_synthesis_family(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            os.makedirs(os.path.join(tmp, "raw"))
+            _write_plan(tmp, model="fixed", signed_at="2026-01-01T00:00:00Z", synthesis_family="structured_narrative")
+            plan = resolve_synthesis_plan("t", None, _fake_safe_topic_path(tmp))
+            self.assertEqual(plan["synthesis_family"], "structured_narrative")
+
+    def test_invalid_synthesis_family_in_plan_raises_schema_error(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            _write_plan(tmp, model="fixed", signed_at="2026-01-01T00:00:00Z", synthesis_family="not_a_real_family")
+            with self.assertRaises(jsonschema.exceptions.ValidationError):
+                resolve_synthesis_plan("t", None, _fake_safe_topic_path(tmp))
+
+
 if __name__ == "__main__":
     unittest.main()

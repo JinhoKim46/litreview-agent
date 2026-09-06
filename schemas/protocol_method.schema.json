@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://prisma-flow.local/schemas/protocol_method.schema.json",
+  "title": "protocol.json.method",
+  "description": "Which method manifest (methods/*.json) governs this review, recorded once at protocol time. Read by tools/method.py. Absence of this whole block (a legacy protocol.json predating this schema) means \"systematic_review\", recorded=false -- see docs/PLAN.md M1's migration path, not an error.",
+  "type": "object",
+  "required": ["id"],
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]*$",
+      "description": "Must match a methods/<id>.json manifest's own \"id\" field -- tools/method.py checks this at resolve time, not this schema (the set of shipped methods changes across milestones)."
+    },
+    "recorded": {
+      "type": "boolean",
+      "default": true,
+      "description": "True when a reviewer (or /prisma-init's routing, from docs/PLAN.md M2 onward) actually chose this method before the first protocol-driven run. tools/method.py sets this false only for its own defaulted resolution when the block is absent entirely -- never hand-set false in a real protocol.json."
+    }
+  }
+}
