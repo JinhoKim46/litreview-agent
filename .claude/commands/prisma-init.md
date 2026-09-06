@@ -1,6 +1,6 @@
 # /prisma-init - Start or Resume a Systematic Review
 
-You are running the initialization pipeline for a new (or existing) systematic review under this PRISMA-on-Claude-Code framework. This command implements pipeline steps 0-4: scope selection, the reviewer-profile interview, defining the review question (via the `review-protocol` skill), and handing off keyword elicitation (to the `keyword-expansion` skill). It ends with a populated `results/<TOPIC>/` workspace and a written `protocol.json`.
+You are running the initialization pipeline for a new (or existing) review under this multi-method evidence-synthesis workspace. This command implements pipeline steps 0-4: method routing (which review method this actually is — systematic review, scoping review, or systematic mapping study), scope selection, the reviewer-profile interview, defining the review question (via the `review-protocol` skill), and handing off keyword elicitation (to the `keyword-expansion` skill). It ends with a populated `results/<TOPIC>/` workspace and a written `protocol.json`.
 
 **Follow the steps below in order. Do not skip a step, and do not write `protocol.json` before Steps 0-3 are actually complete** — every field in its schema (Step 5) is sourced from an earlier step, not invented at write time.
 
@@ -13,8 +13,105 @@ You are running the initialization pipeline for a new (or existing) systematic r
    - If `$ARGUMENTS` is non-empty, derive `<TOPIC>` from it directly and proceed without blocking on confirmation — just state the folder name you resolved to in your first reply so the reviewer can redirect you if it's wrong (e.g. "I'll use `results/ai-in-korean-elder-care/` for this review — let me know if you'd prefer a different folder name.").
    - If `$ARGUMENTS` is empty, ask the reviewer for a short topic phrase (2-6 words is plenty — it only needs to be enough to name a folder; the full working title and objective are elicited properly in Step 4) before deriving the slug.
 3. **Check for an existing review**: attempt to read `results/<TOPIC>/protocol.json`.
-   - **If it exists**, this is a resume/update, not a fresh init. Read it in full, summarize its current title, framework, eligibility criteria, and scope back to the reviewer in plain language, and ask whether they want to (a) update this protocol (carry the update into Step 4, which routes to the `review-protocol` skill's own "Before you begin" update path and never silently overwrites recorded eligibility criteria), or (b) start a distinct review under a different topic slug (go back to Step 0.2 with a new slug). Do not re-run Steps 1-3 wholesale for an update — Step 2 (reviewer profile) in particular should only run if `CLAUDE.local.md` still has placeholder tokens; re-confirm scope (Step 1) only if the reviewer says scope is what's changing. Don't write the amendment record yourself — the `review-protocol` skill's update path owns `protocol.json`'s `amendments: [{date, change, reason}]` array (PRISMA Item 24c); your job here is only to route into that path.
-   - **If it does not exist**, this is a fresh init. Continue to Step 1.
+   - **If it exists**, this is a resume/update, not a fresh init. Read it in full, summarize its current title, framework, eligibility criteria, and scope back to the reviewer in plain language, and ask whether they want to (a) update this protocol (carry the update into Step 4, which routes to the `review-protocol` skill's own "Before you begin" update path and never silently overwrites recorded eligibility criteria), or (b) start a distinct review under a different topic slug (go back to Step 0.2 with a new slug). Do not re-run Steps 1-3 wholesale for an update — Step 2 (reviewer profile) in particular should only run if `CLAUDE.local.md` still has placeholder tokens; re-confirm scope (Step 1) only if the reviewer says scope is what's changing. Don't write the amendment record yourself — the `review-protocol` skill's update path owns `protocol.json`'s `amendments: [{date, change, reason}]` array (PRISMA Item 24c); your job here is only to route into that path. **Also skip Step 0.5 entirely** — the method is already recorded in `protocol.json.method`; re-running the routing interview on an already-routed review would ask questions whose answer is already settled and risks silently switching methods mid-review.
+   - **If it does not exist**, this is a fresh init. Continue to Step 0.5.
+
+---
+
+## Step 0.5: Method Routing (G-Route)
+
+Which method manifest governs this review — `systematic_review`, `scoping_review`, `systematic_mapping_study`, or a clean refusal for a method not shipped yet (reconnaissance is M4; living/incremental-update mode, umbrella review, meta-aggregation, mixed-methods review, and diagnostic-test-accuracy narrative are all later milestones or v2) — is decided here, before scope or the protocol interview, using `methods/_routing.json`'s versioned decision table (`tools/route.py`) evaluated against a short set of questions. **This is a deterministic decision the table makes, not a judgment call you make by reading the answers yourself** — run `tools/route.py` and follow its result; do not second-guess it because a different method "feels right."
+
+Ask conversationally, in plain language, never using method vocabulary in the question text itself (the reviewer should never have to know what a "scoping review" is to answer these).
+
+### Q1: What do you need at the end?
+
+Ask this as a plain multi-select list (not the `AskUserQuestion` tool — it has more than four options):
+
+> - **(a)** Get oriented — key papers, vocabulary, what's been done
+> - **(g)** Check whether something like my idea has already been done
+> - **(b)** A background/related-work section
+> - **(c)** A map of what exists and where it is thin
+> - **(d)** A defensible answer to one specific question
+> - **(f)** A summary of what existing reviews conclude
+> - **(e)** Update a review that already exists in this workspace
+
+Record the pick(s) as `goal` — a list drawn from `{"orient", "prior_work", "background", "map", "answer", "overview", "update"}` (a→orient, g→prior_work, b→background, c→map, d→answer, f→overview, e→update). More than one may apply.
+
+**If `"update"` is among the picks**: stop and tell the reviewer plainly that living/incremental-update mode (re-running an existing completed review in this workspace against only new records) is not implemented yet (M5) — `methods/_routing.json`'s R1 row would technically resolve this to the base review's own method with `modes: ["living"]`, but nothing in this framework executes a delta rerun, so writing that would promise a capability that doesn't exist. Ask whether they'd rather (a) drop `"update"` and continue with whatever other goals they also picked, if any, or (b) treat this as a fresh, independent review (a new protocol) rather than an update. If `"update"` was the only pick and they don't want a fresh review instead, stop here — do not proceed to Q0 or write anything — and point them at `docs/ROADMAP.md`'s M5 entry for when this lands.
+
+### Q0: Existing-review check
+
+Ask: "Have you already checked PROSPERO, OSF, or the Cochrane Library for an existing systematic review answering this exact question?" with three answers: *found one and want to build on/formally update it* · *checked, found none* · *haven't checked yet*.
+
+This is a simplified stand-in for the design's full "bounded existing-review scan over enabled connectors with `purpose: orienting`" (not yet implemented — say so if asked, don't pretend a scan ran). Record:
+
+- Found one, wants to update it: `q0.human_judgement = "update_external"`; ask for the citation and fold it into `registry_lookup.result` as free text (e.g. `"found: Smith et al. 2020 systematic review on X — this review updates it"`). This is a *different* thing from Q1's `"update"` goal above — R0 resolves this to `systematic_review` directly (a formal review update per Garner 2016 is fully supported today; it's `"update"`/living-mode over *this workspace's own* prior review that isn't).
+- Checked, found none: `q0.human_judgement = "proceed"`, `registry_lookup = {"date": "<today, ISO date>", "result": "none found", "url": null}`.
+- Hasn't checked: `q0.human_judgement = "proceed"`, `registry_lookup = null`. This surfaces later as a disclosure (`registry_lookup_recorded` is never a hard-gate check), never a silent downgrade.
+
+### Q2: Question focus
+
+Render from the generic template (no `packs/*.json` field pack ships yet, so there's no pack-specific wording to draw from — use the generic wording plainly rather than pretending a pack informed it): "Can you state your question as 'does/how well A, compared with B, affect C in D'?" — **Yes** · **Roughly** · **Not yet — it's an area, not a question**. Record as `question_focus`: `"focused"` | `"rough"` | `"forming"`.
+
+### Q3: Evidence type
+
+"What kind of papers do you expect to find?" — trials/experiments with numbers · observational studies · algorithm/benchmark papers · test-accuracy or prediction-model studies · interviews/qualitative · existing reviews · mixed/don't know. Record as `evidence_type`: `"trials"` | `"observational"` | `"algorithm"` | `"test_accuracy_or_model"` | `"qualitative"` | `"existing_reviews"` | `"mixed"`.
+
+If `evidence_type` is `"algorithm"` or `"test_accuracy_or_model"`, ask the disambiguator: "Are results reported on shared public datasets (e.g. fastMRI, BraTS) or on patients/clinical outcomes?" — record as `benchmark_vs_clinical`: `"benchmark"` | `"clinical"` (not read by any routing row yet in v1; recorded for the pack layer once it ships).
+
+### Q4: Reviewers and time
+
+"How many people can screen independently, and how much time do you have?" — just me · 2 or more; an afternoon · a week · 1–3 months · 6+ months. Record `reviewers` as the **integer** `1` or `2` (routing rows check `reviewers: {"eq": 1}` — a string `"1"` would silently never match), and `time_budget` as exactly `"afternoon"` or `"week"` for those two answers (routing rows check these two exact strings — `"1_3_months"` / `"6_plus_months"` for the other two, which no row currently reads but should stay consistent for when packs/profiles do).
+
+### Q5: Appraisal intent
+
+"Will you formally rate each paper's risk of bias with a checklist (e.g. RoB 2, PROBAST)? Most related-work sections and surveys do not." — **Yes** · **No** · **Not sure** (treat as No). Record as `appraisal_intent`: `"yes"` | `"no"`.
+
+### Q6: Pooling expectation (conditional)
+
+Only ask if `"answer"` is in `goal` **and** `evidence_type` is `"trials"` or `"observational"`: "Do you expect several studies to report the same measurement for the same comparison, so their numbers could be combined?" — **Yes** · **No** · **Not sure** (treat as No — never assume pooling is wanted). Record as `expects_pooling`: `"yes"` | `"no"` (a **string**, not a boolean — `methods/_routing.json`'s R6e checks `expects_pooling: {"eq": "yes"}`).
+
+### Run the routing table
+
+Write the assembled answers to a JSON file (e.g. `{"goal": [...], "question_focus": "...", "evidence_type": "...", "benchmark_vs_clinical": "...", "reviewers": 1, "time_budget": "...", "appraisal_intent": "...", "expects_pooling": "...", "q0": {"human_judgement": "...", "registry_lookup": {...} | null, "raw_files": []}}` — omit `benchmark_vs_clinical`/`expects_pooling` entirely when Q3/Q6 weren't asked) and run:
+
+```bash
+python3 tools/route.py --answers-json <path>
+```
+
+(Pre-allowlisted — `Bash(python3 tools/route.py:*)`.) The result's `"kind"` is one of:
+
+- **`"resolve"`**: a real, shipped method (`method_id`) was recommended. Continue below to render the card.
+- **`"refuse"`**: no method applies (or the recommended one isn't shipped yet). Tell the reviewer the `reason` and `pointer` plainly, and any `offer[]` methods they could pursue instead (already filtered to only ones actually shipped — never suggest a dead end). Ask how they'd like to proceed: adjust an earlier answer and re-run routing, or pick one of the offered methods directly (an explicit override, recorded per R10 below). Do not write `protocol.json.method` for a refusal the reviewer hasn't explicitly overridden.
+
+  **Known carve-out** — if `matched_row == "R3"` **and** `"answer"` is in `goal` **and** `question_focus == "forming"`: this is a documented routing-table ordering defect (`methods/_routing.json`'s R3 row fires unconditionally on `question_focus == "forming"`, before R5 — which is what actually applies to this combination — ever gets evaluated; flagged since PR #30, not yet fixed at the table level because reordering it is a maintainer judgment call, not something to silently patch here). R5's intended resolution for exactly this combination is `scoping_review`, which **is** shipped. Don't present the raw "reconnaissance isn't shipped" refusal as if it were the honest answer here — tell the reviewer plainly: "your question isn't focused enough yet to run as a systematic review, but this fits a scoping review, which maps the space first" and offer `scoping_review` directly as an override (`chosen_id: "scoping_review"`, `override_reason` citing this R3/R5 ordering note) rather than sending them back to rephrase an answer that was already correct.
+- **`"ask"`**: only possible via R1 (living mode), which Q1's own interception above already handled — this should not occur in practice; if it does, treat it the same as `"update"` was handled above.
+
+### Render the "because" card and confirm (G-Route)
+
+For a `"resolve"` result, render a five-line card from the resolved manifest's own `microcopy` (`methods/<method_id>.json`) and the routing result — fill this template with real values, never leave a bracketed placeholder in what you show the reviewer:
+
+1. **What you told me** — echo the answers back in the reviewer's own words, not the routing vocabulary (e.g. "you want a defensible answer to one specific question, expect trial data, and can screen with two people").
+2. **What I recommend and what it is** — `microcopy.what`.
+3. **What you will have at the end** — `microcopy.gives`.
+4. **What it costs** — `microcopy.costs`, plus a one-line note on which of the six sources this workspace searches and any known gaps for the reviewer's field (from `CLAUDE.local.md`, if anything relevant is on file — otherwise omit this clause rather than inventing a gap).
+5. **What you will be allowed to call this, and why** — the **predicted label**, computed from `reviewers` (Q4) alone, never by calling `tools/label_gate.py` (nothing exists on disk yet to compute a *real* label from — this is a prediction, not a computation):
+   - `method_id == "systematic_review"` and `reviewers == 1`: predicted **"systematized review"** — disclose that a second screener, or a documented verification sample over a portion of title/abstract screening, would let it be reported as "systematic review" instead.
+   - `method_id == "systematic_review"` and `reviewers == 2`: predicted **"systematic review"** — note this assumes the protocol gets signed (Step 4/Phase 2's `tools/sign_protocol.py` call) before the first search run, which this same command will handle.
+   - `method_id` is `"scoping_review"` or `"systematic_mapping_study"`: predicted label is simply the manifest's own `label_rules.label` (`"scoping review"` / `"systematic mapping study"`) — these are never downgraded for single screening (PRISMA-ScR item 9 / JBI), so `reviewers` doesn't change the prediction.
+
+   Also state `microcopy.cannot_claim` here, plainly.
+
+If `result["explain"]` is set (R8's appraisal-intent note, or an R7 override), add one more sentence using it verbatim — never paraphrase a routing-table explanation.
+
+If the reviewer's answers led here by a route other than the most direct one (`chosen_id` would differ from `recommended_id` only after an override below — at this point they're still equal), skip this; the "you asked for X but Y fits better" sentence only applies after an override is being explained, not before one exists.
+
+Ask the reviewer to confirm (`recommended_id`) or override with a specific alternative method + a one-sentence reason. Record via `tools/route.py`'s `record_override()` shape: `{"recommended_id": ..., "chosen_id": ..., "override_reason": ...}` (`override_reason` is `null` unless `chosen_id != recommended_id`).
+
+### Hold the result — do not write it yet
+
+Exactly like Step 1's scope answer, **hold** the full routing block in context rather than writing it to disk now: `{"table_version": <methods/_routing.json's own "table_version">, "answers": {...as sent to route.py...}, "q0": {...}, "recommended_id": ..., "chosen_id": ..., "override_reason": ..., "fallback_reason": <result["reason"] if this was a fallback, else null>}`, plus `method_id` (the confirmed `chosen_id`), `synthesis_family` (`result["synthesis_family"]`), `profile_flags` (`result["profile_flags"]`), `modes` (`result["modes"]`), `output_profiles` (`result["output_profiles"]`), and `pack` (`tools.route.resolve_pack()` — `null`/`"generic"` until packs ship, per R9). **`version` is `methods/<chosen_id>.json`'s own `"version"` field, read fresh at this moment** — never hardcode `"1.0.0"` from the schema's worked example; it records which manifest revision actually routed this review, and both `scoping_review.json` and `systematic_mapping_study.json` have already moved past `1.0.0`. It is persisted into `protocol.json.method` in Step 4's handoff to `review-protocol`, per `schemas/protocol_method.schema.json` §2.3 — not written here, so an aborted or restarted run never leaves a half-written `protocol.json`.
 
 ---
 
@@ -79,6 +176,7 @@ Substitute the real `<TOPIC>` slug from Step 0. The `.gitkeep` touches matter: `
 Invoke the **`review-protocol`** skill (Skill tool, `skill: review-protocol`) to run its Phase 1 interview and Phase 2 persistence for `results/<TOPIC>/`. Before invoking it, tell it explicitly:
 
 - The target path is `results/<TOPIC>/protocol.json` (the `<TOPIC>` resolved in Step 0).
+- Method routing has **already been decided** in Step 0.5 above (skip this bullet entirely on a resume, where Step 0.5 itself was skipped) — pass along the full `method` block held in context (`id`/`chosen_id`, `version` from the resolved manifest, `synthesis_family`, `profile_flags`, `modes`, `pack`, `output_profiles`, and the `routing` object) so the skill writes it straight into `protocol.json.method`, per `schemas/protocol_method.schema.json`, rather than leaving it unset (which would default the review to `systematic_review`, `recorded: false` — silently wrong for a scoping/mapping review).
 - Scope has **already been collected** in Step 1 above — pass along `mode`, `region`, and any named `coverage_gaps` so the skill writes them straight into `protocol.json.scope` rather than re-running its own Phase 1 Step 4 scope elicitation.
 - If Step 0 identified this as a resume/update, tell the skill so it takes its "Before you begin" update path (read the existing file, confirm what's changing, never silently overwrite recorded eligibility criteria).
 
