@@ -326,6 +326,45 @@ class ChartingBlockerTests(unittest.TestCase):
         self.assertIn("charting_table_matches_frozen_fields", names)
 
 
+class ClassificationBlockerTests(unittest.TestCase):
+    SLUG = "label-gate-classification-blocker-test-topic"
+
+    def setUp(self):
+        self.topic_dir = path_policy.RESULTS_ROOT / self.SLUG
+        if self.topic_dir.exists():
+            shutil.rmtree(self.topic_dir)
+        os.makedirs(self.topic_dir, exist_ok=True)
+        _write_json(str(self.topic_dir / "protocol.json"), {"signed_at": "2026-01-01T00:00:00Z", "method": {"id": "systematic_mapping_study"}})
+        _write_json(str(self.topic_dir / "manuscript" / "references_verified.json"), {"verified": True})
+
+    def tearDown(self):
+        if self.topic_dir.exists():
+            shutil.rmtree(self.topic_dir)
+
+    def test_no_classification_table_does_not_block(self):
+        blockers = label_gate.compute_blockers(self.SLUG)
+        names = {b["blocker"] for b in blockers}
+        self.assertNotIn("classification_table_matches_frozen_scheme", names)
+
+    def test_frozen_scheme_with_matching_rows_does_not_block(self):
+        _write_json(str(self.topic_dir / "classification_table.json"), {
+            "scheme_frozen": True, "facets": [{"name": "research_type", "categories": ["validation"]}],
+            "studies": [{"record_id": "r1", "codes": {"research_type": "validation"}}],
+        })
+        blockers = label_gate.compute_blockers(self.SLUG)
+        names = {b["blocker"] for b in blockers}
+        self.assertNotIn("classification_table_matches_frozen_scheme", names)
+
+    def test_frozen_scheme_with_drifted_row_blocks(self):
+        _write_json(str(self.topic_dir / "classification_table.json"), {
+            "scheme_frozen": True, "facets": [{"name": "research_type", "categories": ["validation"]}],
+            "studies": [{"record_id": "bad1", "codes": {}}],
+        })
+        blockers = label_gate.compute_blockers(self.SLUG)
+        names = {b["blocker"] for b in blockers}
+        self.assertIn("classification_table_matches_frozen_scheme", names)
+
+
 class ForbiddenFormLintTests(unittest.TestCase):
     def setUp(self):
         from tools.method import list_manifests

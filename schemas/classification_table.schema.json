@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://prisma-flow.local/schemas/classification_table.schema.json",
   "title": "classification_table.json",
-  "description": "A systematic mapping study's classified-study table (docs/PLAN.md M3; references/docs/design/multi-method-consensus.md §3.1 S5, §3.3 'Systematic mapping study'). Written by the (not-yet-shipped) evidence-mapping skill once a method manifest's capture.mode is \"classification\". The scheme is built by keywording a sample (pack-supplied candidate facets; Wieringa research types), frozen, then applied to every study; a calibration re-code (inter-rater when two coders, delayed intra-rater re-code of >=10 records when one) discloses agreement/disagreement rather than hiding it.",
+  "description": "A systematic mapping study's classified-study table (docs/PLAN.md M3; references/docs/design/multi-method-consensus.md §3.1 S5, §3.3 'Systematic mapping study'). Written by the study-classification skill once a method manifest's capture.mode is \"classification\". The scheme is built by keywording a sample (pack-supplied candidate facets; Wieringa research types), frozen, then applied to every study; a calibration re-code (inter-rater when two coders, delayed intra-rater re-code of >=10 records when one) discloses agreement/disagreement rather than hiding it.",
   "type": "object",
   "required": ["framework_version", "topic", "scheme_frozen", "studies"],
   "additionalProperties": false,
