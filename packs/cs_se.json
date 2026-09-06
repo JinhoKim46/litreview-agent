@@ -1,0 +1,27 @@
+{
+  "id": "cs_se",
+  "label": "Computer science / software engineering",
+  "version": "1.0.0",
+  "source_expectations": [
+    {"source": "OpenAlex", "role": "bibliographic", "standard": "SEGRESS 2023 (broad CS/SE coverage)", "reachable_via": "openalex"},
+    {"source": "Crossref", "role": "bibliographic", "standard": "SEGRESS 2023 (DOI-registered venues)", "reachable_via": "crossref"},
+    {"source": "Semantic Scholar", "role": "bibliographic", "standard": "SEGRESS 2023 (CS-focused coverage)", "reachable_via": "semanticscholar"},
+    {"source": "arXiv", "role": "preprint", "standard": "SEGRESS 2023 / Petersen et al. 2015 (preprint-heavy field norm)", "reachable_via": "arxiv"},
+    {"source": "IEEE Xplore", "role": "bibliographic", "standard": "Petersen et al. 2015 (conduct: source coverage for SE)", "reachable_via": null},
+    {"source": "ACM Digital Library", "role": "bibliographic", "standard": "Petersen et al. 2015 / SEGRESS 2023", "reachable_via": null}
+  ],
+  "controlled_vocab": "none",
+  "search": {"primary_strategies_allowed": ["database", "snowballing"]},
+  "question_template": "does method A, compared with baseline B, improve metric C on dataset D under condition E?",
+  "framework_glosses": {
+    "Population": "system/domain under study",
+    "Concept": "method, technique, or tool family",
+    "Context": "development context, language/platform, evaluation setting"
+  },
+  "default_capture_fields": ["year", "venue", "publication_type", "data_source", "method_family", "main_metric", "code_available", "claimed_contribution"],
+  "appraisal_instruments_by_design": {},
+  "confidence_framework": "none",
+  "pooling_unit_identity_proposal": [],
+  "preprint_eligibility_default": true,
+  "label_rule_additions": []
+}

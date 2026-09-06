@@ -1,0 +1,111 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://prisma-flow.local/packs/_schema.json",
+  "title": "field pack",
+  "description": "A field pack (packs/<id>.json) is flat data adding glosses and expectations on top of a method manifest -- it never overrides a manifest field, and it needs no code of its own (references/docs/design/multi-method-consensus.md §4.4). tools/method.py globs packs/*.json (except this file) and validates each against this schema. A pack that needs code is a fork, per doctrine. Every `default` below documents what a pack author may omit; jsonschema.validate() does not fill it in at load time -- a pack that omits an optional field simply has no key for it, so any code reading pack[<field>] unconditionally (rather than pack.get(<field>, <default>)) must be written expecting that, not assuming the default already landed in the dict.",
+  "type": "object",
+  "required": ["id", "label", "version", "source_expectations"],
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]*$",
+      "description": "Stable identifier, matches the pack's own filename without the .json extension (e.g. \"cs_se\" for packs/cs_se.json). tools/method.py checks this at load time."
+    },
+    "label": {"type": "string", "description": "Human-readable name shown in the routing card and CLI output, e.g. \"Computer science / software engineering\"."},
+    "version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "description": "Semver, watched by tools/check_framework_version.py the same way as methods/*.json -- bump this whenever the pack's own content changes non-trivially."
+    },
+    "source_expectations": {
+      "type": "array",
+      "minItems": 1,
+      "description": "§4.4: renders the card's coverage statement (§2.4 line 4), fills protocol.json.scope.coverage_gaps for a source this field's standard expects but no enabled connector reaches, and generates the manuscript's Limitations paragraph. Required and non-empty -- a pack with nothing to say about source coverage is not yet a pack.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["source", "role", "standard", "reachable_via"],
+        "properties": {
+          "source": {"type": "string", "description": "Human-readable source name, e.g. \"ClinicalTrials.gov\", \"IEEE Xplore\", \"PROSPERO\"."},
+          "role": {"type": "string", "enum": ["bibliographic", "registry", "grey", "preprint", "proceedings"]},
+          "standard": {"type": "string", "description": "The reporting/conduct standard that expects this source for this field, e.g. \"Cochrane Handbook 4.5\", \"SEGRESS 2023\"."},
+          "reachable_via": {
+            "type": ["string", "null"],
+            "description": "The connectors/<name>.py module id this source is reachable through (must be a real, currently-installed connector -- tools/method.py checks this against connectors.registry.list_source_files()), or null when this workspace cannot reach it at all. null is the expected, honest value for most registry/grey sources today -- it is what makes the source a recorded coverage gap, not a bug to silence."
+          }
+        }
+      }
+    },
+    "controlled_vocab": {
+      "type": "string",
+      "enum": ["mesh", "emtree", "none"],
+      "default": "none",
+      "description": "Which controlled vocabulary system this field's literature is normally indexed against, if any. Distinct from methods/_schema.json's own search.controlled_vocab (that one is a method-level yes/no gate for the QGS sensitivity check at S3; this one names which system a pack's glosses/question templates should assume)."
+    },
+    "search": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "primary_strategies_allowed": {
+          "type": "array",
+          "items": {"type": "string"},
+          "default": ["database"],
+          "description": "Which search strategies this field's standard treats as a valid primary strategy, e.g. adding \"snowballing\" for cs_se (§3.3: \"Snowballing primary only where pack.search.primary_strategies_allowed includes it\")."
+        }
+      },
+      "default": {}
+    },
+    "question_template": {
+      "type": "string",
+      "default": "",
+      "description": "The Q2 template rendered for this field, with one worked example, e.g. \"does method A, compared with baseline B, improve metric C on dataset D under condition E?\" (§2.1 Q2)."
+    },
+    "framework_glosses": {
+      "type": "object",
+      "additionalProperties": {"type": "string"},
+      "default": {},
+      "description": "Per-element gloss for whichever question framework this field uses, e.g. {\"Population\": \"imaging modality / anatomy / dataset\", \"Concept\": \"method family\", \"Context\": \"acceleration, sampling pattern, evaluation setting\"} for a PCC-framed imaging pack."
+    },
+    "default_capture_fields": {
+      "type": "array",
+      "items": {"type": "string"},
+      "default": [],
+      "description": "Candidate charting/classification/extraction fields this field's studies commonly report, offered as a starting point at the pilot-and-freeze stage (S5) -- never a fixed schema, always editable before freeze."
+    },
+    "appraisal_instruments_by_design": {
+      "type": "object",
+      "additionalProperties": {"type": ["string", "null"]},
+      "default": {},
+      "description": "Study-design id (e.g. \"rct\", \"cohort\", \"case_control\", \"qualitative\") -> appraisal instrument id (e.g. \"rob2\", \"robins-i\", \"nos\", \"mmat\"), or null when no instrument applies for that design in this field. §1: \"rob2 only in clinical packs\" -- other packs must not offer it."
+    },
+    "confidence_framework": {
+      "type": "string",
+      "enum": ["grade", "none"],
+      "default": "none",
+      "description": "§1: \"Certainty framework from pack (GRADE in clinical; none in cs_se)\"."
+    },
+    "pooling_unit_identity_proposal": {
+      "type": "array",
+      "items": {"type": "string"},
+      "default": [],
+      "description": "Pre-fills synthesis_plan.json's pooling_unit.identity_fields as a *proposal* the human signs at G-Protocol -- e.g. [\"dataset\", \"split_policy\", \"acceleration\", \"mask\", \"coil_setting\", \"metric_definition\"] for an imaging pack. The refusal to pool across non-identical units is a core predicate over the signed plan, never pack code."
+    },
+    "preprint_eligibility_default": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether preprints are eligible by default for this field's reviews, offered at protocol time -- always overridable per-review."
+    },
+    "label_rule_additions": {
+      "type": "array",
+      "default": [],
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["check"],
+        "properties": {"check": {"type": "string"}, "value": {}}
+      },
+      "description": "Extra label_rules.requires[]-shaped entries this pack adds on top of the chosen method's own, restricted to check names tools/label_gate.py.CHECK_FUNCTIONS already implements (the same discipline methods/_schema.json's own label_rules.requires[].check follows -- an unknown name fails loudly at evaluation time, never silently ignored). Empty for every M3 pack: the one worked example in §4.4 (\"registry_or_grey_source\") is v2 (dissent #17), reopened only once an institutional/registry connector ships."
+      }
+    }
+  }

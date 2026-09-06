@@ -19,7 +19,10 @@ every other target (reconnaissance, scoping_review, systematic_mapping_study,
 ...) refuses honestly until its milestone ships the manifest.
 
 Usage:
-    python3 tools/route.py --answers-json <path>   # print the routing decision as JSON
+    python3 tools/route.py --answers-json <path> [--claude-local-pack <id>]
+        # print the routing decision as JSON, plus R9's resolved "pack" id
+        # and "pack_source_coverage" (which of that pack's expected sources
+        # this workspace can/cannot reach -- §2.4 line 4 of the "because" card)
 """
 
 from __future__ import annotations
@@ -32,7 +35,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-from tools.method import list_manifests  # noqa: E402
+from tools.method import MethodError, list_manifests, load_pack  # noqa: E402
 
 ROUTING_TABLE_PATH = ROOT / "methods" / "_routing.json"
 
@@ -252,9 +255,36 @@ def record_override(routing_result: dict, chosen_id: str | None, override_reason
     }
 
 
+def pack_source_coverage(pack_id: str) -> list[dict] | None:
+    """§2.4 line 4 of the "because" card: which of a pack's expected
+    sources this workspace can and cannot reach. Returns None only when
+    `pack_id` resolves to no packs/<id>.json on disk at all (a pack id
+    nothing ships yet); returns [] for an id load_pack() rejects outright
+    rather than raising here -- main() surfaces that error separately, this
+    function stays a read-only lookup for the card.
+
+    A source's `reachable` is exactly `reachable_via is not None`: load_pack()
+    already validates that a non-null `reachable_via` names an installed
+    connector module, so no live connectivity probe is needed here -- the
+    schema check at load time is the coverage check."""
+    pack = load_pack(pack_id)
+    if pack is None:
+        return None
+    return [
+        {**expectation, "reachable": expectation["reachable_via"] is not None}
+        for expectation in pack["source_expectations"]
+    ]
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--answers-json", required=True, help="path to a JSON file of routing answers")
+    parser.add_argument(
+        "--claude-local-pack", default=None,
+        help="R9's default pack id derived from CLAUDE.local.md's field-of-research/target-venue "
+             "(the caller's job to derive from that file's content); omitted when nothing on file "
+             "applies, in which case resolve_pack() falls through to \"generic\".",
+    )
     args = parser.parse_args(argv)
 
     try:
@@ -266,6 +296,14 @@ def main(argv: list[str] | None = None) -> int:
     try:
         result = decide(answers)
     except RouteError as exc:
+        print(f"Error: {exc}", file=sys.stderr)
+        return 1
+
+    pack_id = resolve_pack(answers, claude_local_pack=args.claude_local_pack)
+    result["pack"] = pack_id
+    try:
+        result["pack_source_coverage"] = pack_source_coverage(pack_id)
+    except MethodError as exc:
         print(f"Error: {exc}", file=sys.stderr)
         return 1
 
