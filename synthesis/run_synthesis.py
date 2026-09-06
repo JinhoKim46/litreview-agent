@@ -218,6 +218,14 @@ def normalize_risk_of_bias(rob, study_id):
             file=sys.stderr,
         )
         tool = "RoB1"
+    if tool == "unsupported":
+        print(
+            f"warning: {study_id}: risk_of_bias.tool=\"unsupported\" (design fits neither RoB1 "
+            "nor NOS) counts as not-low-risk in proportion_low_risk -- this study needs a "
+            "design-appropriate instrument this framework doesn't yet implement "
+            "(see .claude/skills/quality-appraisal/01-risk-of-bias.md)",
+            file=sys.stderr,
+        )
     normalized = dict(rob, tool=tool)
     if "instrument" not in normalized and tool in INSTRUMENT_BY_TOOL:
         normalized["instrument"] = INSTRUMENT_BY_TOOL[tool]
