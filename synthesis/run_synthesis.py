@@ -309,7 +309,11 @@ def flatten_rows(studies):
     (docs/PLAN.md PR p0-11-extraction-provenance) `reports`, `by`,
     `verified_by` -- each `effect_data` entry's own `source` (quote/
     locator/notes) is already inside that entry, so it needs no separate
-    threading here."""
+    threading here. `study` carries the raw extraction_table.json entry
+    verbatim, used only by check_pooling_unit_identity() (docs/ROADMAP.md
+    M5) to read whatever arbitrary top-level field names a signed
+    synthesis_plan.json's pooling_unit.identity_fields declares -- those
+    field names aren't part of this file's own fixed row shape."""
     rows = []
     for study in studies:
         record_id = study.get("record_id") or study.get("author_year") or "UNKNOWN_STUDY"
@@ -328,6 +332,7 @@ def flatten_rows(studies):
                 "outcome": entry["outcome"], "type": "quantitative",
                 "effect_data": entry, "risk_of_bias": rob,
                 "reports": reports, "by": by, "verified_by": verified_by,
+                "study": study,
             })
 
         for name in study.get("outcomes_measured", []):
@@ -338,6 +343,7 @@ def flatten_rows(studies):
                 "outcome": name, "type": "qualitative",
                 "effect_data": None, "risk_of_bias": rob,
                 "reports": reports, "by": by, "verified_by": verified_by,
+                "study": study,
             })
     return rows
 
@@ -544,9 +550,55 @@ def build_grade_draft(outcome_name, rows, model_used, k, het, effect_summary):
     }
 
 
+_IDENTITY_FIELD_MISSING = object()
+
+
+def check_pooling_unit_identity(rows, identity_fields):
+    """The core, pack-agnostic pooling-unit-identity refusal predicate
+    (docs/ROADMAP.md M5): refuses (returns a human-readable reason string)
+    an outcome group whose included studies do not all agree on every
+    field named in synthesis_plan.json's pooling_unit.identity_fields --
+    e.g. a pooled cross-dataset metric where the studies' `dataset_id`
+    values differ. Reads identity_fields generically off the *signed
+    plan*; it works identically whether those field names were hand-typed
+    at G-Protocol or pre-filled from a pack's own
+    pooling_unit_identity_proposal -- no pack-specific code here or
+    anywhere else in this refusal path.
+
+    Returns None (pool normally) when identity_fields is empty/None --
+    additive and opt-in, so a review with no pooling_unit declared pools
+    exactly as it always has. A study missing a declared field entirely is
+    refused with its own distinct message, never silently treated as
+    "agreeing" with another study that's also missing it -- two studies
+    that never recorded a field aren't thereby known to share a value."""
+    if not identity_fields:
+        return None
+    for field in identity_fields:
+        missing = []
+        by_value = {}
+        for row in rows:
+            study = row.get("study") or {}
+            value = study.get(field, _IDENTITY_FIELD_MISSING)
+            if value is _IDENTITY_FIELD_MISSING:
+                missing.append(row["study_id"])
+            else:
+                by_value.setdefault(value, []).append(row["study_id"])
+        if missing:
+            return (f'pooling_unit.identity_fields declares "{field}", but it is not recorded on: '
+                    f"{', '.join(sorted(missing))} -- add it to each study's extraction_table.json "
+                    "entry before pooling")
+        if len(by_value) > 1:
+            detail = "; ".join(
+                f"{value!r} ({', '.join(sorted(ids))})"
+                for value, ids in sorted(by_value.items(), key=lambda kv: str(kv[0]))
+            )
+            return f'pooling_unit.identity_fields declares "{field}", but studies disagree: {detail}'
+    return None
+
+
 def process_outcome_group(outcome_name, measure, rows, out_dir, slug, model, model_source,
                            k_min=POOL_MIN_K, tau2_estimator="dl", ci_method="normal",
-                           synthesis_family="pairwise_iv"):
+                           synthesis_family="pairwise_iv", identity_fields=None):
     """rows: all rows for this (outcome, measure_type) pair. `model` is the
     prespecified primary pooling model ("fixed" or "random", from
     synthesis_plan.json) -- never chosen from this group's own heterogeneity
@@ -580,8 +632,12 @@ def process_outcome_group(outcome_name, measure, rows, out_dir, slug, model, mod
     rob_entry = build_rob_entry(outcome_name, rows)
     k = len(study_effects)
 
+    identity_reason = check_pooling_unit_identity(rows, identity_fields)
+
     if synthesis_family == "structured_narrative":
         reason = "structured_narrative synthesis family (synthesis_plan.json) -- no statistical pooling attempted for this review"
+    elif identity_reason is not None:
+        reason = identity_reason
     elif k < k_min:
         reason = (f"only {k} study/studies with usable effect data for this outcome+measure "
                   f"(need >= {k_min} to pool)" + (f"; excluded: {excluded}" if excluded else ""))
@@ -695,7 +751,7 @@ def _atomic_write_json(path, data):
 
 
 def run(extraction_table_path, out_dir, model, model_source="protocol", k_min=POOL_MIN_K,
-        tau2_estimator="dl", ci_method="normal", synthesis_family="pairwise_iv"):
+        tau2_estimator="dl", ci_method="normal", synthesis_family="pairwise_iv", identity_fields=None):
     """`model` is the prespecified primary pooling model ("fixed" or
     "random") -- required, never derived here from the data. `model_source`
     records where it came from ("protocol", "post_hoc", or "cli_override";
@@ -705,7 +761,10 @@ def run(extraction_table_path, out_dir, model, model_source="protocol", k_min=PO
     through to every process_outcome_group call (see synthesis/pooling.py).
     `synthesis_family` (docs/PLAN.md M1) dispatches which of
     methods/systematic_review.json's synthesis.families_allowed this run
-    follows -- see SYNTHESIS_FAMILIES and process_outcome_group's docstring."""
+    follows -- see SYNTHESIS_FAMILIES and process_outcome_group's docstring.
+    `identity_fields` (docs/ROADMAP.md M5) is synthesis_plan.json's signed
+    `pooling_unit.identity_fields`, if any -- see
+    check_pooling_unit_identity()."""
     if model not in ("fixed", "random"):
         raise ValueError(f"model must be 'fixed' or 'random', got {model!r}")
     if synthesis_family not in SYNTHESIS_FAMILIES:
@@ -733,7 +792,8 @@ def run(extraction_table_path, out_dir, model, model_source="protocol", k_min=PO
     for (outcome_name, measure), group_rows in sorted(groups.items()):
         slug = slugify(f"{outcome_name}-{measure}")
         es, het, grade, rob = process_outcome_group(outcome_name, measure, group_rows, out_dir, slug, model, model_source, k_min,
-                                                     tau2_estimator=tau2_estimator, ci_method=ci_method, synthesis_family=synthesis_family)
+                                                     tau2_estimator=tau2_estimator, ci_method=ci_method, synthesis_family=synthesis_family,
+                                                     identity_fields=identity_fields)
         effect_sizes.append(es)
         heterogeneity.append(het)
         grade_table.append(grade)
@@ -842,7 +902,8 @@ def main():
 
     result = run(str(extraction_table_path), str(out_dir), model=plan["model"], model_source=plan["model_source"],
                  k_min=plan["k_min"], tau2_estimator=plan["tau2_estimator"], ci_method=plan["ci_method"],
-                 synthesis_family=plan["synthesis_family"])
+                 synthesis_family=plan["synthesis_family"],
+                 identity_fields=(plan.get("pooling_unit") or {}).get("identity_fields"))
     pooled_n = sum(1 for h in result["heterogeneity"] if h["pooled"])
     narrative_n = sum(1 for h in result["heterogeneity"] if not h["pooled"])
     rob_plot_note = f"rob_traffic_light.svg ({result['rob_traffic_light_svg']})" if result["rob_traffic_light_svg"] else \
