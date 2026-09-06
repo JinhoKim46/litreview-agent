@@ -14,10 +14,12 @@ A complete walkthrough from "I just cloned this" to "I have a drafted manuscript
 4. [First run: personalize the tool](#4-first-run-personalize-the-tool)
 5. [Run your first review, end to end](#5-run-your-first-review-end-to-end)
 6. [Test the workflow with a real example](#6-test-the-workflow-with-a-real-example)
-7. [Optional: raise API rate limits](#7-optional-raise-api-rate-limits)
-8. [Extending the framework](#8-extending-the-framework)
-9. [Troubleshooting](#9-troubleshooting)
-10. [Where things live, and where to go next](#10-where-things-live-and-where-to-go-next)
+7. [Incomplete or interrupted review](#7-incomplete-or-interrupted-review)
+8. [Methodological limits before submission](#8-methodological-limits-before-submission)
+9. [Optional: raise API rate limits](#9-optional-raise-api-rate-limits)
+10. [Extending the framework](#10-extending-the-framework)
+11. [Troubleshooting](#11-troubleshooting)
+12. [Where things live, and where to go next](#12-where-things-live-and-where-to-go-next)
 
 ---
 
@@ -51,7 +53,7 @@ git clone https://github.com/<your-fork>/prisma-flow.git
 cd prisma-flow
 ```
 
-If you forked this on GitHub, your fork is public by default, same as the upstream repo — but that's fine here: `/prisma-init`'s reviewer-profile interview (Section 4 below) writes your name, institution, and prior publications into `CLAUDE.local.md`, which is gitignored, so none of it enters git history even on a public fork. Your actual review data — search results, screening decisions, extracted study data, the drafted manuscript — is a separate concern and is gitignored by default too (see `results/<TOPIC>/` in Section 10).
+If you forked this on GitHub, your fork is public by default, same as the upstream repo — but that's fine here: `/prisma-init`'s reviewer-profile interview (Section 4 below) writes your name, institution, and prior publications into `CLAUDE.local.md`, which is gitignored, so none of it enters git history even on a public fork. Your actual review data — search results, screening decisions, extracted study data, the drafted manuscript — is a separate concern and is gitignored by default too (see `results/<TOPIC>/` in Section 12).
 
 ---
 
@@ -69,7 +71,7 @@ Verify the install:
 python3 -m unittest discover -s tests
 ```
 
-You should see `OK` and around 109 passing tests. This is the same fixture-based suite CI runs — it never touches a live network, so a pass here just confirms your Python environment is sound, not that the live connectors work yet (Section 6 checks that for real).
+You should see `OK` and 130+ passing tests (the exact count grows as the framework does). This is the same fixture-based suite CI runs — it never touches a live network, so a pass here just confirms your Python environment is sound, not that the live connectors work yet (Section 6 checks that for real).
 
 ---
 
@@ -163,11 +165,40 @@ What to actually check, not just observe:
 - Does `/prisma-synthesize`'s pooled risk ratio and confidence interval land in a plausible range compared to a real published meta-analysis on an overlapping set of trials?
 - Does at least one secondary outcome fall back to narrative synthesis (fewer than 2 poolable studies)? If everything pools, you haven't actually exercised that code path.
 
-A second, deliberately different topic — something like "spaced repetition for second-language vocabulary retention" — is worth running afterward specifically because it's *not* biomedical: weaker MeSH coverage, heavier reliance on OpenAlex/Semantic Scholar, and it's likely to stay in narrative synthesis rather than pool, exercising a different part of the framework than PONV does.
+A second, deliberately different topic — something like "spaced repetition for second-language vocabulary retention" — is worth running afterward specifically because it's *not* biomedical: weaker MeSH coverage, heavier reliance on OpenAlex/Semantic Scholar, and it's likely to stay in narrative synthesis rather than pool, exercising a different part of the framework than PONV does. Treat this second run as a search/dedup/screening smoke test only, not a demonstration that the framework fully supports non-biomedical reviews end to end — its risk-of-bias tools and question frameworks are still clinical/health-science-shaped either way (see `README.md`'s "What this is — and is not," and Section 8 below).
 
 ---
 
-## 7. Optional: raise API rate limits
+## 7. Incomplete or interrupted review
+
+A search is not automatically complete just because `/prisma-search` finished without an error. Three things make it incomplete, and the pipeline reports each one rather than hiding it:
+
+- **A source failed** (rate-limited, upstream error, missing credentials for a source you added yourself). `/prisma-search` names which source and why, and offers to retry — most rate limits clear within minutes.
+- **A source truncated.** `raw/<source>-<date>.json`'s `meta.truncated` is `true` whenever `total_available` exceeds what was actually retrieved (the default per-source limit is capped; see `search_plan.json`). Re-run with a higher `--limit` if you need the full set — but note the raw file is named by day, so a same-day re-run **overwrites** the smaller response rather than keeping both; that's fine for getting the fuller record set into `records.jsonl`, but if you want to preserve the original truncated response for your own audit trail, copy it aside first.
+- **A source was deliberately skipped this run** — you said no to it in `/prisma-search`'s source-confirmation step.
+
+None of these three states are self-resolving: you decide whether to retry, revise the search, or explicitly accept the gap and disclose it in your methods section. `/prisma-report` does not currently block on an incomplete search — it's on you to check `/prisma-status` and each source's `raw/*.json` before treating a review as ready to write up.
+
+**Interrupted mid-review** (closed your laptop, came back a week later, switched machines): nothing is lost. Every stage's state is either append-only (`screening_decisions.jsonl`, `possible_duplicates.jsonl`) or fully re-derivable from files on disk. Run `/prisma-status "your topic"` and it reconstructs exactly where things stand and what to run next — there's no separate "resume" command because there's nothing to resume from except the files themselves.
+
+---
+
+## 8. Methodological limits before submission
+
+Before treating a review as ready for a manuscript, methods reviewer, or co-author, verify these by hand — the pipeline drafts and records, it does not certify:
+
+- [ ] **Source coverage** matches your protocol's stated scope — check `search_plan.json` and any `coverage_gaps` entries in `protocol.json` against what you actually need covered.
+- [ ] **Every screening decision** at both stages is genuinely yours, not left on the AI-suggested default — spot-check a sample against the sheets you marked up.
+- [ ] **Full-text was actually available** for every included study, not interviewed out of you as a last resort when a URL failed — check `extraction_table.json`'s evidence locators.
+- [ ] **Data extraction** reflects what you'd write down yourself, not just what the pipeline's single AI-assisted pass produced — this framework runs one pass, not independent dual extraction with a resolver.
+- [ ] **Your review's field is one this framework's methodology actually covers.** Risk-of-bias appraisal (RoB2 for randomized studies, Newcastle-Ottawa for non-randomized), the question frameworks (PICO/PICo/SPIDER/PIRD), and the default PRISMA 2020 27-item manuscript structure all assume a clinical/health-science review — confirm all three are the right instruments for your actual field and study designs before relying on them, not just the risk-of-bias tool alone (see `README.md`'s "What this is — and is not").
+- [ ] **Every pooled outcome's studies are actually compatible** — same timepoint, same direction, no double-counted participants — before trusting `/prisma-synthesize`'s pooled estimate over its narrative-fallback judgment.
+- [ ] **GRADE certainty ratings are complete**, not left at a placeholder domain `/prisma-synthesize` couldn't fill in automatically (indirectness and imprecision need your judgment call).
+- [ ] **A human did the final read.** A single reviewer/agent pass through this pipeline is not equivalent to independent dual review — if your target venue or protocol requires that, this framework doesn't provide it by itself.
+
+---
+
+## 9. Optional: raise API rate limits
 
 None of the six default connectors require a key — this section is entirely optional. If you're running large or repeated searches:
 
@@ -182,7 +213,7 @@ Set these in your shell profile or a local `.env` you source before `claude` —
 
 ---
 
-## 8. Extending the framework
+## 10. Extending the framework
 
 **Need a source the six free connectors don't cover** (an institutional Scopus or Web of Science subscription, a discipline-specific index)?
 
@@ -206,13 +237,13 @@ Always shows exactly what will be deleted and asks for confirmation first — no
 
 ---
 
-## 9. Troubleshooting
+## 11. Troubleshooting
 
 **`ModuleNotFoundError: No module named 'statsmodels'` (or `matplotlib`, `requests`)**
 `pip install -r requirements.txt` wasn't run, or was run in a different Python environment than the one Claude Code's Bash tool is using. Confirm with `python3 -c "import statsmodels"` in the same shell Claude Code would use.
 
 **A connector returns `RATE_LIMITED`**
-Expected occasionally, especially from Semantic Scholar's unauthenticated pool. `/prisma-search` reports which source failed and offers to retry — usually clears within minutes. See Section 7 for raising the limit permanently.
+Expected occasionally, especially from Semantic Scholar's unauthenticated pool. `/prisma-search` reports which source failed and offers to retry — usually clears within minutes. See Section 9 for raising the limit permanently.
 
 **A connector returns `MISSING_CREDENTIALS`**
 Only happens if you've set an API-key environment variable to an empty or malformed value, or a connector you added via `/prisma-add-source` genuinely requires one. None of the six default connectors need a key to function at all.
@@ -231,7 +262,7 @@ Check `search_plan.json`'s query strings for that source — a keyword expansion
 
 ---
 
-## 10. Where things live, and where to go next
+## 12. Where things live, and where to go next
 
 ```
 results/<topic-slug>/
