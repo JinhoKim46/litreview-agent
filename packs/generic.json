@@ -1,0 +1,21 @@
+{
+  "id": "generic",
+  "label": "Generic (no field-specific specialization)",
+  "version": "1.0.0",
+  "source_expectations": [
+    {"source": "OpenAlex", "role": "bibliographic", "standard": "PRISMA 2020 Item 6 (multidisciplinary bibliographic coverage)", "reachable_via": "openalex"},
+    {"source": "Crossref", "role": "bibliographic", "standard": "PRISMA 2020 Item 6 (DOI-registered scholarly metadata)", "reachable_via": "crossref"},
+    {"source": "Semantic Scholar", "role": "bibliographic", "standard": "PRISMA 2020 Item 6 (broad multidisciplinary coverage)", "reachable_via": "semanticscholar"},
+    {"source": "A study registry (e.g. PROSPERO, OSF Registries)", "role": "registry", "standard": "MECIR C39 / PRISMA 2020 Item 24a (prospective registration check)", "reachable_via": null}
+  ],
+  "controlled_vocab": "none",
+  "search": {"primary_strategies_allowed": ["database"]},
+  "question_template": "does/how well A, compared with B, affect C in D?",
+  "framework_glosses": {},
+  "default_capture_fields": ["year", "study_design", "sample_size", "population", "intervention", "comparator", "outcome", "funding_source"],
+  "appraisal_instruments_by_design": {"rct": null, "cohort": "robins-i", "case_control": "nos", "cross_sectional": "nos", "qualitative": "casp"},
+  "confidence_framework": "grade",
+  "pooling_unit_identity_proposal": [],
+  "preprint_eligibility_default": true,
+  "label_rule_additions": []
+}

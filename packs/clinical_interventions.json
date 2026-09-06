@@ -1,0 +1,28 @@
+{
+  "id": "clinical_interventions",
+  "label": "Clinical interventions (health/medicine)",
+  "version": "1.0.0",
+  "source_expectations": [
+    {"source": "PubMed/MEDLINE", "role": "bibliographic", "standard": "Cochrane Handbook v6.5 Ch.4 / PRISMA-S Item 1", "reachable_via": "pubmed"},
+    {"source": "Europe PMC", "role": "bibliographic", "standard": "Cochrane Handbook v6.5 Ch.4 (biomedical literature + preprints)", "reachable_via": "europepmc"},
+    {"source": "OpenAlex", "role": "bibliographic", "standard": "PRISMA 2020 Item 6 (multidisciplinary cross-check)", "reachable_via": "openalex"},
+    {"source": "ClinicalTrials.gov", "role": "registry", "standard": "Cochrane Handbook v6.5 Ch.4 (trial registry search)", "reachable_via": null},
+    {"source": "Cochrane Central Register of Controlled Trials (CENTRAL)", "role": "registry", "standard": "Cochrane Handbook v6.5 Ch.4", "reachable_via": null},
+    {"source": "Grey literature (conference proceedings, dissertations, regulatory reports)", "role": "grey", "standard": "Cochrane Handbook v6.5 Ch.4 (publication-bias mitigation)", "reachable_via": null}
+  ],
+  "controlled_vocab": "mesh",
+  "search": {"primary_strategies_allowed": ["database"]},
+  "question_template": "does A, compared with B, affect C in D? (e.g. \"does early mobilization, compared with standard care, reduce postoperative delirium in elderly surgical patients?\")",
+  "framework_glosses": {
+    "Population": "patients/condition and clinical setting",
+    "Intervention": "the treatment, drug, or clinical intervention",
+    "Comparison": "control, placebo, or standard-of-care",
+    "Outcome": "the clinical outcome measured"
+  },
+  "default_capture_fields": ["year", "country", "study_design", "sample_size", "population", "intervention", "comparator", "outcome_measures", "funding_source", "conflicts_of_interest"],
+  "appraisal_instruments_by_design": {"rct": "rob2", "cohort": "robins-i", "case_control": "nos", "cross_sectional": "nos", "qualitative": "casp"},
+  "confidence_framework": "grade",
+  "pooling_unit_identity_proposal": [],
+  "preprint_eligibility_default": false,
+  "label_rule_additions": []
+}

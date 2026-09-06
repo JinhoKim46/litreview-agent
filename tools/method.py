@@ -15,9 +15,11 @@ error, and not a downgrade; see resolve()'s docstring and
 docs/ROADMAP.md's migration note.
 
 Field packs (packs/*.json) add glosses and expectations on top of a method,
-never override its rules (docs/ROADMAP.md). No pack ships until
-docs/PLAN.md M3, so `packs/` may not exist at all yet -- resolve() treats a
-missing pack file as "no pack data", never an error.
+never override its rules (docs/ROADMAP.md). `generic`, `clinical_interventions`
+and `cs_se` ship from docs/PLAN.md M3 on; a pack id resolving to none of
+those (or to a later pack, e.g. M5's imaging packs, before it ships) is the
+expected state for that id, not an error -- resolve() treats a missing pack
+file as "no pack data", never an error.
 
 Usage:
     python3 tools/method.py --topic <slug>   # print the resolved method/pack as JSON
@@ -41,6 +43,7 @@ from tools.path_policy import UnsafePathError, safe_topic_path  # noqa: E402
 METHODS_DIR = ROOT / "methods"
 PACKS_DIR = ROOT / "packs"
 METHOD_SCHEMA_PATH = METHODS_DIR / "_schema.json"
+PACK_SCHEMA_PATH = PACKS_DIR / "_schema.json"
 PROTOCOL_METHOD_SCHEMA_PATH = ROOT / "schemas" / "protocol_method.schema.json"
 
 # Not method manifests themselves -- the manifest schema and (from M2 on) the
@@ -48,6 +51,7 @@ PROTOCOL_METHOD_SCHEMA_PATH = ROOT / "schemas" / "protocol_method.schema.json"
 # by any content sniff, so a manifest that happens to omit a field the schema
 # would also omit is never mistaken for the schema itself.
 NON_MANIFEST_FILES = {"_schema.json", "_routing.json"}
+NON_PACK_FILES = {"_schema.json"}
 
 DEFAULT_METHOD_ID = "systematic_review"
 DEFAULT_PACK_ID = "generic"
@@ -90,57 +94,99 @@ def list_manifests() -> dict[str, dict]:
 
 
 def load_pack(pack_id: str) -> dict | None:
-    """Load packs/<pack_id>.json if it exists. No pack manifest ships until
-    docs/PLAN.md M3 -- a missing file (or a missing packs/ directory
-    entirely) is the expected M1 state, not an error. A malformed pack file
-    that *does* exist still fails loudly."""
+    """Load packs/<pack_id>.json if it exists, validated against
+    packs/_schema.json. A missing file (or a missing packs/ directory
+    entirely) resolves to None, never an error -- callers before docs/PLAN.md
+    M3 (or any topic resolving to a pack id nothing ships yet) rely on this.
+    A malformed or schema-invalid pack file that *does* exist still fails
+    loudly, the same discipline as list_manifests()."""
     if not re.match(r"^[a-z][a-z0-9_]*$", pack_id):
         raise MethodError(f"invalid pack id {pack_id!r}")
     path = PACKS_DIR / f"{pack_id}.json"
     if not path.exists():
         return None
     try:
-        return json.loads(path.read_text())
+        pack = json.loads(path.read_text())
     except json.JSONDecodeError as exc:
         raise MethodError(f"{path}: invalid JSON: {exc}") from exc
+    if not PACK_SCHEMA_PATH.exists():
+        raise MethodError(f"{PACK_SCHEMA_PATH} not found -- packs/_schema.json must ship with any pack")
+    schema = json.loads(PACK_SCHEMA_PATH.read_text())
+    try:
+        jsonschema.validate(pack, schema)
+    except jsonschema.exceptions.ValidationError as exc:
+        raise MethodError(f"{path}: fails packs/_schema.json: {exc.message}") from exc
+    if pack["id"] != pack_id:
+        raise MethodError(f"{path}: pack id {pack['id']!r} does not match filename stem {pack_id!r}")
+    known_connectors = set(_installed_connector_ids())
+    for expectation in pack["source_expectations"]:
+        reachable_via = expectation["reachable_via"]
+        if reachable_via is not None and reachable_via not in known_connectors:
+            raise MethodError(
+                f"{path}: source_expectations entry {expectation['source']!r} names "
+                f"reachable_via={reachable_via!r}, which is not an installed connector "
+                f"(known: {sorted(known_connectors) or '<none installed>'})"
+            )
+    return pack
 
 
-def _load_protocol_method_block(protocol: dict | None) -> tuple[str, bool]:
-    """Returns (method_id, recorded). `protocol` is protocol.json's parsed
-    content, or None if the file does not exist yet (a review that has not
-    run /prisma-init's protocol step at all -- resolve() still returns the
-    default method so a caller can render "what SR requires" before one is
-    signed)."""
+def _installed_connector_ids() -> list[str]:
+    """The connector module ids load_pack() checks reachable_via against.
+    Imported lazily (not at module load) so a broken connector module can
+    never prevent tools/method.py itself from importing."""
+    from connectors.registry import list_source_files
+
+    return list_source_files()
+
+
+def _load_protocol_method_block(protocol: dict | None) -> tuple[str, bool, str | None]:
+    """Returns (method_id, recorded, pack_id). `protocol` is protocol.json's
+    parsed content, or None if the file does not exist yet (a review that
+    has not run /prisma-init's protocol step at all -- resolve() still
+    returns the default method so a caller can render "what SR requires"
+    before one is signed).
+
+    `pack_id` is R9's recorded pack choice (tools/route.py's
+    resolve_pack(), written to protocol.json.method.pack at G-Route) -- None
+    when absent, which happens both for a legacy protocol predating M2's
+    routing interview and for one where routing explicitly resolved no pack
+    at all. resolve() falls back to DEFAULT_PACK_ID in either case; this
+    function only reports what was actually recorded, never substitutes a
+    default itself."""
     method_block = (protocol or {}).get("method")
     if method_block is None:
-        return DEFAULT_METHOD_ID, False
+        return DEFAULT_METHOD_ID, False, None
     schema = json.loads(PROTOCOL_METHOD_SCHEMA_PATH.read_text())
     try:
         jsonschema.validate(method_block, schema)
     except jsonschema.exceptions.ValidationError as exc:
         raise MethodError(f"protocol.json.method fails schemas/protocol_method.schema.json: {exc.message}") from exc
-    return method_block["id"], method_block.get("recorded", True)
+    return method_block["id"], method_block.get("recorded", True), method_block.get("pack")
 
 
 def resolve(topic: str, pack_id: str | None = None) -> dict:
-    """Resolve the method (and, once packs ship, the pack) governing `topic`.
+    """Resolve the method and pack governing `topic`.
 
     Reads results/<topic>/protocol.json if it exists; absence of the file,
     or absence of its `method` key, both resolve to
     ("systematic_review", recorded=False) per docs/ROADMAP.md's migration
     path -- never an error, never a different method silently substituted.
 
-    `pack_id` lets a caller override which pack to resolve against; omitted,
-    it defaults to "generic". No pack manifest exists until M3 (nothing
-    writes a pack choice to protocol.json yet either), so `pack` in the
-    returned dict is commonly None -- that is expected, not a failure.
+    `pack_id` lets a caller override which pack to resolve against. Omitted,
+    it defaults to whatever R9 recorded at G-Route
+    (protocol.json.method.pack, tools/route.py's resolve_pack()), falling
+    back to "generic" only when nothing was recorded (a legacy protocol
+    predating M2's routing interview, or no protocol at all) -- never to
+    "generic" over a review's own recorded choice. `pack` in the returned
+    dict is None whenever the resolved pack id has no packs/<id>.json on
+    disk yet; that is expected for any id not shipped, not a failure.
 
     Returns {"method_id", "recorded", "manifest", "pack_id", "pack"}."""
     topic_dir = safe_topic_path(topic)
     protocol_path = topic_dir / "protocol.json"
     protocol = json.loads(protocol_path.read_text()) if protocol_path.exists() else None
 
-    method_id, recorded = _load_protocol_method_block(protocol)
+    method_id, recorded, recorded_pack_id = _load_protocol_method_block(protocol)
     manifests = list_manifests()
     if method_id not in manifests:
         raise MethodError(
@@ -148,7 +194,7 @@ def resolve(topic: str, pack_id: str | None = None) -> dict:
             f"(known methods: {sorted(manifests) or '<none shipped>'})"
         )
 
-    resolved_pack_id = pack_id or DEFAULT_PACK_ID
+    resolved_pack_id = pack_id or recorded_pack_id or DEFAULT_PACK_ID
     return {
         "method_id": method_id,
         "recorded": recorded,

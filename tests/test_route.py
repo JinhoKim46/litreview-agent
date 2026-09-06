@@ -269,5 +269,73 @@ class NoMatchTests(unittest.TestCase):
             route.decide({"goal": []}, shipped_method_ids=ALL_TARGETS)
 
 
+class PackSourceCoverageTests(unittest.TestCase):
+    # docs/PLAN.md M3 / §2.4 line 4: the "because" card's coverage
+    # statement, now that packs/{generic,clinical_interventions,cs_se}.json
+    # actually ship.
+    def test_generic_pack_coverage_marks_registry_unreachable(self):
+        coverage = route.pack_source_coverage("generic")
+        by_role = {c["role"]: c for c in coverage}
+        self.assertFalse(by_role["registry"]["reachable"])
+        self.assertIsNone(by_role["registry"]["reachable_via"])
+
+    def test_generic_pack_coverage_marks_openalex_reachable(self):
+        coverage = route.pack_source_coverage("generic")
+        openalex = next(c for c in coverage if c["reachable_via"] == "openalex")
+        self.assertTrue(openalex["reachable"])
+
+    def test_cs_se_pack_coverage_marks_ieee_and_acm_unreachable(self):
+        coverage = route.pack_source_coverage("cs_se")
+        unreachable_sources = {c["source"] for c in coverage if not c["reachable"]}
+        self.assertIn("IEEE Xplore", unreachable_sources)
+        self.assertIn("ACM Digital Library", unreachable_sources)
+
+    def test_unshipped_pack_id_returns_none(self):
+        self.assertIsNone(route.pack_source_coverage("medical_imaging_prediction"))
+
+
+class MainCliPackFieldsTests(unittest.TestCase):
+    def _run_main(self, answers, extra_args=None):
+        import contextlib
+        import io
+        import json as _json
+        import tempfile
+
+        with tempfile.NamedTemporaryFile("w", suffix=".json", delete=False) as f:
+            _json.dump(answers, f)
+            path = f.name
+        try:
+            buf = io.StringIO()
+            argv = ["--answers-json", path] + (extra_args or [])
+            with contextlib.redirect_stdout(buf):
+                rc = route.main(argv)
+            return rc, _json.loads(buf.getvalue()) if rc == 0 else buf.getvalue()
+        finally:
+            os.unlink(path)
+
+    def test_cli_output_includes_resolved_pack_and_coverage(self):
+        rc, printed = self._run_main({"goal": ["map"], "evidence_type": "algorithm"})
+        self.assertEqual(rc, 0)
+        self.assertEqual(printed["pack"], "generic")
+        self.assertIsInstance(printed["pack_source_coverage"], list)
+        self.assertTrue(len(printed["pack_source_coverage"]) >= 1)
+
+    def test_cli_claude_local_pack_flag_selects_pack(self):
+        rc, printed = self._run_main(
+            {"goal": ["map"], "evidence_type": "algorithm"},
+            extra_args=["--claude-local-pack", "cs_se"],
+        )
+        self.assertEqual(rc, 0)
+        self.assertEqual(printed["pack"], "cs_se")
+
+    def test_cli_explicit_answers_pack_wins_over_claude_local_pack(self):
+        rc, printed = self._run_main(
+            {"goal": ["map"], "evidence_type": "algorithm", "pack": "clinical_interventions"},
+            extra_args=["--claude-local-pack", "cs_se"],
+        )
+        self.assertEqual(rc, 0)
+        self.assertEqual(printed["pack"], "clinical_interventions")
+
+
 if __name__ == "__main__":
     unittest.main()
