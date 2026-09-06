@@ -78,7 +78,7 @@ for source, p in latest.items():
 "
 ```
 4. **Never open `records.jsonl` or `screening_decisions.jsonl` with the `Read` tool.** These are the two files sized to a review's actual record count, not its included-study count, and are exactly the files the `screening-assistant` skill's "never blow the context window" rule exists to protect. All you need from them at this stage are the aggregate counts Step 8 computes via `python3` — defer touching them until then.
-5. If `.claude/skills/quality-appraisal/` or `.claude/skills/review-protocol/` reference files are present, note that Step 7 will consult them directly for RoB2/GRADE domain wording and eligibility-gate phrasing rather than re-deriving definitions from general knowledge.
+5. If `.claude/skills/quality-appraisal/` or `.claude/skills/review-protocol/` reference files are present, note that Step 7 will consult them directly for RoB1/GRADE domain wording and eligibility-gate phrasing rather than re-deriving definitions from general knowledge.
 
 ---
 
@@ -138,7 +138,7 @@ Work through the manuscript **one section at a time**, in academic register, fol
 - 2.5 Selection process [Item 8] — screening stages/independence, from `screening_decisions.jsonl`'s stage structure and any `ai_suggestion` use.
 - 2.6 Data collection process [Item 9] — how `extraction_table.json` was built.
 - 2.7 Data items [10a, 10b] — the field set actually present in `extraction_table.json`.
-- 2.8 Study risk of bias assessment [Item 11] — tool named per `synthesis/rob_table.json` (RoB2/NOS, per `quality-appraisal/01-risk-of-bias.md`).
+- 2.8 Study risk of bias assessment [Item 11] — tool named per `synthesis/rob_table.json` (RoB1/NOS, per `quality-appraisal/01-risk-of-bias.md`).
 - 2.9 Effect measures [Item 12] — from `synthesis/effect_sizes.json` per outcome; "Not applicable" only for outcomes with no synthesis data at all.
 - 2.10 Synthesis methods [13a–13f] — per outcome group: pooling model and heterogeneity method (fixed vs. random, from `synthesis/heterogeneity.json`'s `choose_model` decision) for poolable outcomes; narrative/thematic synthesis and the recorded `reason` for non-poolable ones. Address every applicable sub-item.
 - 2.11 Reporting bias assessment [Item 14] — funnel-plot assessment only where a plot was generated (≥10 studies per outcome); otherwise state it could not be formally assessed.
@@ -147,7 +147,7 @@ Work through the manuscript **one section at a time**, in academic register, fol
 **3. RESULTS**
 - 3.1 Study selection [16a, 16b] — narrative description **and** the flow diagram (Step 9); cite full-text exclusions with their `reason` field verbatim.
 - 3.2 Study characteristics [Item 17] — summary table built from `extraction_table.json` (author/year, country, design, population, intervention, outcome, key findings).
-- 3.3 Risk of bias in studies [Item 18] — `synthesis/rob_table.json`, as a summary table or a traffic-light figure (inline SVG, RoB2 colour convention: low risk / some concerns / high risk).
+- 3.3 Risk of bias in studies [Item 18] — `synthesis/rob_table.json`, as a summary table or a traffic-light figure (inline SVG, RoB1 colour convention: low risk / unclear risk / high risk).
 - 3.4 Results of individual studies [Item 19] — per-study findings and effect estimates from `extraction_table.json`'s `effect_data`.
 - 3.5 Results of syntheses [20a–20d] — pooled estimate + 95% CI + heterogeneity per outcome (Figure 2, the forest plot) or narrative synthesis where pooling did not apply.
 - 3.6 Reporting biases [Item 21] — the funnel plot (Figure 3), where generated.
@@ -213,7 +213,7 @@ Write the file with the `Write` tool — this is authored markup, not a script o
 
 ## Step 10: Verify References (APA 7th Edition)
 
-For every reference the draft cites (a study from `extraction_table.json`/`records.jsonl`, the PRISMA 2020 statement itself, and — if synthesis ran — RoB2, GRADE, and the pooling method's primary sources):
+For every reference the draft cites (a study from `extraction_table.json`/`records.jsonl`, the PRISMA 2020 statement itself, and — if synthesis ran — RoB1, GRADE, and the pooling method's primary sources):
 
 1. Check formatting against `apa7-formatting-rules.md` for that source's type (journal article, preprint, report, dataset, etc.) — in-text citation form, reference-list entry, hanging-indent convention, DOI formatting, italicization rules.
 2. Use **WebSearch** (and **WebFetch** on a candidate landing page — publisher site or DOI resolver) to confirm the reference is real. A reference pulled directly from `extraction_table.json`/`records.jsonl` already carries a connector-verified DOI or URL — re-verify it only if its metadata looks incomplete or inconsistent (e.g. no year, a title that looks truncated), not as a blanket re-check of every study.

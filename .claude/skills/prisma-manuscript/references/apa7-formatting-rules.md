@@ -1,5 +1,5 @@
 ---
-framework_version: 1.0.1
+framework_version: 1.0.2
 ---
 
 # APA 7th Edition Formatting Rules
@@ -92,7 +92,7 @@ Page, M. J., McKenzie, J. E., Bossuyt, P. M., Boutron, I., Hoffmann, T. C.,
     reporting systematic reviews. BMJ, 372, Article n71.
     https://doi.org/10.1136/bmj.n71
 ```
-Always verify the current, correct citation for the PRISMA 2020 statement (and any other methodological source cited, e.g. RoB2, GRADE, PRISMA extensions) via WebSearch before inserting it — do not retype the example above from memory without confirming it still matches the published record.
+Always verify the current, correct citation for the PRISMA 2020 statement (and any other methodological source cited, e.g. RoB1, GRADE, PRISMA extensions) via WebSearch before inserting it — do not retype the example above from memory without confirming it still matches the published record.
 
 **Dataset:**
 ```
@@ -118,6 +118,6 @@ Author, A. A., or Organization Name. (Year). Name of software (Version
 
 ## 5. Verification discipline (non-negotiable)
 
-- Every reference inserted into the manuscript — whether supplied by the reviewer or drafted while citing a methodological source (PRISMA 2020, RoB2, GRADE, a statistical method) — must be checked for real existence via WebSearch/WebFetch before it is written into `references.md`. Never fabricate an author, year, title, volume, or DOI.
+- Every reference inserted into the manuscript — whether supplied by the reviewer or drafted while citing a methodological source (PRISMA 2020, RoB1, GRADE, a statistical method) — must be checked for real existence via WebSearch/WebFetch before it is written into `references.md`. Never fabricate an author, year, title, volume, or DOI.
 - A reference pulled from `records.jsonl`/`extraction_table.json` (i.e. studies the pipeline actually retrieved from OpenAlex/Crossref/PubMed/ etc.) already carries a verified DOI or source URL from the connector that found it — re-verify only if the metadata looks incomplete or inconsistent (e.g. mismatched year vs. volume), not as a blanket re-check of every already-sourced record.
 - If a reference cannot be verified, flag it explicitly to the reviewer rather than silently dropping it or guessing at the missing fields.
