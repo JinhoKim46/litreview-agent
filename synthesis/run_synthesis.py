@@ -474,12 +474,15 @@ def build_grade_draft(outcome_name, rows, model_used, k, het, effect_summary):
     }
 
 
-def process_outcome_group(outcome_name, measure, rows, out_dir, slug, model, model_source, k_min=POOL_MIN_K):
+def process_outcome_group(outcome_name, measure, rows, out_dir, slug, model, model_source,
+                           k_min=POOL_MIN_K, tau2_estimator="dl", ci_method="normal"):
     """rows: all rows for this (outcome, measure_type) pair. `model` is the
     prespecified primary pooling model ("fixed" or "random", from
     synthesis_plan.json) -- never chosen from this group's own heterogeneity
     statistics. The other model is always pooled too and reported under
-    effect_sizes_entry["sensitivity"]. Returns (effect_sizes_entry,
+    effect_sizes_entry["sensitivity"]. `tau2_estimator`/`ci_method` are also
+    prespecified in synthesis_plan.json and apply to both the primary and
+    sensitivity pool (see synthesis/pooling.py). Returns (effect_sizes_entry,
     heterogeneity_entry, grade_entry, rob_entry)."""
     study_effects, excluded = [], []
     for row in rows:
@@ -508,19 +511,25 @@ def process_outcome_group(outcome_name, measure, rows, out_dir, slug, model, mod
     effects = [s["effect"] for s in study_effects]
     variances = [s["variance"] for s in study_effects]
     het = compute_heterogeneity(effects, variances)
-    pooled = pool_effects(effects, variances, model)
+    pooled = pool_effects(effects, variances, model, tau2_estimator=tau2_estimator, ci_method=ci_method)
     sensitivity_model = "fixed" if model == "random" else "random"
-    sensitivity_pooled = pool_effects(effects, variances, sensitivity_model)
+    sensitivity_pooled = pool_effects(effects, variances, sensitivity_model, tau2_estimator=tau2_estimator, ci_method=ci_method)
 
     def to_display(value):
+        if value is None:
+            return None
         return math.exp(value) if measure in LOG_SCALE_MEASURES else value
 
     display_pooled = to_display(pooled["pooled_effect"])
     display_ci_low = to_display(pooled["ci_low"])
     display_ci_high = to_display(pooled["ci_high"])
+    display_pi_low = to_display(pooled["pi_low"])
+    display_pi_high = to_display(pooled["pi_high"])
     sensitivity_pooled["display_estimate"] = to_display(sensitivity_pooled["pooled_effect"])
     sensitivity_pooled["display_ci_low"] = to_display(sensitivity_pooled["ci_low"])
     sensitivity_pooled["display_ci_high"] = to_display(sensitivity_pooled["ci_high"])
+    sensitivity_pooled["display_pi_low"] = to_display(sensitivity_pooled["pi_low"])
+    sensitivity_pooled["display_pi_high"] = to_display(sensitivity_pooled["pi_high"])
 
     for s in study_effects:
         s["ci_low"] = s["effect"] - Z95 * s["se"]
@@ -534,6 +543,7 @@ def process_outcome_group(outcome_name, measure, rows, out_dir, slug, model, mod
         pooled={"effect": pooled["pooled_effect"], "ci_low": pooled["ci_low"], "ci_high": pooled["ci_high"], "label": f"Pooled ({model}-effects)"},
         out_path=forest_path,
         null_value=0,  # always drawn on the pooling scale (log for OR/RR) -- see display_* fields for the exponentiated numbers
+        prediction_interval=({"low": pooled["pi_low"], "high": pooled["pi_high"]} if pooled["pi_low"] is not None else None),
     )
 
     funnel_path = None
@@ -544,17 +554,19 @@ def process_outcome_group(outcome_name, measure, rows, out_dir, slug, model, mod
     effect_sizes_entry = {
         "outcome": outcome_name, "measure_type": measure, "pooled": True,
         "model": model, "model_source": model_source,
+        "tau2_estimator": tau2_estimator, "ci_method": ci_method,
         "scale": "log" if measure in LOG_SCALE_MEASURES else "natural",
         "studies": study_effects, "excluded": excluded,
         "pooled_effect": pooled, "display_estimate": display_pooled,
         "display_ci_low": display_ci_low, "display_ci_high": display_ci_high,
+        "display_pi_low": display_pi_low, "display_pi_high": display_pi_high,
         "sensitivity": sensitivity_pooled,
         "forest_plot_svg": forest_path, "funnel_plot_svg": funnel_path,
     }
     heterogeneity_entry = {
         "outcome": outcome_name, "measure_type": measure, "pooled": True,
         "k": k, "Q": het["Q"], "df": het["df"], "p_value": het["p_value"], "I2": het["I2"],
-        "model": model, "model_source": model_source,
+        "model": model, "model_source": model_source, "tau2_estimator": tau2_estimator, "ci_method": ci_method,
     }
     effect_summary = {"measure": measure, "estimate": display_pooled, "ci_low": display_ci_low, "ci_high": display_ci_high}
     grade_entry = build_grade_draft(outcome_name, rows, model, k, het, effect_summary)
@@ -596,12 +608,15 @@ def _atomic_write_json(path, data):
     os.replace(tmp_path, path)
 
 
-def run(extraction_table_path, out_dir, model, model_source="protocol", k_min=POOL_MIN_K):
+def run(extraction_table_path, out_dir, model, model_source="protocol", k_min=POOL_MIN_K,
+        tau2_estimator="dl", ci_method="normal"):
     """`model` is the prespecified primary pooling model ("fixed" or
     "random") -- required, never derived here from the data. `model_source`
     records where it came from ("protocol", "post_hoc", or "cli_override";
     see resolve_synthesis_plan) and is echoed into every pooled outcome's
-    effect_sizes.json/heterogeneity.json entry."""
+    effect_sizes.json/heterogeneity.json entry. `tau2_estimator`/`ci_method`
+    are likewise prespecified in synthesis_plan.json and passed straight
+    through to every process_outcome_group call (see synthesis/pooling.py)."""
     if model not in ("fixed", "random"):
         raise ValueError(f"model must be 'fixed' or 'random', got {model!r}")
     os.makedirs(out_dir, exist_ok=True)
@@ -622,7 +637,8 @@ def run(extraction_table_path, out_dir, model, model_source="protocol", k_min=PO
 
     for (outcome_name, measure), group_rows in sorted(groups.items()):
         slug = slugify(f"{outcome_name}-{measure}")
-        es, het, grade, rob = process_outcome_group(outcome_name, measure, group_rows, out_dir, slug, model, model_source, k_min)
+        es, het, grade, rob = process_outcome_group(outcome_name, measure, group_rows, out_dir, slug, model, model_source, k_min,
+                                                     tau2_estimator=tau2_estimator, ci_method=ci_method)
         effect_sizes.append(es)
         heterogeneity.append(het)
         grade_table.append(grade)
@@ -691,7 +707,8 @@ def main():
         print(f"Error: {exc}", file=sys.stderr)
         return 1
 
-    result = run(str(extraction_table_path), str(out_dir), model=plan["model"], model_source=plan["model_source"], k_min=plan["k_min"])
+    result = run(str(extraction_table_path), str(out_dir), model=plan["model"], model_source=plan["model_source"],
+                 k_min=plan["k_min"], tau2_estimator=plan["tau2_estimator"], ci_method=plan["ci_method"])
     pooled_n = sum(1 for h in result["heterogeneity"] if h["pooled"])
     narrative_n = sum(1 for h in result["heterogeneity"] if not h["pooled"])
     rob_plot_note = f"rob_traffic_light.svg ({result['rob_traffic_light_svg']})" if result["rob_traffic_light_svg"] else \

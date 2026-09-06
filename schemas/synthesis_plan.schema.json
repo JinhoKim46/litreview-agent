@@ -14,15 +14,15 @@
     },
     "tau2_estimator": {
       "type": "string",
-      "enum": ["dl"],
+      "enum": ["dl", "pm"],
       "default": "dl",
-      "description": "Random-effects between-study variance estimator. Only DerSimonian-Laird ships in Phase 0; \"pm\" (Paule-Mandel) arrives in a later PR (docs/PLAN.md PR p0-10-re-estimators)."
+      "description": "Random-effects between-study variance estimator: \"dl\" (DerSimonian-Laird, one-step) or \"pm\" (Paule-Mandel, iterative -- statsmodels' method_re=\"pm\"/\"iterated\"). Only affects outcomes pooled under model=\"random\"; a fixed-effect pool has no between-study variance to estimate either way."
     },
     "ci_method": {
       "type": "string",
-      "enum": ["normal"],
+      "enum": ["normal", "hksj"],
       "default": "normal",
-      "description": "Confidence-interval method for the pooled estimate. Only the normal-approximation CI ships in Phase 0; \"hksj\" (modified Hartung-Knapp-Sidik-Jonkman) arrives with tau2_estimator:\"pm\" (docs/PLAN.md PR p0-10-re-estimators)."
+      "description": "Confidence-interval method for the pooled estimate: \"normal\" (fixed-scale, normal-approximation CI) or \"hksj\" (modified Hartung-Knapp-Sidik-Jonkman: an estimated-scale CI using a t-distribution with df=k-1). synthesis/pooling.py flags k<5 under \"hksj\" as a caution (the correction can be anti-conservative with few studies), but never withholds the estimate."
     },
     "k_min": {
       "type": "integer",
