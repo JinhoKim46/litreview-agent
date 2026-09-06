@@ -1,0 +1,15 @@
+{
+  "meta": {"source": "crossref", "query": "(\"gig economy\" OR \"platform work\") AND (wellbeing OR wellness OR burnout)", "retrieved": 1, "total_available": 1, "truncated": false, "fetched_at": "2026-01-01T00:00:00Z", "purpose": "orienting"},
+  "results": [
+    {
+      "id": "C1",
+      "title": "Precarity and Wellbeing Among Freelance Platform Workers: A Qualitative Study",
+      "authors": ["Fournier L", "Osei B"],
+      "year": 2021,
+      "venue": "New Technology, Work and Employment",
+      "doi": "10.3333/gw003",
+      "abstract": "A qualitative interview study exploring how income precarity shapes subjective wellbeing among freelance workers on digital labour platforms.",
+      "url": "https://doi.org/10.3333/gw003"
+    }
+  ]
+}

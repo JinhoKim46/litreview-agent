@@ -1,0 +1,40 @@
+{
+  "sources": {
+    "openalex": {
+      "status": "complete",
+      "retrieved": 2,
+      "total_available": 2
+    },
+    "crossref": {
+      "status": "missing",
+      "retrieved": null,
+      "total_available": null
+    }
+  },
+  "unacknowledged_incomplete_sources": [
+    "crossref"
+  ],
+  "known_item_recall": {
+    "checked": 2,
+    "found": [
+      {
+        "id_type": "doi",
+        "id": "10.3333/gw001",
+        "provenance": "recon-db",
+        "matched_record_id": "openalex:O1"
+      },
+      {
+        "id_type": "doi",
+        "id": "10.3333/gw002",
+        "provenance": "recon-db",
+        "matched_record_id": "openalex:O2"
+      }
+    ],
+    "missing": [],
+    "checked_excluding_recon_seeds": 0,
+    "found_excluding_recon_seeds": 0,
+    "non_independent_gold_set": true
+  },
+  "unacknowledged_missing_known_items": [],
+  "non_independent_gold_set_notice": "non-independent gold set: every known item on record came from this topic's own reconnaissance search (provenance: \"recon-db\") -- recall is not yet validated against anything external. Add an externally-sourced known item to clear this notice."
+}

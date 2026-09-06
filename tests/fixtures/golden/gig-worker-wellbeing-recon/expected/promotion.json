@@ -1,0 +1,10 @@
+{
+  "archived": [
+    "records.jsonl",
+    "raw",
+    "relevance_tags_table.json"
+  ],
+  "gold_set_candidates": 2,
+  "known_items_added": 2,
+  "new_method_id": "scoping_review"
+}

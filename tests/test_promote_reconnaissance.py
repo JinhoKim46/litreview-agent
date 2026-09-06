@@ -51,7 +51,7 @@ class PromoteTests(unittest.TestCase):
                 {"record_id": "openalex:W1", "facet_tags": ["method"], "claim": None, "by": "claude"},
             ],
         })
-        _write_json(self.topic_dir / "search_plan.json", {"sources": {"crossref": {"query_string": "term1 AND term2"}}})
+        _write_json(self.topic_dir / "search_plan.json", {"sources": {"crossref": {"query": "term1 AND term2"}}})
 
     def test_refuses_non_reconnaissance_topic(self):
         _write_json(self.topic_dir / "protocol.json", {"method": {"id": "scoping_review"}})
@@ -116,6 +116,24 @@ class PromoteTests(unittest.TestCase):
         self.assertEqual(protocol["method"]["id"], "scoping_review")
         self.assertIsNone(protocol["method"]["signed_at"])
         self.assertIsNone(protocol["method"]["signed_by"])
+
+    def test_resets_top_level_signed_at_too(self):
+        # tools/sign_protocol.py and label_gate.py's
+        # protocol_signed_before_first_protocol_driven_run check both read
+        # protocol.json's own TOP-LEVEL signed_at, not method.signed_at --
+        # a stale value here would make the promoted method's protocol
+        # look already (and wrongly-dated) signed, silently blocking a real
+        # re-sign.
+        self._seed_recon_topic()
+        protocol = json.loads((self.topic_dir / "protocol.json").read_text())
+        protocol["signed_at"] = "2026-01-01T10:00:00Z"
+        protocol["signed_by"] = "Dr. Reviewer"
+        (self.topic_dir / "protocol.json").write_text(json.dumps(protocol))
+
+        promote_reconnaissance.promote(self.topic_dir, self.SLUG, "scoping_review", "reason")
+        protocol_after = json.loads((self.topic_dir / "protocol.json").read_text())
+        self.assertIsNone(protocol_after["signed_at"])
+        self.assertIsNone(protocol_after["signed_by"])
 
     def test_candidate_without_recoverable_id_is_skipped_from_known_items(self):
         _write_json(self.topic_dir / "protocol.json", {"method": {"id": "reconnaissance"}})

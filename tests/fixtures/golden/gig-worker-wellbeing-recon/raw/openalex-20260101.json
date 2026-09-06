@@ -1,0 +1,25 @@
+{
+  "meta": {"source": "openalex", "query": "(\"gig economy\" OR \"platform work\") AND (wellbeing OR wellness OR burnout)", "retrieved": 2, "total_available": 2, "truncated": false, "fetched_at": "2026-01-01T00:00:00Z", "purpose": "orienting"},
+  "results": [
+    {
+      "id": "O1",
+      "title": "Algorithmic Management and Gig Worker Mental Health: A Systematic Review",
+      "authors": ["Alvarez R", "Tan WK"],
+      "year": 2023,
+      "venue": "Journal of Occupational Health Psychology",
+      "doi": "10.3333/gw001",
+      "abstract": "A systematic review of studies examining the relationship between algorithmic management practices and gig workers' mental health outcomes.",
+      "url": "https://doi.org/10.3333/gw001"
+    },
+    {
+      "id": "O2",
+      "title": "Platform Work and Burnout: A Survey of Ride-Hailing Drivers",
+      "authors": ["Mensah K"],
+      "year": 2022,
+      "venue": "Work & Stress",
+      "doi": "10.3333/gw002",
+      "abstract": "A cross-sectional survey of ride-hailing drivers examining burnout prevalence and its association with shift length and platform rating pressure.",
+      "url": "https://doi.org/10.3333/gw002"
+    }
+  ]
+}

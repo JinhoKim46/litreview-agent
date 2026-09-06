@@ -1,0 +1,24 @@
+{
+  "framework_version": "1.0.0",
+  "topic": "gig-worker-wellbeing-recon",
+  "studies": [
+    {
+      "record_id": "openalex:O1",
+      "facet_tags": ["existing_reviews", "population"],
+      "claim": {"quote": "algorithmic management practices and gig workers' mental health outcomes", "page": "abstract", "hash": null},
+      "by": "claude (single pass)"
+    },
+    {
+      "record_id": "openalex:O2",
+      "facet_tags": ["population", "outcome"],
+      "claim": {"quote": "burnout prevalence and its association with shift length and platform rating pressure", "page": "abstract", "hash": null},
+      "by": "claude (single pass)"
+    },
+    {
+      "record_id": "crossref:C1",
+      "facet_tags": ["method"],
+      "claim": null,
+      "by": "claude (single pass)"
+    }
+  ]
+}

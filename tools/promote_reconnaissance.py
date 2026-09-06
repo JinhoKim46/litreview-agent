@@ -20,9 +20,11 @@ excluding these seeds and print a "non-independent gold set" notice until
 an externally-sourced known item is added). Records the method change via
 `protocol.json.amendments[]` (the same `{date, change, reason}` shape
 `review-protocol/SKILL.md`'s own update path already uses, PRISMA Item
-24c) and clears `method.signed_at`/`signed_by` -- the promoted method's
-own protocol needs its own signing before its first protocol-driven
-search run, per the label conduct-floor's existing rule.
+24c) and clears both `method.signed_at`/`signed_by` and protocol.json's
+own top-level `signed_at`/`signed_by` -- tools/sign_protocol.py and
+label_gate.py's protocol_signed_before_first_protocol_driven_run check
+both read the top-level field, so leaving it in place would make the
+promoted method's protocol look already (and wrongly-dated) signed.
 
 Usage:
     python3 tools/promote_reconnaissance.py --topic <slug> --new-method-id <id> --reason "<text>"
@@ -133,9 +135,9 @@ def promote(topic_dir: Path, topic: str, new_method_id: str, reason: str) -> dic
 
     search_plan = _load_json(topic_dir / "search_plan.json") or {}
     seed_terms = {
-        source: cfg.get("query_string")
+        source: cfg.get("query")
         for source, cfg in (search_plan.get("sources") or {}).items()
-        if cfg.get("query_string")
+        if cfg.get("query")
     }
     (handoff_dir / "seed_terms.json").write_text(json.dumps({"query_strings": seed_terms}, indent=2) + "\n")
 
@@ -172,6 +174,15 @@ def promote(topic_dir: Path, topic: str, new_method_id: str, reason: str) -> dic
     method_block["signed_at"] = None
     method_block["signed_by"] = None
     protocol["method"] = method_block
+
+    # tools/sign_protocol.py reads protocol.json's own TOP-LEVEL signed_at
+    # (not method.signed_at) to decide whether signing is already done, and
+    # label_gate.py's protocol_signed_before_first_protocol_driven_run check
+    # reads the same top-level field -- a stale value here would make the
+    # promoted method's protocol look already (and wrongly-dated) signed,
+    # silently blocking it from ever being re-signed for real.
+    protocol["signed_at"] = None
+    protocol["signed_by"] = None
 
     protocol_path.write_text(json.dumps(protocol, indent=2) + "\n")
 
