@@ -1,5 +1,5 @@
 ---
-framework_version: 1.1.0
+framework_version: 1.2.0
 ---
 
 # Keyword Expansion Methodology
@@ -116,6 +116,14 @@ When a gap applies, write it to `protocol.json.scope.coverage_gaps` (schema in �
 
 ---
 
+## 5b. Known-item recall (optional but recommended)
+
+Before confirming the final term set, ask the reviewer: "Are there 3-5 papers you already know should turn up in this search — ones you'd be surprised or concerned to miss?" This is optional (some reviews start from a genuinely blank slate), but when the reviewer has any prior familiarity with the literature, it is the cheapest real check on whether the Boolean strings actually work, rather than just looking plausible.
+
+For each paper offered, record its DOI or PMID (whichever is available — prefer DOI) as an entry in `protocol.json.known_items` (schema in §6), with a one-phrase `note` on why it's expected (e.g. "the seminal RCT this review is partly built around"). `tools/search_preflight.py` checks these against `records.jsonl` after each search run (`/prisma-search` Step 7c) and flags any that aren't found — a **string-miss** (the term set didn't actually capture a paper it should have) is exactly the kind of recall failure a plausible-looking Boolean string can hide. If a known item turns out to be genuinely unindexed by every enabled source (rather than a term-set problem), the reviewer records why on that entry (`expected_missing_reason`) rather than leaving it an open question every future search run re-flags.
+
+---
+
 ## 6. JSON Schemas
 
 ### `protocol.json.scope` (this skill writes/updates this block only —
@@ -143,6 +151,20 @@ the rest of `protocol.json` belongs to `review-protocol`)
   }
 }
 ```
+
+### `protocol.json.known_items` (§5b; this skill appends here, `review-protocol` owns the rest of `protocol.json`)
+
+```json
+{
+  "known_items": [
+    {"id_type": "doi", "id": "10.1056/NEJMoa2035389", "note": "seminal RCT this review is built around"},
+    {"id_type": "pmid", "id": "34496195", "note": "frequently cited systematic review on the same question",
+     "expected_missing_reason": null}
+  ]
+}
+```
+
+`id_type` is `"doi"` or `"pmid"`. `expected_missing_reason` stays `null`/absent until a search run genuinely can't find the item and the reviewer confirms why (§5b) — never pre-fill it speculatively.
 
 ### `search_plan.json` (this skill owns this file in full)
 
