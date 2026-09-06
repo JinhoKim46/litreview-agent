@@ -196,17 +196,24 @@ def _parse_article(pubmed_article_el):
     return record
 
 
+# efetch is a GET request; NCBI's URL-length limit means a comma-joined id
+# list past a few hundred PMIDs returns HTTP 414. Batch to stay well under it.
+EFETCH_BATCH_SIZE = 200
+
+
 def _efetch_records(pmids):
     if not pmids:
         return []
-    params = _base_params()
-    params.update({"db": "pubmed", "id": ",".join(pmids), "rettype": "abstract", "retmode": "xml"})
-    root = _get_xml(EFETCH_URL, params)
     records = []
-    for article_el in root.findall("PubmedArticle"):
-        record = _parse_article(article_el)
-        if record:
-            records.append(record)
+    for i in range(0, len(pmids), EFETCH_BATCH_SIZE):
+        batch = pmids[i : i + EFETCH_BATCH_SIZE]
+        params = _base_params()
+        params.update({"db": "pubmed", "id": ",".join(batch), "rettype": "abstract", "retmode": "xml"})
+        root = _get_xml(EFETCH_URL, params)
+        for article_el in root.findall("PubmedArticle"):
+            record = _parse_article(article_el)
+            if record:
+                records.append(record)
     return records
 
 
