@@ -1,0 +1,21 @@
+{
+  "title": "Diagnostic accuracy of deep-learning models for COVID-19 detection from chest radiographs",
+  "framework": "PICO",
+  "review_type": "systematic_review",
+  "field_domain": "medical_imaging_prediction",
+  "pico": {
+    "population": "Chest radiograph (CXR) datasets from patients evaluated for COVID-19",
+    "intervention": "A deep-learning prediction model classifying CXR images for COVID-19",
+    "comparator": "A baseline model or radiologist reader",
+    "outcome": "Diagnostic accuracy (e.g. AUC, sensitivity/specificity) on a held-out test set"
+  },
+  "eligibility": {
+    "study_design": {"included": ["diagnostic accuracy study"], "excluded": [], "gate": "hard"},
+    "publication_type": {"included": ["peer-reviewed journal article", "conference paper", "preprint"], "excluded": [], "gate": "hard"},
+    "date_range": {"from": "2020-01-01", "to": null, "gate": "hard"},
+    "language": {"included": ["English"], "gate": "hard", "translation_used": false}
+  },
+  "scope": {"mode": "global", "region": null, "translation_used": false, "translation_languages": [], "coverage_gaps": []},
+  "known_items": [],
+  "versions": []
+}

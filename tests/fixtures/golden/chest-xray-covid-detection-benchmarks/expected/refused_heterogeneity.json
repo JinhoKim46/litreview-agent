@@ -1,0 +1,6 @@
+{
+  "outcome": "diagnostic accuracy",
+  "measure_type": "RR",
+  "pooled": false,
+  "reason": "pooling_unit.identity_fields declares \"dataset_id\", but studies disagree: 'brixia' (openalex:CX3); 'covidx' (openalex:CX1, openalex:CX2)"
+}

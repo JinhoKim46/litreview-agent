@@ -1,0 +1,5 @@
+{
+  "sources": {
+    "openalex": {"enabled": true, "query": "(\"COVID-19\" OR \"SARS-CoV-2\") AND (\"chest radiograph\" OR \"chest X-ray\") AND (\"deep learning\" OR \"convolutional neural network\")"}
+  }
+}

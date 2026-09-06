@@ -1,0 +1,9 @@
+{
+  "model": "fixed",
+  "tau2_estimator": "dl",
+  "ci_method": "normal",
+  "k_min": 2,
+  "signed_at": "2025-12-01T09:00:00Z",
+  "pooling_unit": {"identity_fields": ["dataset_id", "test_split"]},
+  "justification": "pooling_unit.identity_fields pre-filled from packs/medical_imaging_prediction.json's own pooling_unit_identity_proposal (docs/ROADMAP.md M5) -- a pooled diagnostic-accuracy metric across two different benchmark datasets is not the same pooling unit."
+}
