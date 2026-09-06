@@ -1,0 +1,55 @@
+{
+  "id": "scoping_review",
+  "label": "Scoping review",
+  "aliases": ["scoping study", "JBI scoping review"],
+  "version": "1.1.0",
+  "family": "scoping",
+  "question_frameworks": ["PCC", "PICO", "SPIDER"],
+  "search": {
+    "mode": "protocol_driven",
+    "min_index_families": 2,
+    "primary_strategies_default": ["database"],
+    "known_item_recall": "waivable_with_reason"
+  },
+  "screening": {"recommend_reviewers": 2, "criteria_may_evolve": "versioned"},
+  "capture": {"mode": "charting", "schema": "schemas/charting_table.schema.json", "freeze_gate": true, "pilot_records": 8},
+  "appraisal": {"requirement": "optional_with_justification", "use": ["describe"]},
+  "synthesis": {
+    "families_allowed": ["descriptive"],
+    "plan_required_for": [],
+    "plan_required_at": null,
+    "proposal_defaults": {}
+  },
+  "standards": [
+    {"ref": ".claude/skills/prisma-manuscript/references/prisma-scr-2018-checklist.md"},
+    {"ref": ".claude/skills/keyword-expansion/references/prisma-s-2021-checklist.md"}
+  ],
+  "label_rules": {
+    "label": "scoping review",
+    "requires": [{"check": "min_index_families", "value": 2}],
+    "profile_labels": {},
+    "otherwise": {},
+    "disclosures": [
+      "reviewer_count", "extraction_verification", "search_dates",
+      "search_age", "registration", "criteria_changes", "coverage_gaps"
+    ]
+  },
+  "report_blockers": ["fulltext_exclusion_reasons_complete", "appraisal_complete", "references_verified"],
+  "forbidden_forms": ["exhaustive_search", "comprehensive_search", "no_prior_work", "first_to", "novelty"],
+  "profiles": [],
+  "living": true,
+  "microcopy": {
+    "what": "A scoping review maps the extent, range, and nature of evidence on a broad or emerging topic -- clarifying concepts and testing whether a focused systematic review is feasible, rather than answering one specific question.",
+    "gives": "A protocol (PCC framing), a replayable search appendix, a PRISMA flow diagram, a charted evidence table, and a PRISMA-ScR manuscript.",
+    "costs": "Typically 2-9 months; single-reviewer charting is acceptable when disclosed -- JBI recommends two reviewers, but a scoping review is never downgraded for using one.",
+    "cannot_claim": "That the search was exhaustive, that anything is 'first' or 'novel', or a risk-of-bias/certainty judgement unless appraisal was explicitly enabled and justified.",
+    "upgrade_to": "systematic_review",
+    "stage_names": {
+      "extract": "chart each study's characteristics",
+      "appraise": "optionally judge study quality, with justification",
+      "synthesize": "tabulate and chart the results (no pooling)",
+      "report": "draft the manuscript and PRISMA-ScR checklist"
+    }
+  },
+  "exports": ["md", "docx", "ris", "csv", "svg"]
+}

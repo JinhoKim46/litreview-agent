@@ -215,9 +215,10 @@ class ProfileOfferAndOverrideTests(unittest.TestCase):
 
 
 class ShippedManifestGateTests(unittest.TestCase):
-    """M2's real, non-hypothetical behaviour: only systematic_review is
-    shipped, so every other resolution refuses honestly (no stub manifests
-    -- routing refusals instead, per docs/PLAN.md's dissent log)."""
+    """M3's real, non-hypothetical behaviour: systematic_review,
+    scoping_review, and systematic_mapping_study are shipped;
+    reconnaissance still refuses honestly (no stub manifests -- routing
+    refusals instead, per docs/PLAN.md's dissent log)."""
 
     def test_default_gate_uses_real_list_manifests(self):
         result = route.decide({"goal": ["answer"], "evidence_type": "trials", "expects_pooling": "no",
@@ -225,18 +226,35 @@ class ShippedManifestGateTests(unittest.TestCase):
         self.assertEqual(result["kind"], "resolve")
         self.assertEqual(result["method_id"], "systematic_review")
 
+    def test_now_shipped_scoping_and_mapping_manifests_actually_resolve(self):
+        # docs/PLAN.md M3: once these manifests exist, routing must resolve
+        # to them for real -- this is the parity fix the reviewer asked for.
+        scoping = route.decide({"goal": ["map"], "evidence_type": "trials"})  # R4d -> scoping_review
+        self.assertEqual(scoping["kind"], "resolve")
+        self.assertEqual(scoping["method_id"], "scoping_review")
+
+        mapping = route.decide({"goal": ["map"], "evidence_type": "algorithm", "venue_default": "cs_se"})  # R4a
+        self.assertEqual(mapping["kind"], "resolve")
+        self.assertEqual(mapping["method_id"], "systematic_mapping_study")
+
     def test_unshipped_target_refuses_with_pointer(self):
-        result = route.decide({"goal": ["orient"]})  # -> reconnaissance, not shipped in M2
+        result = route.decide({"goal": ["orient"]})  # -> reconnaissance, still not shipped
         self.assertEqual(result["kind"], "refuse")
         self.assertIn("reconnaissance", result["reason"])
         self.assertEqual(result["pointer"], route.ROADMAP_POINTER)
 
-    def test_refusal_never_offers_an_unshipped_method(self):
-        # R2's row offers "scoping_review", which has no shipped manifest
-        # either in M2 -- surfacing it as a live suggestion would hand the
-        # user a dead-end recommendation the tool would immediately refuse
-        # too. The offer must be filtered down to the real shipped roster.
-        result = route.decide({"goal": ["overview"]})  # R2 -> REFUSE, offer=["scoping_review"] in the table
+    def test_refusal_now_offers_the_now_shipped_scoping_review(self):
+        # R2's row offers "scoping_review" -- now a real, shipped manifest,
+        # so the offer legitimately survives the shipped-manifest filter.
+        result = route.decide({"goal": ["overview"]})  # R2 -> REFUSE, offer=["scoping_review"]
+        self.assertEqual(result["kind"], "refuse")
+        self.assertEqual(result["offer"], ["scoping_review"])
+
+    def test_refusal_still_filters_an_offer_that_is_not_shipped(self):
+        # Isolates the filtering mechanism itself from which manifests
+        # happen to be shipped today, using an explicit smaller roster --
+        # same assertion the pre-M3 test made, kept alive on purpose.
+        result = route.decide({"goal": ["overview"]}, shipped_method_ids=set())
         self.assertEqual(result["kind"], "refuse")
         self.assertEqual(result["offer"], [])
 
