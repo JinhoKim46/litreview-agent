@@ -1,10 +1,12 @@
 ---
-framework_version: 1.0.1
+framework_version: 1.1.0
 ---
 
 # Risk of Bias Assessment
 
-Two tools cover the study designs a systematic review typically includes: the **Cochrane Collaboration's tool for assessing risk of bias** (commonly called "RoB2" in its current, revised form) for randomized controlled trials, and the **Newcastle-Ottawa Scale (NOS)** for non-randomized studies. Use exactly one per study, matched to its actual design — never mix domains from the two tools on a single study.
+Two tools cover the study designs a systematic review typically includes: the **original Cochrane Collaboration's tool for assessing risk of bias** (2011, informally called "RoB1" to distinguish it from its 2019 successor) for randomized controlled trials, and the **Newcastle-Ottawa Scale (NOS)** for non-randomized studies. Use exactly one per study, matched to its actual design — never mix domains from the two tools on a single study.
+
+**This is the legacy 2011 tool, not the current Cochrane RoB 2 (Sterne et al., BMJ 2019).** RoB 2 uses five different, result-specific domains (randomization process; deviations from intended interventions; missing outcome data; measurement of the outcome; selection of the reported result), signalling questions, and an algorithm-supported overall judgement, and is now the Cochrane-recommended tool for RCTs. This framework implements RoB1 only; adopting real RoB 2 is tracked as future work (see `docs/ROADMAP.md`) rather than something silently substituted here.
 
 ## Part 1 — Cochrane Risk of Bias Tool (RCTs)
 
@@ -30,17 +32,17 @@ Source: Higgins JP, Altman DG, Sterne JA. Chapter 8: Assessing risk of bias in i
 
 ### Overall risk-of-bias judgement per study
 
-RoB2's current guidance derives one overall judgement per outcome (not per study, strictly — different outcomes in the same trial can carry different judgements when blinding matters more for one outcome than another) from the worst domain-level judgement, with three tiers:
+RoB1 has no official algorithm for rolling domain-level judgements up into one overall rating (that algorithmic rollup, including a "some concerns" middle tier, is a RoB 2 feature — do not borrow it here). Summarize instead with a plain, conservative rule across the six domains:
 
-- **Low risk of bias** — low risk in every domain.
-- **Some concerns** — at least one domain judged unclear or a non-critical high, without other domains raising serious concern.
-- **High risk of bias** — at least one domain judged high risk in a way that substantially undermines confidence in the result, or multiple domains raising concern together.
+- **Low risk of bias** — every domain judged low risk.
+- **High risk of bias** — one or more domains judged high risk in a way that plausibly undermines confidence in the result.
+- **Unclear risk of bias** — no domain judged high risk, but one or more domains judged unclear.
 
-Record the overall judgement per outcome when domain judgements genuinely differ by outcome (e.g. blinding of outcome assessment is "low" for a lab value but "high" for a self-reported pain score in the same unblinded- personnel trial); otherwise one overall judgement per study is sufficient.
+Different outcomes in the same trial can carry different judgements when blinding matters more for one outcome than another (e.g. blinding of outcome assessment is "low" for a lab value but "high" for a self-reported pain score in the same unblinded-personnel trial) — record the overall judgement per outcome when domain judgements genuinely differ by outcome; otherwise one overall judgement per study is sufficient.
 
 ## Part 2 — Newcastle-Ottawa Scale (non-randomized studies)
 
-For cohort, case-control, before-after, and cross-sectional studies — where RoB2's "allocation concealment" and "sequence generation" domains do not apply because there was no randomization — use the **Newcastle-Ottawa Scale** (Ottawa Hospital Research Institute; referenced as the standard alternative for non-randomized studies in the GRADE/RoB2 literature, e.g. Ahn & Kang 2018, kjae-2018-71-2-103, "Quality of evidence" section). NOS awards **stars** (maximum 9) across three categories, using the **cohort-study** version (adapt item wording for case-control per the official OHRI case-control form when a study is case-control rather than cohort):
+For cohort, case-control, before-after, and cross-sectional studies — where RoB1's "allocation concealment" and "sequence generation" domains do not apply because there was no randomization — use the **Newcastle-Ottawa Scale** (Ottawa Hospital Research Institute; referenced as the standard alternative for non-randomized studies in the GRADE/RoB1 literature, e.g. Ahn & Kang 2018, kjae-2018-71-2-103, "Quality of evidence" section). NOS awards **stars** (maximum 9) across three categories, using the **cohort-study** version (adapt item wording for case-control per the official OHRI case-control form when a study is case-control rather than cohort):
 
 | Category | Items (1 star each unless noted) | Max stars |
 |---|---|---|
@@ -54,7 +56,7 @@ Total NOS score guidance commonly used to bucket study quality (used only as a d
 - **Fair quality**: 2 stars in Selection AND 1-2 stars in Comparability AND 2-3 stars in Outcome.
 - **Poor quality**: 0-1 stars in Selection, OR 0 stars in Comparability, OR 0-1 stars in Outcome.
 
-Write the NOS assessment into a study's `risk_of_bias` block with `"tool": "NOS"` and one entry per category carrying `stars_awarded`/`stars_possible` and a `support` string naming the specific item(s) that earned or lost a star — the same evidence-based discipline as RoB2's "support of judgement," not a bare number.
+Write the NOS assessment into a study's `risk_of_bias` block with `"tool": "NOS"` and one entry per category carrying `stars_awarded`/`stars_possible` and a `support` string naming the specific item(s) that earned or lost a star — the same evidence-based discipline as RoB1's "support of judgement," not a bare number.
 
 ## Rolling up to the outcome level
 
