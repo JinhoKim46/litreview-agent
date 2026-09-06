@@ -59,6 +59,18 @@ class RunChecksTests(unittest.TestCase):
         plan_check = next(c for c in checks if c["name"] == "synthesis_plan_present")
         self.assertTrue(plan_check["ok"])
 
+    def test_synthesize_stage_skips_plan_check_for_a_method_that_never_pools(self):
+        # A real bug found while building M3's scoping-review golden fixture
+        # (tests/test_golden_scoping_pipeline.py): scoping_review's
+        # synthesis.plan_required_for is [] (pooling forbidden by design),
+        # so it can never satisfy this check -- it must be skipped, not
+        # fail every such review forever.
+        _write_json(self.topic_dir / "protocol.json", {"method": {"id": "scoping_review"}})
+        checks = preflight.run_checks(self.topic_dir, "synthesize")
+        names = {c["name"] for c in checks}
+        self.assertNotIn("synthesis_plan_present", names)
+        self.assertTrue(all(c["ok"] for c in checks))
+
     def test_ledger_reason_gate_failure_surfaces(self):
         ledger.append_decisions(self.topic_dir, [
             {"record_id": "r1", "stage": "full_text", "decision": "exclude", "reason": None,

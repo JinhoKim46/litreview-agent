@@ -123,6 +123,36 @@ class RunTests(unittest.TestCase):
         self.assertEqual(len(result["cross_tabs"]), 1)
         self.assertEqual(result["cross_tabs"][0]["counts"], {"validation|public": 1, "evaluation|private": 1})
 
+    def test_classification_run_renders_a_bubble_plot_svg_per_cross_tab(self):
+        # docs/PLAN.md M3's last remaining item: bubble-plot SVG rendering,
+        # not just the frequency data behind it.
+        table = classification_gate.freeze(self.classification_dir, self.CLASSIFICATION_SLUG, [
+            {"name": "research_type", "categories": ["validation", "evaluation"]},
+            {"name": "dataset", "categories": ["public", "private"]},
+        ])
+        table["studies"] = [
+            {"record_id": "r1", "codes": {"research_type": "validation", "dataset": "public"}},
+            {"record_id": "r2", "codes": {"research_type": "evaluation", "dataset": "private"}},
+        ]
+        (self.classification_dir / "classification_table.json").write_text(json.dumps(table))
+
+        result = chart_summary.run(self.CLASSIFICATION_SLUG, topic_dir=self.classification_dir)
+        svg_path = result["cross_tabs"][0]["bubble_plot_svg"]
+        self.assertIsNotNone(svg_path)
+        self.assertTrue(os.path.exists(svg_path))
+        self.assertGreater(os.path.getsize(svg_path), 0)
+
+        with open(self.classification_dir / "synthesis" / "descriptive_summary.json") as f:
+            written = json.load(f)
+        self.assertEqual(written["cross_tabs"][0]["bubble_plot_svg"], svg_path)
+
+    def test_charting_run_has_no_bubble_plot_key_needed_since_cross_tabs_is_empty(self):
+        # Scoping reviews (capture.mode: charting) never produce cross-tabs
+        # at all -- nothing to render, and nothing here should try to.
+        charting_gate.freeze(self.charting_dir, self.CHARTING_SLUG, ["year"])
+        result = chart_summary.run(self.CHARTING_SLUG, topic_dir=self.charting_dir)
+        self.assertEqual(result["cross_tabs"], [])
+
     def test_cli_smoke(self):
         charting_gate.freeze(self.charting_dir, self.CHARTING_SLUG, ["year"])
         import contextlib

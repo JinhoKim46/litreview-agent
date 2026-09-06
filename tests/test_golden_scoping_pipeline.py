@@ -10,10 +10,10 @@ hash-chained screening ledger where one full-text decision is
 frozen, piloted charting_table.json for the 3 studies that were actually
 retrieved) are run through the real deterministic pipeline: dedup ->
 ledger gate/verify -> flow_counts (the not_retrieved record in its own
-box) -> search_preflight -> preflight -> charting_gate's freeze-drift
-check -> run_synthesis's real CLI dispatch (descriptive synthesis via
-chart_summary.py, pooling never attempted) -> label_gate (label +
-report blockers).
+box) -> search_preflight -> preflight (both stages) -> charting_gate's
+freeze-drift check -> run_synthesis's real CLI dispatch (descriptive
+synthesis via chart_summary.py, pooling never attempted) -> label_gate
+(label + report blockers).
 
 Chosen topic ("digital literacy interventions for school-age youth") is
 deliberately unrelated to any reviewer's own research field and to any
@@ -22,10 +22,12 @@ project's own topic-genericity discipline for validation fixtures.
 
 Every stage's output is compared against a frozen
 tests/fixtures/golden/youth-digital-literacy-scoping/expected/ snapshot,
-by direct JSON/text comparison (this fixture has no SVG or other
-non-deterministic binary artifact to hash -- bubble-plot rendering does
-not exist yet; chart_summary.py only computes the underlying frequency
-data this test already checks).
+by direct JSON/text comparison (this fixture's cross_tabs is always []
+since capture.mode: charting never produces cross-tab data at all --
+synthesis/plots.py's bubble_plot() only ever renders for a classification
+capture mode, tested separately in tests/test_chart_summary.py and
+tests/test_synthesis_plots.py, so there is no SVG for this fixture to
+hash).
 
 If a fixture input or a module's output shape legitimately changes,
 regenerate expected/ by rerunning the (uncommitted-to-test-discovery)
@@ -124,10 +126,19 @@ class GoldenScopingPipelineTest(unittest.TestCase):
         with open(self.topic_dir / "search_status.json") as f:
             self.assertEqual(json.load(f), _load_expected("search_status.json"))
 
-        # ---- Stage 5: aggregated preflight (report stage) ----
+        # ---- Stage 5: aggregated preflight, both stages -- "synthesize"
+        # must skip synthesis_plan_present for scoping_review (its
+        # synthesis.plan_required_for is [], since pooling is forbidden by
+        # design) rather than fail forever with no synthesis_plan.json to
+        # ever satisfy it (tools/preflight.py's genericity fix) ----
         checks_report = preflight.run_checks(self.topic_dir, "report")
         self.assertEqual(checks_report, _load_expected("preflight_report.json"))
         self.assertTrue(all(c["ok"] for c in checks_report))
+
+        checks_synthesize = preflight.run_checks(self.topic_dir, "synthesize")
+        self.assertEqual(checks_synthesize, _load_expected("preflight_synthesize.json"))
+        self.assertTrue(all(c["ok"] for c in checks_synthesize))
+        self.assertNotIn("synthesis_plan_present", {c["name"] for c in checks_synthesize})
 
         # ---- Stage 6: charting freeze-gate -- frozen, no drifted rows ----
         table = charting_gate.load_charting_table(self.topic_dir, SLUG)

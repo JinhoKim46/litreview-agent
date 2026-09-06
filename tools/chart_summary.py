@@ -7,10 +7,9 @@ anything (methods/scoping_review.json and methods/systematic_mapping_study
 .json both set `synthesis.families_allowed: ["descriptive"]`, forbidding
 pooling by design) -- this only tabulates category frequencies per
 field/facet and, for a classification table, pairwise cross-tabulations
-(the data behind Petersen et al. 2015's bubble plots; rendering the actual
-SVG bubble plot is deferred to a follow-up, same as this file's own
-frequency tables were deferred when synthesis/run_synthesis.py first
-shipped its clean DESCRIPTIVE_NOT_IMPLEMENTED refusal).
+rendered as Petersen et al. 2015-style bubble plots (synthesis/plots.py's
+bubble_plot(), one SVG per cross-tab, written alongside
+descriptive_summary.json).
 
 Refuses cleanly rather than fabricate a summary over incomplete or
 corrupted data: the source table must be frozen (a charting form or
@@ -54,6 +53,17 @@ def _stringify(value) -> str:
     if value is None:
         return "not reported"
     return str(value)
+
+
+def _slugify(name: str) -> str:
+    """Facet name -> filesystem-safe token for a bubble-plot SVG filename
+    (e.g. "research type" -> "research_type"). Not a general-purpose slug --
+    only handles what a facet name (a short, human-chosen field name) can
+    contain; anything else collapses to "_". Two facet names differing only
+    in punctuation (e.g. "data source" and "data-source") collapse to the
+    same slug and would overwrite each other's SVG -- no shipped manifest
+    has such a pair, and worth a real fix only if one ever does."""
+    return "".join(c if c.isalnum() else "_" for c in name.strip().lower())
 
 
 def _values_for(raw) -> list[str]:
@@ -151,6 +161,23 @@ def run(topic: str, *, topic_dir=None) -> dict:
     category_frequencies = compute_frequencies(studies, key_field, names)
     cross_tabs = compute_cross_tabs(studies, key_field, names) if capture_mode == "classification" else []
 
+    out_dir = topic_dir / "synthesis"
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    # Petersen et al. 2015's bubble plots: one per cross-tab, classification
+    # (systematic mapping study) only -- a scoping review's cross_tabs is
+    # always [] (charting has no cross-tab data at all, see compute_cross_tabs'
+    # own docstring), so this loop is simply a no-op there.
+    for cross_tab in cross_tabs:
+        if not cross_tab["counts"]:
+            cross_tab["bubble_plot_svg"] = None
+            continue
+        from synthesis.plots import bubble_plot
+
+        svg_path = out_dir / f"bubble_{_slugify(cross_tab['facet_a'])}_x_{_slugify(cross_tab['facet_b'])}.svg"
+        bubble_plot(cross_tab, str(svg_path))
+        cross_tab["bubble_plot_svg"] = str(svg_path)
+
     result = {
         "framework_version": "1.0.0",
         "topic": topic,
@@ -160,8 +187,6 @@ def run(topic: str, *, topic_dir=None) -> dict:
         "cross_tabs": cross_tabs,
     }
 
-    out_dir = topic_dir / "synthesis"
-    out_dir.mkdir(parents=True, exist_ok=True)
     (out_dir / "descriptive_summary.json").write_text(json.dumps(result, indent=2) + "\n")
     return result
 

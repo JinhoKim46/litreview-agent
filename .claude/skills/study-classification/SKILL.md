@@ -1,7 +1,7 @@
 ---
 name: study-classification
 description: "Classify a systematic mapping study's included studies into results/<TOPIC>/classification_table.json: keyword a sample to build the classification scheme, freeze it (G-Freeze), code every remaining study against the frozen facets, then run and disclose a calibration re-code. Use whenever a review's resolved method manifest declares capture.mode: \"classification\" (methods/systematic_mapping_study.json) -- /prisma-extract's Step 0.5 routes here instead of running extraction for that manifest. Does not cover a systematic review's risk-of-bias-weighted extraction or a scoping review's charting workflow (capture.mode: \"charting\" -- see .claude/skills/evidence-mapping/SKILL.md for that)."
-framework_version: 1.1.0
+framework_version: 1.2.0
 ---
 
 # Study Classification (Keywording)
@@ -80,5 +80,5 @@ The calibration file is `{"mode": "inter_rater"|"intra_rater_delayed", "sample_s
 ## What this skill does not do
 
 - **Appraisal**: optional for a mapping study (`appraisal.requirement: "optional_with_justification"`), no default instrument -- `quality-appraisal`'s job if the reviewer wants it, not this skill's.
-- **Synthesis**: descriptive facet-count tables and cross-tabulations only, never pooling (`synthesis.families_allowed: ["descriptive"]`). `/prisma-synthesize` runs `tools/chart_summary.py` for this (shared with scoping reviews), producing `synthesis/descriptive_summary.json` (facet-count tables plus the pairwise cross-tabs a bubble plot renders) -- this skill never computes or writes that itself. Rendering the actual bubble-plot SVG from those cross-tabs is not yet implemented; the underlying count data already is.
+- **Synthesis**: descriptive facet-count tables and cross-tabulations only, never pooling (`synthesis.families_allowed: ["descriptive"]`). `/prisma-synthesize` runs `tools/chart_summary.py` for this (shared with scoping reviews), producing `synthesis/descriptive_summary.json` (facet-count tables, the pairwise cross-tabs, and a rendered bubble-plot SVG per cross-tab via `synthesis/plots.py`'s `bubble_plot()`) -- this skill never computes or renders any of that itself.
 - **Charting** (a scoping review's `capture.mode: "charting"` -- pilot/freeze of a per-study data-extraction form) is a distinct workflow covered by `.claude/skills/evidence-mapping/SKILL.md`, not this one.

@@ -68,12 +68,15 @@ def main():
     with open(topic_dir / "search_status.json", "w") as f:
         json.dump(status, f, indent=2)
 
-    # Stage 5: aggregated preflight (report stage only -- "synthesize" stage's
-    # synthesis_plan_present check assumes pooling applies to every method,
-    # which a scoping review never does; a real, separate gap, not this
-    # fixture's job to paper over).
+    # Stage 5: aggregated preflight, both stages -- "synthesize" now
+    # correctly skips synthesis_plan_present for a method that never pools
+    # (tools/preflight.py's _method_ever_requires_a_plan(), the genericity
+    # bug this fixture found and a follow-up PR fixed) instead of failing
+    # every scoping/mapping review forever.
     with open(os.path.join(EXPECTED_DIR, "preflight_report.json"), "w") as f:
         json.dump(preflight.run_checks(topic_dir, "report"), f, indent=2)
+    with open(os.path.join(EXPECTED_DIR, "preflight_synthesize.json"), "w") as f:
+        json.dump(preflight.run_checks(topic_dir, "synthesize"), f, indent=2)
 
     # Stage 6: charting freeze-gate verification (no drift)
     table = charting_gate.load_charting_table(topic_dir, SLUG)
