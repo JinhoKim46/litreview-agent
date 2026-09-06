@@ -276,190 +276,15 @@ Handle the result:
 
 ## Step 7: Deduplicate into `records.jsonl`
 
-Run this exactly as written via the `Bash` tool - it is the entire dedup algorithm, self-contained, reading every `raw/<source>-*.json` file and appending only genuinely new lines to `results/<TOPIC>/records.jsonl`. It never touches a line already there (record_id-based idempotency), so re-running it after a later `/prisma-search` only adds what's new.
+Run this exact command via the `Bash` tool - `tools/dedup.py` reads every `raw/<source>-*.json` file and appends only genuinely new lines to `results/<TOPIC>/records.jsonl`. It never touches a line already there (record_id-based idempotency), so re-running it after a later `/prisma-search` only adds what's new.
 
 ```bash
-python3 - "results/<TOPIC>" <<'PYEOF'
-import glob, json, re, sys
-from pathlib import Path
-
-topic_dir = Path(sys.argv[1])
-raw_files = sorted(glob.glob(str(topic_dir / "raw" / "*.json")))
-records_path = topic_dir / "records.jsonl"
-
-existing_ids = set()
-existing_lines = []
-if records_path.exists():
-    with open(records_path) as f:
-        for line in f:
-            line = line.strip()
-            if not line:
-                continue
-            rec = json.loads(line)
-            existing_lines.append(rec)
-            existing_ids.add(rec["record_id"])
-
-def normalize_doi(doi):
-    if not doi:
-        return None
-    d = str(doi).strip().lower()
-    for prefix in ("https://doi.org/", "http://doi.org/", "https://dx.doi.org/", "http://dx.doi.org/", "doi:"):
-        if d.startswith(prefix):
-            d = d[len(prefix):]
-    d = d.rstrip("/")
-    return d or None
-
-def normalize_pmid(rec):
-    # DOI -> PMID -> title|author|year hierarchy, step 2: PMID is only ever
-    # recoverable from a "pubmed" record's bare id, or a "europepmc" record
-    # whose id is "MED:<pmid>" (Europe PMC's own MEDLINE-source prefix).
-    source = rec.get("source")
-    rid = str(rec.get("id") or "")
-    if source == "pubmed":
-        return rid or None
-    if source == "europepmc" and ":" in rid:
-        src, _, extid = rid.partition(":")
-        if src.upper() == "MED" and extid.isdigit():
-            return extid
-    return None
-
-def normalize_title(title):
-    if not title:
-        return ""
-    t = re.sub(r"[^\w\s]", " ", title.lower())
-    return re.sub(r"\s+", " ", t).strip()
-
-def first_author_surname(authors):
-    if not authors:
-        return ""
-    a = str(authors[0]).strip()
-    # MEDLINE style: "Surname IN" (e.g. "Kim JH") - surname is the first token.
-    m = re.match(r"^([A-Za-z\-']+)\s+[A-Z]{1,3}$", a)
-    if m:
-        return m.group(1).lower()
-    if "," in a:
-        return a.split(",")[0].strip().lower()
-    # "Given ... Surname" style (most other sources) - surname is the last token.
-    parts = a.split()
-    return parts[-1].lower() if parts else ""
-
-def tay_key(rec):
-    t = normalize_title(rec.get("title"))
-    y = rec.get("year")
-    if not t or not y:
-        return None
-    a = first_author_surname(rec.get("authors") or [])
-    return f"{t}|{a}|{y}"
-
-def record_keys(rec):
-    # ponytail: heuristic surname/title normalization - catches the large
-    # majority of real duplicates, including an arXiv preprint vs. its later
-    # published version (arXiv's doi is usually null, so those records fall
-    # straight through the doi/pmid tiers to this one; when arXiv *does*
-    # carry a doi - the author later registered the journal DOI - it is
-    # treated as a real doi match like any other, not a special case).
-    # Author-order swaps or a retitled published version can still slip
-    # past this; screening is the safety net, not this script.
-    keys = []
-    doi = normalize_doi(rec.get("doi"))
-    if doi:
-        keys.append(("doi", doi))
-    pmid = normalize_pmid(rec)
-    if pmid:
-        keys.append(("pmid", pmid))
-    tay = tay_key(rec)
-    if tay:
-        keys.append(("title_author_year", tay))
-    return keys
-
-# Seed the key map from records already on disk. Every existing line -
-# canonical or duplicate - resolves to its own canonical record_id so a new
-# record matching any prior copy's keys still lands on the right canonical.
-key_to_canonical = {}
-for rec in existing_lines:
-    canonical_id = rec.get("duplicate_of") or rec["record_id"]
-    for _, k in record_keys(rec):
-        key_to_canonical.setdefault(k, canonical_id)
-
-new_lines = []
-stats = {"canonical": 0, "duplicate": 0, "skipped_no_id": 0,
-         "by_tier": {"doi": 0, "pmid": 0, "title_author_year": 0}}
-
-for path in raw_files:
-    with open(path) as f:
-        payload = json.load(f)
-    source = payload.get("meta", {}).get("source")
-    for r in payload.get("results", []):
-        native_id = r.get("id")
-        if not native_id:
-            stats["skipped_no_id"] += 1
-            continue
-        record_id = f"{source}:{native_id}"
-        if record_id in existing_ids:
-            continue  # already merged by a prior run of this step
-        existing_ids.add(record_id)
-
-        rec = {
-            "record_id": record_id,
-            "title": r.get("title"),
-            "authors": r.get("authors") or [],
-            "year": r.get("year"),
-            "venue": r.get("venue"),
-            "doi": r.get("doi"),
-            "abstract": r.get("abstract"),
-            "url": r.get("url"),
-            "source": source,
-            "duplicate_of": None,
-        }
-
-        matched_canonical = None
-        matched_tier = None
-        for tier, k in record_keys(rec):
-            if k in key_to_canonical:
-                matched_canonical = key_to_canonical[k]
-                matched_tier = tier
-                break
-
-        if matched_canonical:
-            rec["duplicate_of"] = matched_canonical
-            stats["duplicate"] += 1
-            stats["by_tier"][matched_tier] += 1
-        else:
-            stats["canonical"] += 1
-
-        # Register every key this record carries - even a duplicate's own
-        # doi/pmid - against its resolved canonical id. Otherwise a copy
-        # that only matched on title|author|year (because the earlier copy
-        # it matched had no doi) leaves its own doi unindexed, and a later
-        # arrival sharing that doi but with a slightly different title would
-        # wrongly start a new canonical instead of joining this study.
-        canonical_id = matched_canonical or record_id
-        for _, k in record_keys(rec):
-            key_to_canonical.setdefault(k, canonical_id)
-
-        new_lines.append(rec)
-
-with open(records_path, "a") as f:
-    for rec in new_lines:
-        f.write(json.dumps(rec, ensure_ascii=False) + "\n")
-
-total_now = len(existing_lines) + len(new_lines)
-total_canonical_now = (sum(1 for r in existing_lines if r.get("duplicate_of") is None)
-                        + stats["canonical"])
-print(json.dumps({
-    "raw_files_processed": len(raw_files),
-    "new_lines_appended": len(new_lines),
-    "new_canonical": stats["canonical"],
-    "new_duplicates": stats["duplicate"],
-    "duplicates_by_tier": stats["by_tier"],
-    "skipped_no_native_id": stats["skipped_no_id"],
-    "total_records_now": total_now,
-    "total_canonical_now": total_canonical_now,
-}, indent=2))
-PYEOF
+python3 tools/dedup.py --topic <TOPIC> --pass exact
 ```
 
-If `skipped_no_native_id` is greater than 0, tell the reviewer exactly which source(s) produced an id-less result (re-check that source's `raw/*.json` `meta.source` via this same subprocess pattern, not `Read`) - a connector returning a null `id` is a contract violation worth reporting, not silently absorbing.
+(This exact invocation is pre-allowlisted in `.claude/settings.json` - `Bash(python3 tools/dedup.py:*)`. `--topic` derives `results/<TOPIC>/raw/`, `records.jsonl`, and `possible_duplicates.jsonl` itself via `tools/path_policy.safe_topic_path` - it never accepts a free-form path.)
+
+The command prints the same JSON summary the old inline script did: `raw_files_processed`, `new_lines_appended`, `new_canonical`, `new_duplicates`, `duplicates_by_tier` (by `doi`/`pmid`/`title_author_year`), `skipped_no_native_id`, `total_records_now`, `total_canonical_now`. If `skipped_no_native_id` is greater than 0, tell the reviewer exactly which source(s) produced an id-less result (re-check that source's `raw/*.json` `meta.source` via a small `python3 -c` one-liner, not `Read`) - a connector returning a null `id` is a contract violation worth reporting, not silently absorbing.
 
 ---
 
@@ -468,88 +293,15 @@ If `skipped_no_native_id` is greater than 0, tell the reviewer exactly which sou
 Step 7's doi/pmid/title-author-year tiers require an **exact** normalized match. A retitled preprint, punctuation drift, or an OCR'd title from an older record can slip past all three tiers as two separate canonical records. This step never merges anything
 - it only writes advisory pairs to `results/<TOPIC>/possible_duplicates.jsonl` for the reviewer to see during `/prisma-screen` (see `screening-assistant`'s data contract).
 
-Run this exactly as written via the `Bash` tool - idempotent, appends only genuinely new pairs:
+Run this exact command via the `Bash` tool - idempotent, appends only genuinely new pairs:
 
 ```bash
-python3 - "results/<TOPIC>" <<'PYEOF'
-import difflib, json, re, sys
-from datetime import datetime, timezone
-from pathlib import Path
-
-topic_dir = Path(sys.argv[1])
-records_path = topic_dir / "records.jsonl"
-dups_path = topic_dir / "possible_duplicates.jsonl"
-
-SIMILARITY_THRESHOLD = 0.90
-
-def normalize_title(title):
-    if not title:
-        return ""
-    t = re.sub(r"[^\w\s]", " ", title.lower())
-    return re.sub(r"\s+", " ", t).strip()
-
-canonical = []
-with open(records_path) as f:
-    for line in f:
-        line = line.strip()
-        if not line:
-            continue
-        rec = json.loads(line)
-        if rec.get("duplicate_of") is None and rec.get("title") and rec.get("year"):
-            canonical.append(rec)
-
-existing_pairs = set()
-if dups_path.exists():
-    with open(dups_path) as f:
-        for line in f:
-            line = line.strip()
-            if not line:
-                continue
-            d = json.loads(line)
-            existing_pairs.add(frozenset((d["record_id_a"], d["record_id_b"])))
-
-# ponytail: O(n^2) within each same-year bucket, and only matches records
-# published in the *same* year (a preprint/published-version pair spanning
-# two calendar years relies on Step 7's title|author|year tier instead, or
-# manual reviewer catch during screening) -- upgrade path if this proves too
-# narrow: bucket by year and year+-1, or swap SequenceMatcher for a proper
-# fuzzy-matching library (rapidfuzz) once near-duplicate volume justifies
-# the new dependency.
-by_year = {}
-for rec in canonical:
-    by_year.setdefault(rec["year"], []).append(rec)
-
-new_pairs = []
-for year, group in by_year.items():
-    normed = [(rec, normalize_title(rec["title"])) for rec in group]
-    for i in range(len(normed)):
-        rec_a, norm_a = normed[i]
-        for j in range(i + 1, len(normed)):
-            rec_b, norm_b = normed[j]
-            if not norm_a or not norm_b:
-                continue
-            pair_key = frozenset((rec_a["record_id"], rec_b["record_id"]))
-            if pair_key in existing_pairs:
-                continue
-            ratio = difflib.SequenceMatcher(None, norm_a, norm_b).ratio()
-            if ratio >= SIMILARITY_THRESHOLD:
-                new_pairs.append({
-                    "record_id_a": rec_a["record_id"],
-                    "record_id_b": rec_b["record_id"],
-                    "similarity": round(ratio, 2),
-                    "detected_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
-                })
-                existing_pairs.add(pair_key)
-
-with open(dups_path, "a") as f:
-    for pair in new_pairs:
-        f.write(json.dumps(pair, ensure_ascii=False) + "\n")
-
-print(json.dumps({"canonical_records_checked": len(canonical), "new_possible_duplicates_flagged": len(new_pairs)}, indent=2))
-PYEOF
+python3 tools/dedup.py --topic <TOPIC> --pass fuzzy
 ```
 
-This is purely additive and advisory - it never rewrites a line in `records.jsonl`, never sets `duplicate_of`, and never blocks anything downstream. A flagged pair still goes through screening as two separate records; the reviewer sees the annotation and decides.
+(Same pre-allowlisted invocation as Step 7 - `Bash(python3 tools/dedup.py:*)`. Requires `records.jsonl` to already exist; run Step 7 first. Pass `--pass both` instead of running Steps 7 and 7b separately if you want one command to do both.)
+
+This is purely additive and advisory - it never rewrites a line in `records.jsonl`, never sets `duplicate_of`, and never blocks anything downstream. A flagged pair still goes through screening as two separate records; the reviewer sees the annotation and decides. The command prints `canonical_records_checked` and `new_possible_duplicates_flagged`.
 
 ---
 
