@@ -9,7 +9,7 @@ description: >
   inclusion, import screening decisions, apply screening decisions, /prisma-screen,
   /prisma-screen export, /prisma-screen import
 allowed-tools: Read, Glob, Grep, Bash(python3:*)
-framework_version: 1.1.0
+framework_version: 1.2.0
 ---
 
 # Screening Assistant
@@ -39,8 +39,8 @@ Slash command passthrough: `/prisma-screen export [--stage title_abstract|full_t
 ## Mode: import
 
 1. Determine `<TOPIC>` and `--stage`.
-2. Follow **"Import algorithm"** in `01-screening-sheet-workflow.md` exactly: locate the edited sheet (CSV preferred, Markdown checkbox fallback), parse it, **refuse the whole import** if any full-text `exclude` row lacks a `reason` (list the offending record IDs so the reviewer can fix just those rows), otherwise append one decision line per decided record to `screening_decisions.jsonl` (still-undecided rows are simply skipped, not errored).
-3. Reply with **only**: how many decisions were appended (include/exclude split), how many rows were left undecided, and the ledger path. Never echo back reasons or abstracts.
+2. Follow **"Import algorithm"** in `01-screening-sheet-workflow.md` exactly: locate the edited sheet (CSV preferred, Markdown checkbox fallback), parse it, **refuse the whole import** if any full-text `exclude` or `not_retrieved` row lacks a `reason` (list the offending record IDs so the reviewer can fix just those rows), otherwise append one decision line per decided record via `tools/ledger.py`'s `append_decisions` (still-undecided rows are simply skipped, not errored).
+3. Reply with **only**: how many decisions were appended (include/exclude/not_retrieved split), how many rows were left undecided, and the ledger path. Never echo back reasons or abstracts.
 
 ## Why this shape
 
