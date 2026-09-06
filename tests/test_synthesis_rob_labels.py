@@ -114,8 +114,24 @@ class IsLowRiskRollupTests(unittest.TestCase):
     def test_missing_rob_returns_none(self):
         self.assertIsNone(is_low_risk(None))
 
-    def test_unsupported_tool_returns_none(self):
-        self.assertIsNone(is_low_risk({"tool": "unsupported", "overall_judgement": "n/a"}))
+    def test_unsupported_tool_fails_closed_to_false(self):
+        """quality-appraisal/01-risk-of-bias.md Part 3: a design fitting
+        neither RoB1 nor NOS is marked tool="unsupported" and must fail
+        closed (count as NOT low risk) rather than being dropped from
+        proportion_low_risk's denominator like a genuinely missing
+        assessment (is_low_risk(None)) is."""
+        self.assertFalse(is_low_risk({"tool": "unsupported", "notes": "single-arm case series"}))
+
+    def test_unsupported_tool_fails_closed_regardless_of_stray_judgement_field(self):
+        # Part 3 says "unsupported" carries no overall_judgement at all, but
+        # is_low_risk must not be swayed even if one were present by mistake.
+        self.assertFalse(is_low_risk({"tool": "unsupported", "overall_judgement": "low risk"}))
+
+    def test_unrecognized_tool_other_than_unsupported_returns_none(self):
+        # Any other unrecognized tool label is treated as "no assessment
+        # this code understands" -- distinct from the deliberate
+        # "unsupported" fail-closed marker.
+        self.assertIsNone(is_low_risk({"tool": "some-future-instrument", "overall_judgement": "low risk"}))
 
 
 class BuildRobEntryTests(unittest.TestCase):
@@ -128,6 +144,20 @@ class BuildRobEntryTests(unittest.TestCase):
         entry = build_rob_entry("outcome1", rows)
         self.assertEqual(entry["proportion_low_risk"], 0.5)
         self.assertEqual(entry["missing_assessment"], ["s3"])
+
+    def test_unsupported_design_counts_against_proportion_not_dropped(self):
+        """An "unsupported"-tool study is an assessment that happened (the
+        design was looked at, no instrument applies) -- it must land in the
+        assessed denominator as not-low-risk, never in missing_assessment
+        alongside a study that was never looked at at all (risk_of_bias is
+        None)."""
+        rows = [
+            {"study_id": "s1", "risk_of_bias": {"tool": "RoB1", "overall_judgement": "low risk"}},
+            {"study_id": "s2", "risk_of_bias": {"tool": "unsupported", "notes": "single-arm case series"}},
+        ]
+        entry = build_rob_entry("outcome1", rows)
+        self.assertEqual(entry["proportion_low_risk"], 0.5)  # 1 of 2 assessed studies is low risk
+        self.assertEqual(entry["missing_assessment"], [])
 
 
 if __name__ == "__main__":

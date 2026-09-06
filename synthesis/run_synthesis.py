@@ -388,9 +388,20 @@ def convert_effect(effect_data):
 
 
 def is_low_risk(rob):
+    """None means "no assessment at all" (excluded from proportion_low_risk's
+    denominator by build_rob_entry -- genuinely unassessed). "unsupported"
+    (quality-appraisal/01-risk-of-bias.md Part 3: a design neither RoB1 nor
+    NOS covers) is deliberately different -- it IS an assessment (the study
+    was looked at and no instrument applies), so it fails closed as False
+    rather than being dropped from the denominator like a missing
+    assessment would be. Silently excluding it would let an
+    unsupported-design study's contribution to a pooled estimate escape the
+    GRADE risk-of-bias domain entirely."""
     if not rob:
         return None
     tool = rob.get("tool")
+    if tool == "unsupported":
+        return False
     judgement = (rob.get("overall_judgement") or "").lower()
     if tool == "RoB1":
         return "low risk" in judgement

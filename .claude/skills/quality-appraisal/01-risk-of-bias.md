@@ -1,10 +1,10 @@
 ---
-framework_version: 1.1.0
+framework_version: 1.2.0
 ---
 
 # Risk of Bias Assessment
 
-Two tools cover the study designs a systematic review typically includes: the **original Cochrane Collaboration's tool for assessing risk of bias** (2011, informally called "RoB1" to distinguish it from its 2019 successor) for randomized controlled trials, and the **Newcastle-Ottawa Scale (NOS)** for non-randomized studies. Use exactly one per study, matched to its actual design — never mix domains from the two tools on a single study.
+Two tools cover the study designs a systematic review typically includes: the **original Cochrane Collaboration's tool for assessing risk of bias** (2011, informally called "RoB1" to distinguish it from its 2019 successor) for randomized controlled trials, and the **Newcastle-Ottawa Scale (NOS)** for non-randomized studies. Use exactly one per study, matched to its actual design — never mix domains from the two tools on a single study. A study whose design fits neither (Part 3, below) is marked `"unsupported"` and fails closed rather than being forced into one anyway.
 
 **This is the legacy 2011 tool, not the current Cochrane RoB 2 (Sterne et al., BMJ 2019).** RoB 2 uses five different, result-specific domains (randomization process; deviations from intended interventions; missing outcome data; measurement of the outcome; selection of the reported result), signalling questions, and an algorithm-supported overall judgement, and is now the Cochrane-recommended tool for RCTs. This framework implements RoB1 only; adopting real RoB 2 is tracked as future work (see `docs/ROADMAP.md`) rather than something silently substituted here.
 
@@ -57,6 +57,25 @@ Total NOS score guidance commonly used to bucket study quality (used only as a d
 - **Poor quality**: 0-1 stars in Selection, OR 0 stars in Comparability, OR 0-1 stars in Outcome.
 
 Write the NOS assessment into a study's `risk_of_bias` block with `"tool": "NOS"` and one entry per category carrying `stars_awarded`/`stars_possible` and a `support` string naming the specific item(s) that earned or lost a star — the same evidence-based discipline as RoB1's "support of judgement," not a bare number.
+
+## Part 3 — Study designs neither tool covers (fail closed)
+
+RoB1 and NOS both assume a comparison: RoB1 needs a randomized allocation to judge, NOS needs an exposed/non-exposed or case/control comparison to judge. Some included-study designs have neither — diagnostic test accuracy studies, single-arm trials, case series/case reports, qualitative studies, or any design with no comparator arm at all. Forcing one of these into RoB1 or NOS produces a fabricated judgement on a domain that structurally does not apply (there is no allocation to conceal in a single-arm case series; there is no non-exposed cohort in a diagnostic-accuracy study) — exactly what "Never fabricate a judgement" above forbids, just at the level of picking the tool rather than filling in a domain.
+
+For these designs, write:
+
+```json
+{
+  "tool": "unsupported",
+  "notes": "<which design this is, and why neither RoB1's nor NOS's domains apply to it>",
+  "assessed_by": "claude (single-rater first pass)",
+  "assessed_at": "2026-01-01T00:00:00Z"
+}
+```
+
+with no `domains` block and no `overall_judgement` — there is nothing to judge with either tool's own criteria. `run_synthesis.py` treats `"unsupported"` as **not low risk** when computing `proportion_low_risk`: this is a deliberate fail-closed choice, not a bug. The alternative — silently excluding an "unsupported" study from the risk-of-bias denominator entirely, the way a genuinely missing assessment is handled — would let an unsupported-design study's contribution to a pooled estimate go unflagged in the GRADE risk-of-bias domain. Counting it against `proportion_low_risk` instead means the certainty rating conservatively reflects that this study's actual risk of bias was never established, without inventing a favorable judgement to get there.
+
+This is not a signal to skip appraisal effort — flag the design mismatch back to the reviewer, since a review with several "unsupported" studies may need a design-appropriate instrument this framework doesn't yet implement (e.g. QUADAS-2 for diagnostic accuracy) added as future work, rather than being told the studies are simply un-assessable.
 
 ## Rolling up to the outcome level
 
