@@ -67,6 +67,7 @@ ALLOWED_PERMISSIONS = {
     "Bash(python3 tools/dedup.py:*)",
     "Bash(python3 tools/ledger.py:*)",
     "Bash(python3 tools/flow_counts.py:*)",
+    "Bash(python3 tools/status.py:*)",
     "Bash(python3 tools/search_preflight.py:*)",
     "Bash(python3 tools/preflight.py:*)",
     "Bash(gh repo view:*)",
