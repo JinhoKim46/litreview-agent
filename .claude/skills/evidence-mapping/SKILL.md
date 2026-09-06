@@ -1,7 +1,7 @@
 ---
 name: evidence-mapping
-description: "Chart a scoping review's included studies into results/<TOPIC>/charting_table.json: pilot a co-developed form on a handful of records, freeze it (G-Freeze), then chart every remaining study against the frozen form with full provenance. Use whenever a review's resolved method manifest declares capture.mode: \"charting\" (methods/scoping_review.json) -- /prisma-extract's Step 0.5 routes here instead of running extraction for that manifest. Does not cover a systematic review's risk-of-bias-weighted extraction (see prisma-extract.md's own steps for that) or a systematic mapping study's classification-scheme workflow (capture.mode: \"classification\" -- no manifest cites this skill for that mode; it still refuses at Step 0.5 pending its own skill)."
-framework_version: 1.0.0
+description: "Chart a scoping review's included studies into results/<TOPIC>/charting_table.json: pilot a co-developed form on a handful of records, freeze it (G-Freeze), then chart every remaining study against the frozen form with full provenance. Use whenever a review's resolved method manifest declares capture.mode: \"charting\" (methods/scoping_review.json) -- /prisma-extract's Step 0.5 routes here instead of running extraction for that manifest. Does not cover a systematic review's risk-of-bias-weighted extraction (see prisma-extract.md's own steps for that) or a systematic mapping study's classification-scheme workflow (capture.mode: \"classification\" -- see .claude/skills/study-classification/SKILL.md for that)."
+framework_version: 1.1.0
 ---
 
 # Evidence Mapping (Charting)
