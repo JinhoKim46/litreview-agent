@@ -72,6 +72,7 @@ ALLOWED_PERMISSIONS = {
     "Bash(python3 tools/preflight.py:*)",
     "Bash(python3 tools/method.py:*)",
     "Bash(python3 tools/route.py:*)",
+    "Bash(python3 tools/label_gate.py:*)",
     "Bash(gh repo view:*)",
 }
 
