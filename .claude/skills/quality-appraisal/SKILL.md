@@ -1,7 +1,7 @@
 ---
 name: quality-appraisal
 description: Assess risk of bias in included studies and rate the certainty of evidence for each outcome. Use during /prisma-extract (per-study risk-of-bias judgements) and /prisma-synthesize (per-outcome GRADE certainty rating, after pooling or narrative fallback). Trigger phrases — "assess risk of bias", "RoB1", "risk of bias assessment", "Cochrane risk of bias tool", "Newcastle-Ottawa", "NOS score", "GRADE the evidence", "certainty of evidence", "quality of evidence", "rate down/rate up", "summary of findings table", "how reliable is this evidence", "is this study biased". Do not use for eligibility screening (that's review-protocol) or for choosing pooling models (that's synthesis/heterogeneity.py) — this skill only judges study/outcome quality, not whether data can be combined.
-framework_version: 1.0.2
+framework_version: 1.1.0
 ---
 
 # Quality Appraisal: Risk of Bias + GRADE Certainty
@@ -26,8 +26,9 @@ Both files are read verbatim by `/prisma-report` to draft the "Quality of eviden
 |---|---|---|
 | Randomized controlled trial (individual- or cluster-randomized, parallel or crossover) | Cochrane RoB1 (six domains, per Higgins/Altman/Sterne, Cochrane Handbook Ch. 8) | `01-risk-of-bias.md` |
 | Non-randomized study (cohort, case-control, before-after, cross-sectional) | Newcastle-Ottawa Scale (NOS) | `01-risk-of-bias.md`, NOS section |
+| Neither of the above (e.g. diagnostic test accuracy, single-arm/case series, qualitative, no comparator arm at all) | **Unsupported — fail closed** (`"tool": "unsupported"`), never forced into RoB1 or NOS | `01-risk-of-bias.md`, "Study designs neither tool covers" section |
 
-Ask the reviewer to confirm study design during `/prisma-extract` if the included-study table doesn't already record it unambiguously — RoB1 and NOS are not interchangeable, and using RoB1's "allocation concealment" domain on a cohort study produces a meaningless judgement (there was no allocation to conceal).
+Ask the reviewer to confirm study design during `/prisma-extract` if the included-study table doesn't already record it unambiguously — RoB1 and NOS are not interchangeable, and using RoB1's "allocation concealment" domain on a cohort study produces a meaningless judgement (there was no allocation to conceal). A design that fits neither tool is not a reason to force one anyway — see the "unsupported" row above and `01-risk-of-bias.md`.
 
 ## Independent, dual assessment
 
@@ -60,6 +61,19 @@ A risk-of-bias or GRADE rating is only ever written when the "support for judgem
 ```
 
 For a non-randomized study, `tool` is `"NOS"` and `domains` is replaced by the three NOS categories (`selection`, `comparability`, `outcome`) each carrying `stars_awarded`/`stars_possible` and `support`, per `01-risk-of-bias.md`.
+
+For a study whose design fits neither tool, `tool` is `"unsupported"`, there is no `domains` block and no `overall_judgement`, and `notes` states which design it is and why neither RoB1 nor NOS applies:
+
+```json
+{
+  "tool": "unsupported",
+  "notes": "Single-arm case series (n=12), no comparator arm -- RoB1's allocation/blinding domains and NOS's cohort-comparison domains both require a comparison group that does not exist here.",
+  "assessed_by": "claude (single-rater first pass)",
+  "assessed_at": "2026-01-01T00:00:00Z"
+}
+```
+
+`/prisma-synthesize` treats `"unsupported"` as **not low risk** (fail closed) when rolling this up into `rob_table.json`'s `proportion_low_risk` — never silently dropped from the denominator as if unassessed, and never assumed low risk by default. See `01-risk-of-bias.md`.
 
 **`synthesis/rob_table.json`** (per outcome, written during `/prisma-synthesize`) — aggregates the per-study judgements contributing to one outcome, for the manuscript's risk-of-bias summary figure:
 
