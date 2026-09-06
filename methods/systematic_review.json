@@ -1,0 +1,62 @@
+{
+  "id": "systematic_review",
+  "label": "Systematic review",
+  "aliases": ["SR", "SLR", "systematic literature review"],
+  "version": "1.0.0",
+  "family": "systematic",
+  "question_frameworks": ["PICO", "PICOS", "PICo", "SPIDER", "PEO"],
+  "search": {
+    "mode": "protocol_driven",
+    "min_index_families": 2,
+    "primary_strategies_default": ["database"],
+    "known_item_recall": "fail_closed"
+  },
+  "screening": {"recommend_reviewers": 2, "criteria_may_evolve": "amendment_only"},
+  "capture": {"mode": "extraction", "schema": "schemas/extraction_table.schema.json", "freeze_gate": false, "pilot_records": 0},
+  "appraisal": {"requirement": "mandatory", "use": ["describe", "sensitivity", "exclude"]},
+  "synthesis": {
+    "families_allowed": ["structured_narrative", "swim", "pairwise_iv"],
+    "plan_required_for": ["pairwise_iv"],
+    "plan_required_at": "protocol",
+    "proposal_defaults": {"tau2_estimator": "dl", "ci_method": "normal", "prediction_interval_min_k": 3, "small_study_min_k": 10}
+  },
+  "standards": [
+    {"ref": ".claude/skills/prisma-manuscript/references/prisma-2020-checklist.md"},
+    {"ref": ".claude/skills/keyword-expansion/references/prisma-s-2021-checklist.md"},
+    {"ref": ".claude/skills/prisma-manuscript/references/swim-2020-checklist.md", "when": {"synthesis_family": "swim"}}
+  ],
+  "label_rules": {
+    "label": "systematic review",
+    "requires": [
+      {"check": "protocol_signed_before_first_protocol_driven_run"},
+      {"check": "min_index_families", "value": 2},
+      {"check": "registry_lookup_recorded"},
+      {"check": "second_reviewer_involvement_in_selection"},
+      {"check": "pooling_only_under_signed_plan"}
+    ],
+    "profile_labels": {"rapid": "rapid review"},
+    "otherwise": {"label": "systematized review", "list_missing": true},
+    "disclosures": [
+      "reviewer_count", "verification_sample", "extraction_verification", "search_dates",
+      "search_age", "registration", "criteria_changes", "coverage_gaps", "legacy_pooling"
+    ]
+  },
+  "report_blockers": ["fulltext_exclusion_reasons_complete", "appraisal_complete", "references_verified"],
+  "forbidden_forms": ["exhaustive_search", "comprehensive_search", "no_prior_work", "first_to", "novelty"],
+  "profiles": ["rapid", "single_reviewer"],
+  "living": true,
+  "microcopy": {
+    "what": "A systematic review answers one focused question from all eligible studies, with each study's risk of bias judged.",
+    "gives": "A protocol, a replayable search appendix, a PRISMA flow diagram, an extraction table, risk-of-bias and certainty tables, and a PRISMA 2020 manuscript.",
+    "costs": "Typically 6-18 months; two people who can screen independently, or one plus a second person over a recorded verification sample.",
+    "cannot_claim": "That the search was exhaustive, or that anything is 'first' or 'novel'.",
+    "upgrade_to": null,
+    "stage_names": {
+      "extract": "fill the study table",
+      "appraise": "judge each study's risk of bias",
+      "synthesize": "combine or tabulate the results",
+      "report": "draft the manuscript and checklist"
+    }
+  },
+  "exports": ["md", "docx", "ris", "csv", "svg"]
+}

@@ -1,0 +1,135 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://prisma-flow.local/methods/_schema.json",
+  "title": "method manifest",
+  "description": "A method manifest is a flat JSON file of policy differences from today's systematic-review pipeline, plus the claims that policy licenses (docs/ROADMAP.md). It never lists pipeline stages or gates -- those stay in the nine .claude/commands/prisma-*.md files, which are the implementation. tools/method.py globs methods/*.json (except this file and _routing.json) and validates each against this schema.",
+  "type": "object",
+  "required": ["id", "label", "version", "family", "search", "screening", "capture", "appraisal", "synthesis", "label_rules", "microcopy"],
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]*$",
+      "description": "Stable identifier, matches the manifest's own filename without the .json extension (e.g. \"systematic_review\" for methods/systematic_review.json). tools/method.py checks this at load time -- it is not re-derived from the filename."
+    },
+    "label": {"type": "string", "description": "Human-readable name shown in reports and CLI output, e.g. \"Systematic review\"."},
+    "aliases": {"type": "array", "items": {"type": "string"}, "default": [], "description": "Other words a reviewer might type for this method (e.g. \"SR\", \"SLR\") -- understood by the router (docs/PLAN.md M2), not by this schema."},
+    "version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "description": "Semver, watched by tools/check_framework_version.py -- bump this whenever the manifest's own content changes non-trivially."
+    },
+    "family": {
+      "type": "string",
+      "enum": ["systematic", "mapping", "exploratory"],
+      "description": "Broad shape of the method, used for routing and for which stage names apply -- not the same as synthesis.families_allowed, which is about pooling."
+    },
+    "question_frameworks": {
+      "type": "array",
+      "items": {"type": "string"},
+      "default": [],
+      "description": "Research-question frameworks review-protocol may elicit for this method (e.g. PICO, PICo, SPIDER, PCC)."
+    },
+    "search": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode", "min_index_families", "known_item_recall"],
+      "properties": {
+        "mode": {"type": "string", "enum": ["protocol_driven", "orienting"]},
+        "min_index_families": {"type": "integer", "minimum": 0},
+        "primary_strategies_default": {"type": "array", "items": {"type": "string"}, "default": ["database"]},
+        "known_item_recall": {"type": "string", "enum": ["fail_closed", "waivable_with_reason", "advisory"]}
+      }
+    },
+    "screening": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["recommend_reviewers", "criteria_may_evolve"],
+      "properties": {
+        "recommend_reviewers": {"type": "integer", "minimum": 1},
+        "criteria_may_evolve": {"type": "string", "enum": ["amendment_only", "versioned"]}
+      }
+    },
+    "capture": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode", "schema"],
+      "properties": {
+        "mode": {"type": "string", "enum": ["extraction", "charting", "classification", "relevance_tags"]},
+        "schema": {"type": "string", "description": "Repo-relative path to the JSON Schema this method's capture rows must validate against."},
+        "freeze_gate": {"type": "boolean", "default": false},
+        "pilot_records": {"type": "integer", "minimum": 0, "default": 0}
+      }
+    },
+    "appraisal": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["requirement", "use"],
+      "properties": {
+        "requirement": {"type": "string", "enum": ["mandatory", "optional_with_justification", "none"]},
+        "use": {"type": "array", "items": {"type": "string", "enum": ["describe", "sensitivity", "exclude"]}, "default": []}
+      }
+    },
+    "synthesis": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["families_allowed"],
+      "properties": {
+        "families_allowed": {"type": "array", "items": {"type": "string", "enum": ["descriptive", "structured_narrative", "swim", "pairwise_iv", "proportions", "dta"]}},
+        "plan_required_for": {"type": "array", "items": {"type": "string"}, "default": []},
+        "plan_required_at": {"type": ["string", "null"], "enum": ["protocol", null], "default": null},
+        "proposal_defaults": {"type": "object", "default": {}}
+      }
+    },
+    "standards": {
+      "type": "array",
+      "default": [],
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["ref"],
+        "properties": {
+          "ref": {"type": "string", "description": "Repo-relative path to a Markdown reference file under a skill's references/ directory."},
+          "when": {"type": "object", "description": "Optional condition (e.g. {\"synthesis_family\": \"swim\"}) narrowing when this standard applies."}
+        }
+      }
+    },
+    "label_rules": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["label"],
+      "properties": {
+        "label": {"type": "string"},
+        "requires": {
+          "type": "array", "default": [],
+          "items": {
+            "type": "object", "additionalProperties": false, "required": ["check"],
+            "properties": {"check": {"type": "string"}, "value": {}}
+          }
+        },
+        "profile_labels": {"type": "object", "default": {}},
+        "otherwise": {"type": "object", "default": {}},
+        "disclosures": {"type": "array", "items": {"type": "string"}, "default": []}
+      },
+      "description": "The full conduct-floor evaluation of `requires[]` (each `check` backed by one function) is tools/label_gate.py's job (docs/PLAN.md M2) -- in M1 these fields are recorded on the manifest but not yet evaluated."
+    },
+    "report_blockers": {"type": "array", "items": {"type": "string"}, "default": []},
+    "forbidden_forms": {"type": "array", "items": {"type": "string"}, "default": []},
+    "profiles": {"type": "array", "items": {"type": "string"}, "default": []},
+    "living": {"type": "boolean", "default": false},
+    "microcopy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["what", "gives", "costs"],
+      "properties": {
+        "what": {"type": "string"},
+        "gives": {"type": "string"},
+        "costs": {"type": "string"},
+        "cannot_claim": {"type": "string", "default": ""},
+        "upgrade_to": {"type": ["string", "null"], "default": null},
+        "stage_names": {"type": "object", "default": {}}
+      }
+    },
+    "exports": {"type": "array", "items": {"type": "string"}, "default": []}
+  }
+}

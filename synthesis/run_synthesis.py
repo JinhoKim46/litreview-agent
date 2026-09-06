@@ -108,6 +108,18 @@ ALL_MEASURES = DICHOTOMOUS_MEASURES | CONTINUOUS_MEASURES
 FUNNEL_MIN_K = 10
 POOL_MIN_K = 2
 
+# Synthesis families a systematic review's manifest allows (docs/PLAN.md M1;
+# methods/systematic_review.json's synthesis.families_allowed). "swim" is a
+# real, recognized family with no engine yet -- see run() -- rather than a
+# silently-ignored value or a fabricated implementation of untested
+# vote-counting statistics.
+SYNTHESIS_FAMILIES = ("pairwise_iv", "structured_narrative", "swim")
+SWIM_NOT_IMPLEMENTED = (
+    "synthesis_family=\"swim\" (Synthesis without Meta-analysis) is a recognized family "
+    "with no engine in this framework yet -- export effect_sizes.json's inputs and run SWiM "
+    "manually, or choose \"pairwise_iv\"/\"structured_narrative\" in synthesis_plan.json."
+)
+
 
 def slugify(name):
     return re.sub(r"[^a-z0-9]+", "-", name.lower()).strip("-") or "outcome"
@@ -191,6 +203,10 @@ def resolve_synthesis_plan(topic, model_override, safe_topic_path_fn):
     resolved.setdefault("tau2_estimator", "dl")
     resolved.setdefault("ci_method", "normal")
     resolved.setdefault("k_min", POOL_MIN_K)
+    # A plan predating this field (docs/PLAN.md M1) behaves identically to
+    # before -- "pairwise_iv" is today's only synthesis family, so defaulting
+    # to it here is the retrospective-plan path, not a special case.
+    resolved.setdefault("synthesis_family", "pairwise_iv")
     return resolved
 
 
@@ -492,15 +508,19 @@ def build_grade_draft(outcome_name, rows, model_used, k, het, effect_summary):
 
 
 def process_outcome_group(outcome_name, measure, rows, out_dir, slug, model, model_source,
-                           k_min=POOL_MIN_K, tau2_estimator="dl", ci_method="normal"):
+                           k_min=POOL_MIN_K, tau2_estimator="dl", ci_method="normal",
+                           synthesis_family="pairwise_iv"):
     """rows: all rows for this (outcome, measure_type) pair. `model` is the
     prespecified primary pooling model ("fixed" or "random", from
     synthesis_plan.json) -- never chosen from this group's own heterogeneity
     statistics. The other model is always pooled too and reported under
     effect_sizes_entry["sensitivity"]. `tau2_estimator`/`ci_method` are also
     prespecified in synthesis_plan.json and apply to both the primary and
-    sensitivity pool (see synthesis/pooling.py). Returns (effect_sizes_entry,
-    heterogeneity_entry, grade_entry, rob_entry)."""
+    sensitivity pool (see synthesis/pooling.py). `synthesis_family` (docs/PLAN.md
+    M1): "structured_narrative" never attempts pooling for this or any other
+    outcome regardless of k -- the whole review's family, not a per-outcome
+    choice; "pairwise_iv" (default) is today's unchanged behavior. Returns
+    (effect_sizes_entry, heterogeneity_entry, grade_entry, rob_entry)."""
     study_effects, excluded = [], []
     for row in rows:
         try:
@@ -523,9 +543,15 @@ def process_outcome_group(outcome_name, measure, rows, out_dir, slug, model, mod
     rob_entry = build_rob_entry(outcome_name, rows)
     k = len(study_effects)
 
-    if k < k_min:
+    if synthesis_family == "structured_narrative":
+        reason = "structured_narrative synthesis family (synthesis_plan.json) -- no statistical pooling attempted for this review"
+    elif k < k_min:
         reason = (f"only {k} study/studies with usable effect data for this outcome+measure "
                   f"(need >= {k_min} to pool)" + (f"; excluded: {excluded}" if excluded else ""))
+    else:
+        reason = None
+
+    if reason is not None:
         effect_sizes_entry = {"outcome": outcome_name, "measure_type": measure, "pooled": False, "studies": study_effects, "excluded": excluded}
         heterogeneity_entry = {"outcome": outcome_name, "measure_type": measure, "pooled": False, "reason": reason}
         grade_entry = build_grade_draft(outcome_name, rows, "narrative", len(rows), None, None)
@@ -632,16 +658,23 @@ def _atomic_write_json(path, data):
 
 
 def run(extraction_table_path, out_dir, model, model_source="protocol", k_min=POOL_MIN_K,
-        tau2_estimator="dl", ci_method="normal"):
+        tau2_estimator="dl", ci_method="normal", synthesis_family="pairwise_iv"):
     """`model` is the prespecified primary pooling model ("fixed" or
     "random") -- required, never derived here from the data. `model_source`
     records where it came from ("protocol", "post_hoc", or "cli_override";
     see resolve_synthesis_plan) and is echoed into every pooled outcome's
     effect_sizes.json/heterogeneity.json entry. `tau2_estimator`/`ci_method`
     are likewise prespecified in synthesis_plan.json and passed straight
-    through to every process_outcome_group call (see synthesis/pooling.py)."""
+    through to every process_outcome_group call (see synthesis/pooling.py).
+    `synthesis_family` (docs/PLAN.md M1) dispatches which of
+    methods/systematic_review.json's synthesis.families_allowed this run
+    follows -- see SYNTHESIS_FAMILIES and process_outcome_group's docstring."""
     if model not in ("fixed", "random"):
         raise ValueError(f"model must be 'fixed' or 'random', got {model!r}")
+    if synthesis_family not in SYNTHESIS_FAMILIES:
+        raise SynthesisPlanError(f"synthesis_family must be one of {SYNTHESIS_FAMILIES}, got {synthesis_family!r}")
+    if synthesis_family == "swim":
+        raise SynthesisPlanError(SWIM_NOT_IMPLEMENTED)
     os.makedirs(out_dir, exist_ok=True)
     studies = load_studies(extraction_table_path)
     rows = flatten_rows(studies)
@@ -661,7 +694,7 @@ def run(extraction_table_path, out_dir, model, model_source="protocol", k_min=PO
     for (outcome_name, measure), group_rows in sorted(groups.items()):
         slug = slugify(f"{outcome_name}-{measure}")
         es, het, grade, rob = process_outcome_group(outcome_name, measure, group_rows, out_dir, slug, model, model_source, k_min,
-                                                     tau2_estimator=tau2_estimator, ci_method=ci_method)
+                                                     tau2_estimator=tau2_estimator, ci_method=ci_method, synthesis_family=synthesis_family)
         effect_sizes.append(es)
         heterogeneity.append(het)
         grade_table.append(grade)
@@ -731,7 +764,8 @@ def main():
         return 1
 
     result = run(str(extraction_table_path), str(out_dir), model=plan["model"], model_source=plan["model_source"],
-                 k_min=plan["k_min"], tau2_estimator=plan["tau2_estimator"], ci_method=plan["ci_method"])
+                 k_min=plan["k_min"], tau2_estimator=plan["tau2_estimator"], ci_method=plan["ci_method"],
+                 synthesis_family=plan["synthesis_family"])
     pooled_n = sum(1 for h in result["heterogeneity"] if h["pooled"])
     narrative_n = sum(1 for h in result["heterogeneity"] if not h["pooled"])
     rob_plot_note = f"rob_traffic_light.svg ({result['rob_traffic_light_svg']})" if result["rob_traffic_light_svg"] else \
