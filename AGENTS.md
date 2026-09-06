@@ -4,7 +4,7 @@ framework_version: 1.0.0
 
 # Agent Guidelines: prisma-review
 
-This workspace runs a PRISMA 2020-conformant systematic review and meta-analysis pipeline: search connectors, deduplication, screening, extraction, statistical synthesis, and manuscript generation.
+This workspace runs a systematic review and meta-analysis pipeline that follows the PRISMA 2020 reporting guideline: search connectors, deduplication, screening, extraction, statistical synthesis, and manuscript generation. See [docs/ROADMAP.md](docs/ROADMAP.md) for where this is headed beyond that one method.
 
 ## Thin-Pointer Design (Single Source of Truth)
 
