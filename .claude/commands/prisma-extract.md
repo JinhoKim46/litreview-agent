@@ -170,6 +170,7 @@ From the full text (or the interview answers), draft these fields. Present the f
 | `key_findings` | 1-3 sentences in the study's own terms — what it concluded, not your interpretation of significance. |
 | `funding_source` | `null` if not stated or not extracted. |
 | `notes` | Anything that doesn't fit elsewhere but matters for the manuscript (e.g. "abstract-only full text available," "translated from Korean by the review team"). |
+| `reports` | Every distinct source document this study's entry draws data from — most studies have exactly one: `[{"citation": "...", "doi": "...", "url": "..."}]`, built from `extraction_source`'s `url` in Step 4 when nothing separate was elicited. A study can have more than one report (e.g. the main trial publication plus a linked protocol paper or a supplementary appendix with additional outcome data) — list each one the study's characteristics or effect data actually came from, not every paper about the topic. |
 
 Never leave a field silently blank — an unknown value is the literal `null`, so `/prisma-report` can distinguish "checked, not reported" from "a step was skipped."
 
@@ -195,6 +196,13 @@ Ask the reviewer directly: **"Does this study report a quantitative result, for 
      ```
   5. `timepoint` — when the outcome was measured (e.g. `"24h postoperative"`), `null` if not distinguishable.
   6. `as_reported` (optional) — the study's own computed effect/CI/p-value if it states one, e.g. `{"effect": 0.43, "ci_low": 0.24, "ci_high": 0.78, "p_value": 0.005}`. This is kept for cross-checking, not fed directly into `/prisma-synthesize`'s pooling (which recomputes from the raw per-arm numbers above for consistency across studies) — never let a mismatch between `as_reported` and the raw numbers go unmentioned; flag it in `notes` if you spot one. Repeat for every comparable outcome this study reports. A study can contribute zero, one, or several `effect_data` entries.
+  7. `source` — where these exact numbers came from, as `{"quote": "...", "locator": "...", "notes": "..."}`:
+     - `quote` — the sentence, table cell, or figure caption text stating these numbers, copied verbatim (not paraphrased) from the full text you actually retrieved in Step 4.
+     - `locator` — where in the source it appears (e.g. `"Table 2"`, `"Results, para. 3"`, `"Figure 1B"`).
+     - `notes` — `null`, or a short note if the numbers needed any transformation to reach the shape above (e.g. `"converted from percentage using N in Table 1"`).
+
+     **When full text was obtained via WebFetch or pasted text (Step 4, options 1-2): refuse to write an `effect_data` entry whose `quote` does not actually appear (verbatim or as a close, clearly-the-same-sentence paraphrase of a table/figure value) in the retrieved text.** If you cannot locate the exact number in what you actually have, do not write the entry as if you found it — tell the reviewer which number you can't verify and ask them to point you to it, or drop that specific data point rather than fabricate a `quote` to match a number that came from somewhere else (memory, a different study, an inference). This is `01-risk-of-bias.md`'s "never fabricate a judgement" rule applied to raw numbers, not just risk-of-bias judgements.
+     - **When full text was obtained via interview (Step 4, option 3):** there is no retrieved document to quote against. Set `quote` to `null` and use `notes` to say so explicitly (e.g. `"reviewer-stated value; no full text available to quote against"`) — this is a disclosed limitation, not a refusal, since the reviewer is the source in this path.
 
 Never compute or invent per-arm numbers the study doesn't state — if only a summary statistic is reported with no arm-level breakdown, record what's actually there and leave the rest `null`, noting the gap.
 
@@ -254,6 +262,10 @@ Assemble the full entry for this study:
   "key_findings": "Dexamethasone significantly reduced PONV incidence at 24h; no significant difference in pain score.",
   "funding_source": null,
   "notes": null,
+  "reports": [
+    {"citation": "Kim et al. (2022). Effect of dexamethasone on PONV. J. Anesth., 12(3), 45-60.",
+     "doi": "10.1234/abcd", "url": "https://doi.org/10.1234/abcd"}
+  ],
   "effect_data": [
     {
       "outcome": "postoperative nausea and vomiting (PONV)",
@@ -261,7 +273,9 @@ Assemble the full entry for this study:
       "timepoint": "24h postoperative",
       "intervention_arm": {"label": "dexamethasone", "events": 12, "total": 60},
       "comparator_arm": {"label": "placebo", "events": 28, "total": 60},
-      "as_reported": {"effect": 0.43, "ci_low": 0.24, "ci_high": 0.78, "p_value": 0.005}
+      "as_reported": {"effect": 0.43, "ci_low": 0.24, "ci_high": 0.78, "p_value": 0.005},
+      "source": {"quote": "PONV occurred in 12 of 60 (20.0%) patients in the dexamethasone group versus 28 of 60 (46.7%) in the placebo group.",
+                 "locator": "Table 2", "notes": null}
     }
   ],
   "risk_of_bias": {
@@ -280,11 +294,15 @@ Assemble the full entry for this study:
     "assessed_at": "2026-09-04T14:03:11Z"
   },
   "extraction_source": {"method": "webfetch", "url": "https://doi.org/10.1234/abcd", "fetched_at": "2026-09-04T13:58:02Z"},
-  "extracted_at": "2026-09-04T14:05:30Z"
+  "extracted_at": "2026-09-04T14:05:30Z",
+  "by": "claude (single extractor pass)",
+  "verified_by": null
 }
 ```
 
-A non-randomized study's `risk_of_bias` block instead carries `"tool": "NOS"` and `"domains": {"selection": {...}, "comparability": {...}, "outcome": {...}}` per Step 7's NOS schema. A study with no poolable outcome (Step 6 = "No") carries `"effect_data": []`.
+A non-randomized study's `risk_of_bias` block instead carries `"tool": "NOS"` and `"domains": {"selection": {...}, "comparability": {...}, "outcome": {...}}` per Step 7's NOS schema. A study with no poolable outcome (Step 6 = "No") carries `"effect_data": []` — `reports` is still populated (a narrative-only study still has a source document), but no `effect_data[].source` entries exist to refuse or verify.
+
+`by` records who performed this extraction, mirroring risk-of-bias's `assessed_by` — always `"claude (single extractor pass)"` unless the reviewer extracted a study's data directly (record their name/identifier instead). `verified_by` is `null` unless a second reviewer has independently checked this specific study's extracted data against the source; if they have, set it to their name/identifier and note anything they corrected in `notes` (Step 5) rather than silently overwriting the original values — same reconciliation discipline as Step 7's dual-assessment note.
 
 Write it:
 
@@ -333,3 +351,4 @@ Compute every number in this summary from `extraction_table.json` and Step 2's c
 6. **Persist per study, not per run.** Step 8 writes after every study so a long extraction pass is resumable and a crash mid-run loses at most one study's unsaved work.
 7. **Large ledgers stay out of the conversation.** Steps 1-2 read `screening_decisions.jsonl`/`records.jsonl` only inside a `python3` subprocess, never with the `Read` tool — the candidate list this produces is short (full-text includes only), but the ledgers behind it are not.
 8. **Never re-elicit what `/prisma-screen` already decided.** The inclusion decision itself is not up for debate here — `/prisma-extract` extracts data from studies the reviewer already included; it does not re-run eligibility screening (that's `review-protocol`/`/prisma-screen`).
+9. **Every `effect_data` number needs a verifiable quote.** Step 6's `source.quote` must actually appear in the full text you retrieved in Step 4 (WebFetch/pasted-text paths) — refuse to write the entry rather than fabricate a quote to match a number that came from somewhere else. For the interview path (no retrieved document to check against), disclose this explicitly via `quote: null` + a `notes` explanation instead of refusing.
