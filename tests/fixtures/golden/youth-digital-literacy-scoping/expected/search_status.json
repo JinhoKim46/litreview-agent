@@ -15,7 +15,10 @@
   "known_item_recall": {
     "checked": 0,
     "found": [],
-    "missing": []
+    "missing": [],
+    "checked_excluding_recon_seeds": 0,
+    "found_excluding_recon_seeds": 0,
+    "non_independent_gold_set": false
   },
   "unacknowledged_missing_known_items": []
 }

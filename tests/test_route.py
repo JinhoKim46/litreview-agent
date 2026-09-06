@@ -215,10 +215,10 @@ class ProfileOfferAndOverrideTests(unittest.TestCase):
 
 
 class ShippedManifestGateTests(unittest.TestCase):
-    """M3's real, non-hypothetical behaviour: systematic_review,
-    scoping_review, and systematic_mapping_study are shipped;
-    reconnaissance still refuses honestly (no stub manifests -- routing
-    refusals instead, per docs/PLAN.md's dissent log)."""
+    """M4's real, non-hypothetical behaviour: systematic_review,
+    scoping_review, systematic_mapping_study, and reconnaissance are all
+    shipped now -- routing resolves to every one of them for real, not just
+    the mocked ALL_TARGETS set RowResolutionTests exercises."""
 
     def test_default_gate_uses_real_list_manifests(self):
         result = route.decide({"goal": ["answer"], "evidence_type": "trials", "expects_pooling": "no",
@@ -237,8 +237,20 @@ class ShippedManifestGateTests(unittest.TestCase):
         self.assertEqual(mapping["kind"], "resolve")
         self.assertEqual(mapping["method_id"], "systematic_mapping_study")
 
-    def test_unshipped_target_refuses_with_pointer(self):
-        result = route.decide({"goal": ["orient"]})  # -> reconnaissance, still not shipped
+    def test_now_shipped_reconnaissance_manifest_actually_resolves(self):
+        # docs/ROADMAP.md M4: once methods/reconnaissance.json exists,
+        # routing must resolve to it for real -- the same parity fix PR A
+        # (M3) made for scoping_review/systematic_mapping_study.
+        result = route.decide({"goal": ["orient"]})  # R3 -> reconnaissance
+        self.assertEqual(result["kind"], "resolve")
+        self.assertEqual(result["method_id"], "reconnaissance")
+
+    def test_unshipped_target_still_refuses_with_pointer(self):
+        # Isolates the refusal mechanism itself from which manifests happen
+        # to be shipped today, using an explicit empty roster -- same
+        # assertion the pre-M4 test made for a real gap, kept alive on
+        # purpose now that every method_id the routing table names is shipped.
+        result = route.decide({"goal": ["orient"]}, shipped_method_ids=set())
         self.assertEqual(result["kind"], "refuse")
         self.assertIn("reconnaissance", result["reason"])
         self.assertEqual(result["pointer"], route.ROADMAP_POINTER)

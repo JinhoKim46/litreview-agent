@@ -1,0 +1,6 @@
+{
+  "sources": {
+    "openalex": {"enabled": true, "query": "(\"gig economy\" OR \"platform work\") AND (wellbeing OR wellness OR burnout)"},
+    "crossref": {"enabled": true, "query": "(\"gig economy\" OR \"platform work\") AND (wellbeing OR wellness OR burnout)"}
+  }
+}

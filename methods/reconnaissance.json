@@ -1,0 +1,49 @@
+{
+  "id": "reconnaissance",
+  "label": "Exploratory literature brief",
+  "aliases": ["prior work check", "related work check", "landscape scan", "quick look", "reconnaissance"],
+  "version": "1.0.0",
+  "family": "exploratory",
+  "question_frameworks": [],
+  "search": {
+    "mode": "orienting",
+    "min_index_families": 1,
+    "primary_strategies_default": ["database"],
+    "known_item_recall": "advisory"
+  },
+  "screening": {"recommend_reviewers": 1, "criteria_may_evolve": "amendment_only"},
+  "capture": {"mode": "relevance_tags", "schema": "schemas/relevance_tags_table.schema.json", "freeze_gate": false, "pilot_records": 0},
+  "appraisal": {"requirement": "none", "use": []},
+  "synthesis": {
+    "families_allowed": [],
+    "plan_required_for": [],
+    "plan_required_at": null,
+    "proposal_defaults": {}
+  },
+  "standards": [],
+  "label_rules": {
+    "label": "exploratory literature brief (non-systematic)",
+    "requires": [],
+    "profile_labels": {},
+    "otherwise": {},
+    "disclosures": ["search_dates", "search_age", "coverage_gaps"]
+  },
+  "report_blockers": ["references_verified"],
+  "forbidden_forms": ["exhaustive_search", "comprehensive_search", "no_prior_work", "first_to", "novelty", "screening_vocabulary", "eligibility_vocabulary"],
+  "profiles": [],
+  "living": true,
+  "microcopy": {
+    "what": "An exploratory literature brief is a bounded, orienting look at a topic's existing literature -- a prior-work check or a related-work draft for a reviewer who is not running a formal evidence-synthesis review at all.",
+    "gives": "A relevance-tagged reading of the candidates a bounded search across enabled connectors turned up, a corpus-description table, a landscape brief, an optional related-work draft, and a supplementary search log -- never a PRISMA flow diagram or an eligibility-screened study set, because this method never runs formal eligibility screening.",
+    "costs": "Typically hours to a few days; one reviewer is normal and never disclosed as a shortfall, because this method has no reviewer-count conduct floor to fall short of.",
+    "cannot_claim": "That prior work does not exist, that the search reached saturation, that records were screened or found eligible/ineligible against criteria, or that anything here is a systematic or scoping review -- the label is unconditional and never upgrades on its own.",
+    "upgrade_to": null,
+    "stage_names": {
+      "extract": "tag each candidate's relevance facets and draft prior-work claims with provenance",
+      "appraise": "not applicable -- this method does no formal quality appraisal",
+      "synthesize": "not applicable -- no pooling or structured synthesis family applies",
+      "report": "draft the landscape brief (and, optionally, a related-work section and a supplementary search log)"
+    }
+  },
+  "exports": ["md", "docx", "ris"]
+}

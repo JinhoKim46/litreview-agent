@@ -46,6 +46,23 @@ class ListManifestsTests(unittest.TestCase):
         self.assertEqual(manifest["synthesis"]["families_allowed"], ["descriptive"])
         self.assertEqual(manifest["label_rules"]["requires"], [{"check": "min_index_families", "value": 2}])
 
+    def test_reconnaissance_manifest_loads_and_validates(self):
+        # docs/ROADMAP.md M4: the first non-manifest-shaped-review method --
+        # no formal eligibility screening, no appraisal, no pooling.
+        manifests = method.list_manifests()
+        self.assertIn("reconnaissance", manifests)
+        manifest = manifests["reconnaissance"]
+        self.assertEqual(manifest["family"], "exploratory")
+        self.assertEqual(manifest["capture"]["mode"], "relevance_tags")
+        self.assertEqual(manifest["appraisal"]["requirement"], "none")
+        self.assertEqual(manifest["synthesis"]["families_allowed"], [])
+        # unconditional label -- no requires[] check can ever downgrade it,
+        # unlike systematic_review/scoping_review/systematic_mapping_study.
+        self.assertEqual(manifest["label_rules"]["requires"], [])
+        self.assertEqual(manifest["label_rules"]["label"], "exploratory literature brief (non-systematic)")
+        self.assertIn("screening_vocabulary", manifest["forbidden_forms"])
+        self.assertIn("eligibility_vocabulary", manifest["forbidden_forms"])
+
     def test_schema_and_routing_files_never_treated_as_manifests(self):
         manifests = method.list_manifests()
         self.assertNotIn("_schema", manifests)
