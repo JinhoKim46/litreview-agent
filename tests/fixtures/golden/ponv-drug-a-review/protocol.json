@@ -1,0 +1,30 @@
+{
+  "title": "Effect of prophylactic antiemetic drugs on postoperative nausea, vomiting, and pain after surgery",
+  "framework": "PICO",
+  "review_type": "systematic_review",
+  "field_domain": "clinical_medicine",
+  "pico": {
+    "population": "Adults undergoing elective surgery under general anesthesia",
+    "intervention": "Prophylactic antiemetic/analgesic drug (any agent, any dose)",
+    "comparator": "Placebo or standard care",
+    "outcome": "Postoperative nausea and vomiting (PONV), postoperative pain score, adverse events"
+  },
+  "eligibility": {
+    "study_design": {"included": ["RCT", "cohort"], "excluded": ["case report", "case series"], "gate": "hard"},
+    "publication_type": {"included": ["peer-reviewed journal article"], "excluded": ["preprint-only", "conference abstract"], "gate": "hard"},
+    "date_range": {"from": "2015-01-01", "to": null, "gate": "hard"},
+    "language": {"included": ["English"], "gate": "hard", "translation_used": false}
+  },
+  "scope": {
+    "mode": "global",
+    "region": null,
+    "translation_used": false,
+    "translation_languages": [],
+    "coverage_gaps": []
+  },
+  "known_items": [
+    {"id_type": "doi", "id": "10.1111/aaa", "note": "seminal RCT this review is built around"},
+    {"id_type": "doi", "id": "10.9999/zzz", "note": "grey-literature conference report cited in a related review",
+     "expected_missing_reason": "grey literature, not indexed by any enabled connector"}
+  ]
+}

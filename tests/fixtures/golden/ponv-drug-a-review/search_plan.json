@@ -1,0 +1,6 @@
+{
+  "sources": {
+    "openalex": {"enabled": true, "query": "(antiemetic OR dexamethasone) AND (\"postoperative nausea\" OR PONV)"},
+    "crossref": {"enabled": true, "query": "(antiemetic OR dexamethasone) AND (\"postoperative nausea\" OR PONV)"}
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "model": "random",
+  "tau2_estimator": "pm",
+  "ci_method": "hksj",
+  "k_min": 2,
+  "signed_at": "2025-12-15T09:00:00Z",
+  "justification": "Included trials are expected to vary in dose, population, and follow-up duration; a random-effects model with the Paule-Mandel estimator and a modified Hartung-Knapp-Sidik-Jonkman confidence interval better reflects that heterogeneity and the small number of studies expected."
+}

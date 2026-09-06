@@ -1,0 +1,34 @@
+[
+  {
+    "record_id": "openalex:W1003",
+    "status": "extracted",
+    "title": "Pain Outcomes After Drug C: A Randomized Controlled Trial",
+    "year": 2020,
+    "url": "https://doi.org/10.1111/ccc",
+    "doi": "10.1111/ccc"
+  },
+  {
+    "record_id": "crossref:C2001",
+    "status": "extracted",
+    "title": "Effect of Drug A on PONV: A Randomized Controlled Trial",
+    "year": 2022,
+    "url": "https://doi.org/10.1111/aaa",
+    "doi": "10.1111/aaa"
+  },
+  {
+    "record_id": "openalex:W1002",
+    "status": "extracted",
+    "title": "Randomized Trial of Drug B for Prevention of Postoperative Nausea and Vomiting",
+    "year": 2021,
+    "url": "https://doi.org/10.1111/bbb",
+    "doi": "10.1111/bbb"
+  },
+  {
+    "record_id": "openalex:W1004",
+    "status": "extracted",
+    "title": "Cohort Study of Drug D and Postoperative Pain",
+    "year": 2019,
+    "url": "https://doi.org/10.1111/ddd",
+    "doi": "10.1111/ddd"
+  }
+]

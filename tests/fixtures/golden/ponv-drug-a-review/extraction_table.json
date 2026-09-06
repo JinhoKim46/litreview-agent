@@ -1,0 +1,218 @@
+{
+  "framework_version": "1.0.0",
+  "topic": "ponv-drug-a-review",
+  "studies": [
+    {
+      "record_id": "crossref:C2001",
+      "author_year": "Kim et al. (2022)",
+      "country": "South Korea",
+      "study_design": "RCT, parallel-group",
+      "population": "Adults undergoing elective laparoscopic surgery under general anesthesia",
+      "intervention": "Intravenous Drug A 8mg at induction",
+      "comparator": "Saline placebo",
+      "outcomes_measured": ["postoperative nausea and vomiting (PONV)", "adverse events"],
+      "sample_size": {"total": 120, "intervention": 60, "comparator": 60},
+      "key_findings": "Drug A significantly reduced PONV incidence at 24h; adverse events were infrequent and similar between arms.",
+      "funding_source": null,
+      "notes": "This trial was independently indexed by both openalex (native id W1001) and crossref (native id C2001), sharing DOI 10.1111/aaa -- tools/dedup.py's exact pass merges them by DOI, and canonicalizes to whichever source's raw file sorts first lexicographically ('crossref-*' before 'openalex-*'), so crossref:C2001 is this study's canonical record_id, not openalex:W1001.",
+      "reports": [
+        {"citation": "Kim JH, Lee SY. (2022). Effect of Drug A on postoperative nausea and vomiting: a randomized controlled trial. Journal of Anesthesia, 36(4), 512-520.",
+         "doi": "10.1111/aaa", "url": "https://doi.org/10.1111/aaa"}
+      ],
+      "effect_data": [
+        {
+          "outcome": "postoperative nausea and vomiting (PONV)",
+          "measure_type": "RR",
+          "timepoint": "24h postoperative",
+          "intervention_arm": {"label": "Drug A", "events": 10, "total": 60},
+          "comparator_arm": {"label": "placebo", "events": 25, "total": 60},
+          "as_reported": {"effect": 0.40, "ci_low": 0.21, "ci_high": 0.75, "p_value": 0.003},
+          "source": {"quote": "PONV occurred in 10 of 60 (16.7%) patients in the Drug A group versus 25 of 60 (41.7%) in the placebo group.",
+                     "locator": "Table 2", "notes": null}
+        },
+        {
+          "outcome": "adverse events",
+          "measure_type": "RR",
+          "timepoint": "24h postoperative",
+          "intervention_arm": {"label": "Drug A", "events": 3, "total": 60},
+          "comparator_arm": {"label": "placebo", "events": 2, "total": 60},
+          "as_reported": null,
+          "source": {"quote": "Adverse events occurred in 3 patients in the Drug A group and 2 in the placebo group, all mild.",
+                     "locator": "Results, para. 4", "notes": null}
+        }
+      ],
+      "risk_of_bias": {
+        "tool": "RoB1",
+        "domains": {
+          "sequence_generation": {"judgement": "low", "support": "Computer-generated randomization sequence, Methods 2.2."},
+          "allocation_concealment": {"judgement": "low", "support": "Sequentially numbered sealed opaque envelopes, Methods 2.2."},
+          "blinding_participants_personnel": {"judgement": "low", "support": "Identical-appearing saline placebo, double-blind, Methods 2.3."},
+          "blinding_outcome_assessment": {"judgement": "low", "support": "Outcome assessors blinded to group assignment, Methods 2.4."},
+          "incomplete_outcome_data": {"judgement": "low", "support": "2/60 (3.3%) lost to follow-up, balanced across arms."},
+          "selective_reporting": {"judgement": "low", "support": "Prespecified outcomes in registered protocol (NCT-AAA) all reported."},
+          "other_bias": {"judgement": "low", "support": "No other concerns identified."}
+        },
+        "overall_judgement": "low risk",
+        "assessed_by": "claude (single-rater first pass)",
+        "assessed_at": "2026-01-05T10:00:00Z"
+      },
+      "extraction_source": {"method": "webfetch", "url": "https://doi.org/10.1111/aaa", "fetched_at": "2026-01-05T09:55:00Z"},
+      "extracted_at": "2026-01-05T10:05:00Z",
+      "by": "claude (single extractor pass)",
+      "verified_by": null
+    },
+    {
+      "record_id": "openalex:W1002",
+      "author_year": "Park (2021)",
+      "country": "South Korea",
+      "study_design": "RCT, parallel-group",
+      "population": "Adults undergoing elective gynecologic surgery under general anesthesia",
+      "intervention": "Intravenous Drug B 4mg at induction",
+      "comparator": "Saline placebo",
+      "outcomes_measured": ["postoperative nausea and vomiting (PONV)"],
+      "sample_size": {"total": 110, "intervention": 55, "comparator": 55},
+      "key_findings": "Drug B significantly reduced PONV incidence at 24h.",
+      "funding_source": null,
+      "notes": null,
+      "reports": [
+        {"citation": "Park JY. (2021). Randomized trial of Drug B for prevention of postoperative nausea and vomiting. Anesthesia & Analgesia, 133(2), 401-408.",
+         "doi": "10.1111/bbb", "url": "https://doi.org/10.1111/bbb"}
+      ],
+      "effect_data": [
+        {
+          "outcome": "postoperative nausea and vomiting (PONV)",
+          "measure_type": "RR",
+          "timepoint": "24h postoperative",
+          "intervention_arm": {"label": "Drug B", "events": 8, "total": 55},
+          "comparator_arm": {"label": "placebo", "events": 20, "total": 55},
+          "as_reported": {"effect": 0.40, "ci_low": 0.19, "ci_high": 0.84, "p_value": 0.012},
+          "source": {"quote": "PONV occurred in 8 of 55 (14.5%) patients receiving Drug B versus 20 of 55 (36.4%) receiving placebo.",
+                     "locator": "Table 3", "notes": null}
+        }
+      ],
+      "risk_of_bias": {
+        "tool": "RoB1",
+        "domains": {
+          "sequence_generation": {"judgement": "low", "support": "Computer-generated random number sequence, Methods 2.1."},
+          "allocation_concealment": {"judgement": "unclear", "support": "Allocation concealment method not described."},
+          "blinding_participants_personnel": {"judgement": "low", "support": "Identical-appearing placebo infusion, double-blind, Methods 2.2."},
+          "blinding_outcome_assessment": {"judgement": "low", "support": "Outcome assessors blinded, Methods 2.3."},
+          "incomplete_outcome_data": {"judgement": "high", "support": "12/55 (21.8%) lost to follow-up in the intervention arm versus 2/55 (3.6%) in placebo, unbalanced and unexplained."},
+          "selective_reporting": {"judgement": "low", "support": "No trial registry found, but all outcomes described in Methods were reported."},
+          "other_bias": {"judgement": "low", "support": "No other concerns identified."}
+        },
+        "overall_judgement": "high risk",
+        "assessed_by": "claude (single-rater first pass)",
+        "assessed_at": "2026-01-05T11:00:00Z"
+      },
+      "extraction_source": {"method": "webfetch", "url": "https://doi.org/10.1111/bbb", "fetched_at": "2026-01-05T10:55:00Z"},
+      "extracted_at": "2026-01-05T11:05:00Z",
+      "by": "claude (single extractor pass)",
+      "verified_by": null
+    },
+    {
+      "record_id": "openalex:W1003",
+      "author_year": "Choi (2020)",
+      "country": "South Korea",
+      "study_design": "RCT, parallel-group",
+      "population": "Adults undergoing elective orthopedic surgery under general anesthesia",
+      "intervention": "Intravenous Drug C 2mg at induction",
+      "comparator": "Saline placebo",
+      "outcomes_measured": ["postoperative nausea and vomiting (PONV)", "postoperative pain score"],
+      "sample_size": {"total": 130, "intervention": 65, "comparator": 65},
+      "key_findings": "Drug C reduced PONV incidence and postoperative pain scores at 24h.",
+      "funding_source": null,
+      "notes": "risk_of_bias.tool was originally recorded as the legacy 'RoB2' label for this framework's RoB1 six-domain tool -- kept as-is to exercise normalize_risk_of_bias's legacy-alias handling.",
+      "reports": [
+        {"citation": "Choi HJ. (2020). Pain outcomes after Drug C: a randomized controlled trial. Pain Medicine, 21(9), 1801-1809.",
+         "doi": "10.1111/ccc", "url": "https://doi.org/10.1111/ccc"}
+      ],
+      "effect_data": [
+        {
+          "outcome": "postoperative nausea and vomiting (PONV)",
+          "measure_type": "RR",
+          "timepoint": "24h postoperative",
+          "intervention_arm": {"label": "Drug C", "events": 15, "total": 65},
+          "comparator_arm": {"label": "placebo", "events": 22, "total": 65},
+          "as_reported": {"effect": 0.68, "ci_low": 0.39, "ci_high": 1.19, "p_value": 0.18},
+          "source": {"quote": "PONV occurred in 15 of 65 (23.1%) patients in the Drug C group versus 22 of 65 (33.8%) in the placebo group.",
+                     "locator": "Table 2", "notes": null}
+        },
+        {
+          "outcome": "postoperative pain score",
+          "measure_type": "MD",
+          "timepoint": "24h postoperative",
+          "intervention_arm": {"label": "Drug C", "mean": 3.2, "sd": 1.1, "n": 65},
+          "comparator_arm": {"label": "placebo", "mean": 4.0, "sd": 1.3, "n": 65},
+          "as_reported": {"effect": -0.80, "ci_low": -1.21, "ci_high": -0.39, "p_value": 0.0002},
+          "source": {"quote": "Mean pain score (0-10 NRS) at 24h was 3.2 (SD 1.1) in the Drug C group and 4.0 (SD 1.3) in the placebo group.",
+                     "locator": "Table 4", "notes": null}
+        }
+      ],
+      "risk_of_bias": {
+        "tool": "RoB2",
+        "domains": {
+          "sequence_generation": {"judgement": "low", "support": "Random number table, Methods 2.1."},
+          "allocation_concealment": {"judgement": "unclear", "support": "Allocation concealment method not described."},
+          "blinding_participants_personnel": {"judgement": "low", "support": "Identical-appearing placebo, double-blind, Methods 2.2."},
+          "blinding_outcome_assessment": {"judgement": "low", "support": "Outcome assessors blinded, Methods 2.3."},
+          "incomplete_outcome_data": {"judgement": "low", "support": "3/65 (4.6%) lost to follow-up, balanced across arms."},
+          "selective_reporting": {"judgement": "unclear", "support": "No trial registry entry found or cited."},
+          "other_bias": {"judgement": "low", "support": "No other concerns identified."}
+        },
+        "overall_judgement": "unclear risk",
+        "assessed_by": "claude (single-rater first pass)",
+        "assessed_at": "2026-01-05T12:00:00Z"
+      },
+      "extraction_source": {"method": "webfetch", "url": "https://doi.org/10.1111/ccc", "fetched_at": "2026-01-05T11:55:00Z"},
+      "extracted_at": "2026-01-05T12:05:00Z",
+      "by": "claude (single extractor pass)",
+      "verified_by": "Dr. Reviewer"
+    },
+    {
+      "record_id": "openalex:W1004",
+      "author_year": "Jung (2019)",
+      "country": "South Korea",
+      "study_design": "prospective cohort",
+      "population": "Adults undergoing elective abdominal surgery under general anesthesia",
+      "intervention": "Intravenous Drug D 5mg at induction (per surgeon's discretion)",
+      "comparator": "No prophylactic antiemetic",
+      "outcomes_measured": ["postoperative pain score"],
+      "sample_size": {"total": 98, "intervention": 48, "comparator": 50},
+      "key_findings": "Drug D was associated with lower postoperative pain scores at 24h in this cohort.",
+      "funding_source": null,
+      "notes": null,
+      "reports": [
+        {"citation": "Jung MK. (2019). Cohort study of Drug D and postoperative pain. Journal of Clinical Anesthesia, 55, 88-94.",
+         "doi": "10.1111/ddd", "url": "https://doi.org/10.1111/ddd"}
+      ],
+      "effect_data": [
+        {
+          "outcome": "postoperative pain score",
+          "measure_type": "MD",
+          "timepoint": "24h postoperative",
+          "intervention_arm": {"label": "Drug D", "mean": 3.5, "sd": 1.0, "n": 48},
+          "comparator_arm": {"label": "no prophylaxis", "mean": 4.2, "sd": 1.2, "n": 50},
+          "as_reported": {"effect": -0.70, "ci_low": -1.13, "ci_high": -0.27, "p_value": 0.0015},
+          "source": {"quote": "Mean pain score (0-10 NRS) at 24h was 3.5 (SD 1.0) in the Drug D group and 4.2 (SD 1.2) in the comparison group.",
+                     "locator": "Table 3", "notes": null}
+        }
+      ],
+      "risk_of_bias": {
+        "tool": "NOS",
+        "domains": {
+          "selection": {"stars_awarded": 3, "stars_possible": 4, "support": "Representativeness of exposed cohort, selection of non-exposed cohort, and ascertainment of exposure all described (Methods 2.1-2.3); outcome-not-present-at-baseline not explicitly confirmed."},
+          "comparability": {"stars_awarded": 1, "stars_possible": 2, "support": "Adjusted for surgical duration (Methods 2.5); no adjustment for baseline pain or opioid use."},
+          "outcome": {"stars_awarded": 2, "stars_possible": 3, "support": "Outcome assessment and adequacy of follow-up described (Methods 2.6); follow-up duration not explicitly justified as sufficient."}
+        },
+        "overall_judgement": "fair quality",
+        "assessed_by": "claude (single-rater first pass)",
+        "assessed_at": "2026-01-05T13:00:00Z"
+      },
+      "extraction_source": {"method": "webfetch", "url": "https://doi.org/10.1111/ddd", "fetched_at": "2026-01-05T12:55:00Z"},
+      "extracted_at": "2026-01-05T13:05:00Z",
+      "by": "claude (single extractor pass)",
+      "verified_by": null
+    }
+  ]
+}

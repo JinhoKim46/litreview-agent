@@ -1,0 +1,278 @@
+[
+  {
+    "outcome": "adverse events",
+    "measure_type": "RR",
+    "pooled": false,
+    "studies": [
+      {
+        "study_id": "crossref:C2001",
+        "author_year": "Kim et al. (2022)",
+        "effect": 0.4054651081081644,
+        "variance": 0.7999999999999999,
+        "se": 0.8944271909999159,
+        "display_estimate": 1.5,
+        "continuity_correction_applied": false,
+        "source": {
+          "quote": "Adverse events occurred in 3 patients in the Drug A group and 2 in the placebo group, all mild.",
+          "locator": "Results, para. 4",
+          "notes": null
+        },
+        "reports": [
+          {
+            "citation": "Kim JH, Lee SY. (2022). Effect of Drug A on postoperative nausea and vomiting: a randomized controlled trial. Journal of Anesthesia, 36(4), 512-520.",
+            "doi": "10.1111/aaa",
+            "url": "https://doi.org/10.1111/aaa"
+          }
+        ],
+        "by": "claude (single extractor pass)",
+        "verified_by": null
+      }
+    ],
+    "excluded": []
+  },
+  {
+    "outcome": "postoperative nausea and vomiting (PONV)",
+    "measure_type": "RR",
+    "pooled": true,
+    "model": "random",
+    "model_source": "protocol",
+    "tau2_estimator": "pm",
+    "ci_method": "hksj",
+    "scale": "log",
+    "studies": [
+      {
+        "study_id": "crossref:C2001",
+        "author_year": "Kim et al. (2022)",
+        "effect": -0.9162907318741551,
+        "variance": 0.10666666666666669,
+        "se": 0.32659863237109044,
+        "display_estimate": 0.39999999999999997,
+        "continuity_correction_applied": false,
+        "source": {
+          "quote": "PONV occurred in 10 of 60 (16.7%) patients in the Drug A group versus 25 of 60 (41.7%) in the placebo group.",
+          "locator": "Table 2",
+          "notes": null
+        },
+        "reports": [
+          {
+            "citation": "Kim JH, Lee SY. (2022). Effect of Drug A on postoperative nausea and vomiting: a randomized controlled trial. Journal of Anesthesia, 36(4), 512-520.",
+            "doi": "10.1111/aaa",
+            "url": "https://doi.org/10.1111/aaa"
+          }
+        ],
+        "by": "claude (single extractor pass)",
+        "verified_by": null,
+        "ci_low": -1.556412293770727,
+        "ci_high": -0.27616916997758323,
+        "display_ci_low": 0.2108913317087015,
+        "display_ci_high": 0.7586845732521792
+      },
+      {
+        "study_id": "openalex:W1002",
+        "author_year": "Park (2021)",
+        "effect": -0.9162907318741551,
+        "variance": 0.1386363636363636,
+        "se": 0.37233904393222533,
+        "display_estimate": 0.39999999999999997,
+        "continuity_correction_applied": false,
+        "source": {
+          "quote": "PONV occurred in 8 of 55 (14.5%) patients receiving Drug B versus 20 of 55 (36.4%) receiving placebo.",
+          "locator": "Table 3",
+          "notes": null
+        },
+        "reports": [
+          {
+            "citation": "Park JY. (2021). Randomized trial of Drug B for prevention of postoperative nausea and vomiting. Anesthesia & Analgesia, 133(2), 401-408.",
+            "doi": "10.1111/bbb",
+            "url": "https://doi.org/10.1111/bbb"
+          }
+        ],
+        "by": "claude (single extractor pass)",
+        "verified_by": null,
+        "ci_low": -1.6460618537757352,
+        "ci_high": -0.186519609972575,
+        "display_ci_low": 0.19280772045074973,
+        "display_ci_high": 0.8298422886072654
+      },
+      {
+        "study_id": "openalex:W1003",
+        "author_year": "Choi (2020)",
+        "effect": -0.38299225225610584,
+        "variance": 0.08135198135198135,
+        "se": 0.28522268730236267,
+        "display_estimate": 0.6818181818181818,
+        "continuity_correction_applied": false,
+        "source": {
+          "quote": "PONV occurred in 15 of 65 (23.1%) patients in the Drug C group versus 22 of 65 (33.8%) in the placebo group.",
+          "locator": "Table 2",
+          "notes": null
+        },
+        "reports": [
+          {
+            "citation": "Choi HJ. (2020). Pain outcomes after Drug C: a randomized controlled trial. Pain Medicine, 21(9), 1801-1809.",
+            "doi": "10.1111/ccc",
+            "url": "https://doi.org/10.1111/ccc"
+          }
+        ],
+        "by": "claude (single extractor pass)",
+        "verified_by": "Dr. Reviewer",
+        "ci_low": -0.9420184513519938,
+        "ci_high": 0.17603394683978207,
+        "display_ci_low": 0.38984016727838877,
+        "display_ci_high": 1.1924785388414798
+      }
+    ],
+    "excluded": [],
+    "pooled_effect": {
+      "model": "random",
+      "tau2_estimator": "pm",
+      "ci_method": "hksj",
+      "k": 3,
+      "pooled_effect": -0.6894930659666276,
+      "se": 0.18643184967744142,
+      "ci_low": -1.4916445728935126,
+      "ci_high": 0.11265844096025734,
+      "tau2": 0.0003762276037756943,
+      "tau2_truncated": false,
+      "ci_caution": "k=3 < 5: the modified HKSJ confidence interval can be anti-conservative (narrower than its nominal coverage) with this few studies (IntHout et al. 2014; R\u00f6ver et al. 2015) -- interpret with caution.",
+      "pi_low": -3.071120646499593,
+      "pi_high": 1.6921345145663376
+    },
+    "display_estimate": 0.5018303995047213,
+    "display_ci_low": 0.22500231838589013,
+    "display_ci_high": 1.1192495778428415,
+    "display_pi_low": 0.04636916229081834,
+    "display_pi_high": 5.431061020417318,
+    "sensitivity": {
+      "model": "fixed",
+      "tau2_estimator": "pm",
+      "ci_method": "hksj",
+      "k": 3,
+      "pooled_effect": -0.689304595760267,
+      "se": 0.18645194460771866,
+      "ci_low": -1.4915425641937636,
+      "ci_high": 0.11293337267322945,
+      "tau2": 0.0,
+      "tau2_truncated": false,
+      "ci_caution": "k=3 < 5: the modified HKSJ confidence interval can be anti-conservative (narrower than its nominal coverage) with this few studies (IntHout et al. 2014; R\u00f6ver et al. 2015) -- interpret with caution.",
+      "pi_low": null,
+      "pi_high": null,
+      "display_estimate": 0.5019249884969974,
+      "display_ci_low": 0.22502527175053072,
+      "display_ci_high": 1.1195573373510068,
+      "display_pi_low": null,
+      "display_pi_high": null
+    },
+    "forest_plot_svg": "<TOPIC_DIR>/synthesis/forest_postoperative-nausea-and-vomiting-ponv-rr.svg",
+    "funnel_plot_svg": null
+  },
+  {
+    "outcome": "postoperative pain score",
+    "measure_type": "MD",
+    "pooled": true,
+    "model": "random",
+    "model_source": "protocol",
+    "tau2_estimator": "pm",
+    "ci_method": "hksj",
+    "scale": "natural",
+    "studies": [
+      {
+        "study_id": "openalex:W1003",
+        "author_year": "Choi (2020)",
+        "effect": -0.7999999999999998,
+        "variance": 0.04461538461538462,
+        "se": 0.21122354181147665,
+        "display_estimate": -0.7999999999999998,
+        "continuity_correction_applied": false,
+        "source": {
+          "quote": "Mean pain score (0-10 NRS) at 24h was 3.2 (SD 1.1) in the Drug C group and 4.0 (SD 1.3) in the placebo group.",
+          "locator": "Table 4",
+          "notes": null
+        },
+        "reports": [
+          {
+            "citation": "Choi HJ. (2020). Pain outcomes after Drug C: a randomized controlled trial. Pain Medicine, 21(9), 1801-1809.",
+            "doi": "10.1111/ccc",
+            "url": "https://doi.org/10.1111/ccc"
+          }
+        ],
+        "by": "claude (single extractor pass)",
+        "verified_by": "Dr. Reviewer",
+        "ci_low": -1.2139905379029887,
+        "ci_high": -0.3860094620970108,
+        "display_ci_low": -1.2139905379029887,
+        "display_ci_high": -0.3860094620970108
+      },
+      {
+        "study_id": "openalex:W1004",
+        "author_year": "Jung (2019)",
+        "effect": -0.7000000000000002,
+        "variance": 0.049633333333333335,
+        "se": 0.2227853974867593,
+        "display_estimate": -0.7000000000000002,
+        "continuity_correction_applied": false,
+        "source": {
+          "quote": "Mean pain score (0-10 NRS) at 24h was 3.5 (SD 1.0) in the Drug D group and 4.2 (SD 1.2) in the comparison group.",
+          "locator": "Table 3",
+          "notes": null
+        },
+        "reports": [
+          {
+            "citation": "Jung MK. (2019). Cohort study of Drug D and postoperative pain. Journal of Clinical Anesthesia, 55, 88-94.",
+            "doi": "10.1111/ddd",
+            "url": "https://doi.org/10.1111/ddd"
+          }
+        ],
+        "by": "claude (single extractor pass)",
+        "verified_by": null,
+        "ci_low": -1.1366513587997389,
+        "ci_high": -0.26334864120026147,
+        "display_ci_low": -1.1366513587997389,
+        "display_ci_high": -0.26334864120026147
+      }
+    ],
+    "excluded": [],
+    "pooled_effect": {
+      "model": "random",
+      "tau2_estimator": "pm",
+      "ci_method": "hksj",
+      "k": 2,
+      "pooled_effect": -0.7526620779715427,
+      "se": 0.049929083116690705,
+      "ci_low": -1.3870712303416988,
+      "ci_high": -0.11825292560138678,
+      "tau2": 0.0,
+      "tau2_truncated": false,
+      "ci_caution": "k=2 < 5: the modified HKSJ confidence interval can be anti-conservative (narrower than its nominal coverage) with this few studies (IntHout et al. 2014; R\u00f6ver et al. 2015) -- interpret with caution.",
+      "pi_low": null,
+      "pi_high": null
+    },
+    "display_estimate": -0.7526620779715427,
+    "display_ci_low": -1.3870712303416988,
+    "display_ci_high": -0.11825292560138678,
+    "display_pi_low": null,
+    "display_pi_high": null,
+    "sensitivity": {
+      "model": "fixed",
+      "tau2_estimator": "pm",
+      "ci_method": "hksj",
+      "k": 2,
+      "pooled_effect": -0.7526620779715427,
+      "se": 0.049929083116690705,
+      "ci_low": -1.3870712303416988,
+      "ci_high": -0.11825292560138678,
+      "tau2": 0.0,
+      "tau2_truncated": false,
+      "ci_caution": "k=2 < 5: the modified HKSJ confidence interval can be anti-conservative (narrower than its nominal coverage) with this few studies (IntHout et al. 2014; R\u00f6ver et al. 2015) -- interpret with caution.",
+      "pi_low": null,
+      "pi_high": null,
+      "display_estimate": -0.7526620779715427,
+      "display_ci_low": -1.3870712303416988,
+      "display_ci_high": -0.11825292560138678,
+      "display_pi_low": null,
+      "display_pi_high": null
+    },
+    "forest_plot_svg": "<TOPIC_DIR>/synthesis/forest_postoperative-pain-score-md.svg",
+    "funnel_plot_svg": null
+  }
+]
