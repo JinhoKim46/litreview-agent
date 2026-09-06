@@ -112,11 +112,15 @@ After the `review-protocol` skill finishes, read `results/<TOPIC>/protocol.json`
     "translation_used": false,
     "translation_languages": [],
     "coverage_gaps": []
-  }
+  },
+  "signed_at": "2026-09-06T10:12:00Z",
+  "signed_by": "..."
 }
 ```
 
 Some fields are legitimately `null` and are not gaps: `registration.id` when `registration.status` is `"unregistered"`, `eligibility.date_range.to` for an open-ended date range, and `scope.region` for a `"global"` review. Treat only a genuinely unanswered field (an empty `framework_fields` entry, a `criterion`/`included` value the reviewer never actually gave) as a gap. If any such field is missing, do not proceed to Step 6 — go back into the `review-protocol` skill's interview for the missing field specifically, rather than inventing a value or leaving it blank. This file is read verbatim by every later command (`/prisma-search`, `/prisma-screen`, `/prisma-report`) — a gap here becomes a silent gap everywhere downstream.
+
+`signed_at`/`signed_by` should already be present too — `review-protocol`'s own Phase 2 stamps them (`tools/sign_protocol.py`) once every field above is populated, the G-Protocol gate `tools/label_gate.py`'s systematic-review conduct floor depends on. If they're missing, the skill's sign-off call didn't run (or was skipped); go back and run it — do not hand-write these two fields, since the whole point is that `sign_protocol.py` independently re-verified completeness first.
 
 ---
 
