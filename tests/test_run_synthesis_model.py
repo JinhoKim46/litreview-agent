@@ -295,6 +295,17 @@ class SynthesisFamilyDispatchTests(unittest.TestCase):
                 run(path, os.path.join(tmp, "out"), model="fixed", synthesis_family="swim")
             self.assertIn("swim", str(ctx.exception).lower())
 
+    def test_descriptive_refuses_cleanly_rather_than_fabricate_statistics(self):
+        # docs/PLAN.md M3: a scoping review's manifest allows only
+        # "descriptive" -- pooling is forbidden by design, so this must
+        # refuse cleanly (never crash on an unrecognized family, never
+        # silently fall back to another family's pooling logic).
+        with tempfile.TemporaryDirectory() as tmp:
+            path = self._fixture_path(tmp)
+            with self.assertRaises(SynthesisPlanError) as ctx:
+                run(path, os.path.join(tmp, "out"), model="fixed", synthesis_family="descriptive")
+            self.assertIn("descriptive", str(ctx.exception).lower())
+
     def test_invalid_synthesis_family_raises(self):
         with tempfile.TemporaryDirectory() as tmp:
             path = self._fixture_path(tmp)

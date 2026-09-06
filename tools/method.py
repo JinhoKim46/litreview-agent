@@ -162,6 +162,14 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--topic", required=True, help="review slug under results/")
     parser.add_argument("--pack", help="override the pack id to resolve against (default: generic, or protocol.json.pack.id)")
+    parser.add_argument(
+        "--require-capture-mode",
+        help="the capture.mode a caller's stage expects (e.g. \"extraction\"); exit 1 with a refusal "
+             "if the resolved manifest declares a different mode -- docs/PLAN.md M3: a command whose "
+             "stage does not apply to this review's method must refuse and point to the stage that "
+             "does (references/docs/design/multi-method-consensus.md §3.2's '—' legend), never "
+             "silently run its own stage's logic against a manifest that asked for something else.",
+    )
     args = parser.parse_args(argv)
 
     try:
@@ -170,13 +178,26 @@ def main(argv: list[str] | None = None) -> int:
         print(f"Error: {exc}", file=sys.stderr)
         return 1
 
-    print(json.dumps({
+    capture = resolved["manifest"]["capture"]
+    output = {
         "method_id": resolved["method_id"],
         "recorded": resolved["recorded"],
         "label": resolved["manifest"]["label"],
         "pack_id": resolved["pack_id"],
         "pack_loaded": resolved["pack"] is not None,
-    }, indent=2))
+        "capture_mode": capture["mode"],
+    }
+
+    if args.require_capture_mode and capture["mode"] != args.require_capture_mode:
+        output["refused"] = True
+        output["reason"] = (
+            f"{resolved['method_id']!r}'s capture stage uses mode {capture['mode']!r}, not "
+            f"{args.require_capture_mode!r} -- this command's stage does not apply to this review's method."
+        )
+        print(json.dumps(output, indent=2))
+        return 1
+
+    print(json.dumps(output, indent=2))
     return 0
 
 

@@ -29,6 +29,21 @@ State the resolved `<TOPIC>` back to the reviewer before proceeding.
 
 ---
 
+## Step 0.5: Confirm This Review's Capture Stage Is Extraction
+
+`/prisma-extract` only builds `extraction_table.json`, which is what a method manifest's `capture.mode: "extraction"` policy calls for (`methods/systematic_review.json`). A different method (a scoping review's `capture.mode: "charting"`, a systematic mapping study's `"classification"`) uses a different capture stage entirely — running this command's extraction logic against one of those would silently produce the wrong artifact instead of the one that review actually needs.
+
+Run this exact command via the `Bash` tool (pre-allowlisted — `Bash(python3 tools/method.py:*)`):
+
+```bash
+python3 tools/method.py --topic <TOPIC> --require-capture-mode extraction
+```
+
+1. If it exits non-zero (prints `"refused": true`), **stop the entire command.** Tell the reviewer plainly which method this review is using (`method_id` in the printed JSON) and that `/prisma-extract` doesn't apply to it — point at `docs/ROADMAP.md`'s method taxonomy for what does (as of this writing, charting/classification support for scoping reviews and systematic mapping studies has no shipped command yet; say so rather than imply one exists). Never attempt to "extract" from a charting- or classification-mode review anyway just because the reviewer wants a table.
+2. If it exits `0`, continue to Step 1. This is the deterministic decision this step exists to make — do not second-guess it by reading `protocol.json` yourself and deciding capture mode "seems fine."
+
+---
+
 ## Step 1: Validate the Screening Ledger Before Touching Anything
 
 `/prisma-extract` must never build on an incomplete screening record. Per PRISMA Item 16b, every full-text **exclude** (or **not_retrieved**) decision needs a reason — check this now, before any extraction work starts, not partway through.

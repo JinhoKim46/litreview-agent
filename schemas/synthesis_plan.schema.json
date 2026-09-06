@@ -14,9 +14,9 @@
     },
     "synthesis_family": {
       "type": "string",
-      "enum": ["pairwise_iv", "structured_narrative", "swim"],
+      "enum": ["pairwise_iv", "structured_narrative", "swim", "descriptive"],
       "default": "pairwise_iv",
-      "description": "Which synthesis family run_synthesis.py dispatches to (docs/PLAN.md M1; must be one of the resolved method manifest's synthesis.families_allowed -- methods/systematic_review.json allows all three). \"pairwise_iv\" is today's inverse-variance pairwise pooling (unchanged default, so a plan predating this field behaves identically). \"structured_narrative\" never attempts pooling for any outcome, regardless of k. \"swim\" (Synthesis without Meta-analysis) is a recognized family with no engine yet -- run_synthesis.py refuses cleanly rather than fabricate untested vote-counting statistics; see synthesis/run_synthesis.py's SWIM_NOT_IMPLEMENTED message."
+      "description": "Which synthesis family run_synthesis.py dispatches to (docs/PLAN.md M1/M3; must be one of the resolved method manifest's synthesis.families_allowed -- methods/systematic_review.json allows the first three). \"pairwise_iv\" is today's inverse-variance pairwise pooling (unchanged default, so a plan predating this field behaves identically). \"structured_narrative\" never attempts pooling for any outcome, regardless of k. \"swim\" (Synthesis without Meta-analysis) and \"descriptive\" (a scoping review's tabulation/charting summary -- docs/PLAN.md M3) are recognized families with no engine yet -- run_synthesis.py refuses cleanly rather than fabricate untested statistics; see synthesis/run_synthesis.py's SWIM_NOT_IMPLEMENTED/DESCRIPTIVE_NOT_IMPLEMENTED messages. In practice a scoping review's protocol never elicits this file at all (review-protocol only writes one when pooling is expected), so \"descriptive\" here covers a hand-authored plan, not the common path."
     },
     "tau2_estimator": {
       "type": "string",

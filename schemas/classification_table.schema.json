@@ -1,0 +1,70 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://prisma-flow.local/schemas/classification_table.schema.json",
+  "title": "classification_table.json",
+  "description": "A systematic mapping study's classified-study table (docs/PLAN.md M3; references/docs/design/multi-method-consensus.md §3.1 S5, §3.3 'Systematic mapping study'). Written by the (not-yet-shipped) evidence-mapping skill once a method manifest's capture.mode is \"classification\". The scheme is built by keywording a sample (pack-supplied candidate facets; Wieringa research types), frozen, then applied to every study; a calibration re-code (inter-rater when two coders, delayed intra-rater re-code of >=10 records when one) discloses agreement/disagreement rather than hiding it.",
+  "type": "object",
+  "required": ["framework_version", "topic", "scheme_frozen", "studies"],
+  "additionalProperties": false,
+  "properties": {
+    "framework_version": {"type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$"},
+    "topic": {"type": "string"},
+    "scheme_frozen": {
+      "type": "boolean",
+      "description": "False while facets are still being built by keywording a sample; once true, facets[] may no longer change without a documented scheme amendment."
+    },
+    "facets": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "categories"],
+        "additionalProperties": false,
+        "properties": {
+          "name": {"type": "string"},
+          "categories": {"type": "array", "items": {"type": "string"}, "minItems": 1}
+        }
+      },
+      "description": "The frozen classification scheme's facets and their allowed categories -- empty while scheme_frozen is false."
+    },
+    "calibration": {
+      "type": ["object", "null"],
+      "default": null,
+      "additionalProperties": false,
+      "properties": {
+        "mode": {"type": "string", "enum": ["inter_rater", "intra_rater_delayed"]},
+        "sample_size": {"type": "integer", "minimum": 0},
+        "agreement": {"type": ["number", "null"], "description": "Simple agreement or a chance-corrected statistic, whichever was computed -- disclosed either way, never hidden."},
+        "disagreements": {"type": "array", "items": {"type": "string"}, "default": []}
+      },
+      "description": "Recorded once the calibration re-code has run (docs/PLAN.md M3 exit criterion: bulk coding is blocked until scheme_frozen is true; calibration itself is disclosed, not gated)."
+    },
+    "studies": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["record_id", "codes", "by"],
+        "additionalProperties": false,
+        "properties": {
+          "record_id": {"type": "string"},
+          "codes": {
+            "type": "object",
+            "description": "One key per frozen facets[] name, value one of that facet's categories (or an array of categories for a multi-valued facet).",
+            "propertyNames": {"type": "string"}
+          },
+          "source": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "quote": {"type": ["string", "null"]},
+              "page": {"type": ["string", "null"]},
+              "hash": {"type": ["string", "null"]}
+            }
+          },
+          "suggested_by": {"type": "string", "enum": ["llm", "connector"], "default": "llm"},
+          "by": {"type": "string"},
+          "verified_by": {"type": ["string", "null"], "default": null}
+        }
+      }
+    }
+  }
+}

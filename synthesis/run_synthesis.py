@@ -108,16 +108,29 @@ ALL_MEASURES = DICHOTOMOUS_MEASURES | CONTINUOUS_MEASURES
 FUNNEL_MIN_K = 10
 POOL_MIN_K = 2
 
-# Synthesis families a systematic review's manifest allows (docs/PLAN.md M1;
-# methods/systematic_review.json's synthesis.families_allowed). "swim" is a
-# real, recognized family with no engine yet -- see run() -- rather than a
-# silently-ignored value or a fabricated implementation of untested
-# vote-counting statistics.
-SYNTHESIS_FAMILIES = ("pairwise_iv", "structured_narrative", "swim")
+# Synthesis families any method manifest may allow (docs/PLAN.md M1/M3;
+# methods/_schema.json's synthesis.families_allowed enum). "swim" and
+# "descriptive" are real, recognized families with no engine yet -- see
+# run() -- rather than silently-ignored values or fabricated
+# implementations of untested statistics. "descriptive" is what a scoping
+# review's manifest declares (references/docs/design/multi-method-consensus.md
+# §3.2: "R descriptive (families_allowed: [descriptive])") -- pooling is
+# forbidden for scoping reviews by design, so refusing cleanly here (rather
+# than crashing on an unrecognized family, or silently treating it as
+# "structured_narrative") is the correct M3 exit-criterion behavior:
+# "/prisma-synthesize on it refuses pooling".
+SYNTHESIS_FAMILIES = ("pairwise_iv", "structured_narrative", "swim", "descriptive")
 SWIM_NOT_IMPLEMENTED = (
     "synthesis_family=\"swim\" (Synthesis without Meta-analysis) is a recognized family "
     "with no engine in this framework yet -- export effect_sizes.json's inputs and run SWiM "
     "manually, or choose \"pairwise_iv\"/\"structured_narrative\" in synthesis_plan.json."
+)
+DESCRIPTIVE_NOT_IMPLEMENTED = (
+    "synthesis_family=\"descriptive\" (a scoping review's tabulation/charting summary, never "
+    "pooled) is a recognized family with no engine in this framework yet -- see "
+    "tools/chart_summary.py (not yet shipped, docs/PLAN.md M3) for the intended replacement; "
+    "there is no manual workaround that pools this data, since scoping reviews forbid pooling "
+    "by design."
 )
 
 
@@ -675,6 +688,8 @@ def run(extraction_table_path, out_dir, model, model_source="protocol", k_min=PO
         raise SynthesisPlanError(f"synthesis_family must be one of {SYNTHESIS_FAMILIES}, got {synthesis_family!r}")
     if synthesis_family == "swim":
         raise SynthesisPlanError(SWIM_NOT_IMPLEMENTED)
+    if synthesis_family == "descriptive":
+        raise SynthesisPlanError(DESCRIPTIVE_NOT_IMPLEMENTED)
     os.makedirs(out_dir, exist_ok=True)
     studies = load_studies(extraction_table_path)
     rows = flatten_rows(studies)
