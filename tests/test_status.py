@@ -91,6 +91,64 @@ class StudyIdTests(unittest.TestCase):
         self.assertEqual(status.study_id({}), "UNKNOWN_STUDY")
 
 
+class SinceLastVersionTests(unittest.TestCase):
+    """docs/ROADMAP.md M5's "reports what changed" delta, computed from
+    protocol.json.versions[] (tools/versioning.py's own snapshots)."""
+
+    def test_none_with_fewer_than_two_versions(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            _write_protocol(tmp, versions=[{"version": 1, "date": "2026-01-01", "record_ids": ["a"], "n_records": 1, "n_included": 0}])
+            self.assertIsNone(status.since_last_version(Path(tmp)))
+
+    def test_none_with_no_protocol_at_all(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            self.assertIsNone(status.since_last_version(Path(tmp)))
+
+    def test_diffs_the_last_two_versions(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            _write_protocol(tmp, versions=[
+                {"version": 1, "date": "2026-01-01", "record_ids": ["a", "b"], "n_records": 2, "n_included": 1},
+                {"version": 2, "date": "2026-02-01", "record_ids": ["a", "b", "c"], "n_records": 3, "n_included": 2},
+            ])
+            delta = status.since_last_version(Path(tmp))
+            self.assertEqual(delta["from_version"], 1)
+            self.assertEqual(delta["to_version"], 2)
+            self.assertEqual(delta["new_records"], 1)
+            self.assertEqual(delta["new_record_ids"], ["c"])
+            self.assertEqual(delta["removed_records"], 0)
+            self.assertEqual(delta["included_delta"], 1)
+
+    def test_only_compares_the_most_recent_pair_not_the_full_history(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            _write_protocol(tmp, versions=[
+                {"version": 1, "date": "2026-01-01", "record_ids": ["a"], "n_records": 1, "n_included": 0},
+                {"version": 2, "date": "2026-02-01", "record_ids": ["a", "b"], "n_records": 2, "n_included": 0},
+                {"version": 3, "date": "2026-03-01", "record_ids": ["a", "b", "c"], "n_records": 3, "n_included": 0},
+            ])
+            delta = status.since_last_version(Path(tmp))
+            self.assertEqual((delta["from_version"], delta["to_version"]), (2, 3))
+            self.assertEqual(delta["new_record_ids"], ["c"])
+
+    def test_records_reclassified_as_duplicates_show_as_removed(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            _write_protocol(tmp, versions=[
+                {"version": 1, "date": "2026-01-01", "record_ids": ["a", "b"], "n_records": 2, "n_included": 0},
+                {"version": 2, "date": "2026-02-01", "record_ids": ["a"], "n_records": 1, "n_included": 0},
+            ])
+            delta = status.since_last_version(Path(tmp))
+            self.assertEqual(delta["removed_records"], 1)
+            self.assertEqual(delta["removed_record_ids"], ["b"])
+
+    def test_included_delta_can_be_negative(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            _write_protocol(tmp, versions=[
+                {"version": 1, "date": "2026-01-01", "record_ids": ["a"], "n_records": 1, "n_included": 3},
+                {"version": 2, "date": "2026-02-01", "record_ids": ["a"], "n_records": 1, "n_included": 1},
+            ])
+            delta = status.since_last_version(Path(tmp))
+            self.assertEqual(delta["included_delta"], -2)
+
+
 class ComputeStageTests(unittest.TestCase):
     def test_not_started(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -312,6 +370,33 @@ class PrintFullTests(unittest.TestCase):
             self.assertIn("PRISMA review status", out)
             self.assertIn("WARNING: Search coverage", out)
             self.assertIn("Current stage: search_incomplete", out)
+
+    def test_no_delta_section_with_fewer_than_two_versions(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            _write_protocol(tmp)
+            s = status.compute(Path(tmp))
+            self.assertIsNone(s["delta"])
+            buf = io.StringIO()
+            with redirect_stdout(buf):
+                status.print_full(s)
+            self.assertNotIn("Living-mode delta", buf.getvalue())
+
+    def test_delta_section_printed_once_two_versions_exist(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            _write_protocol(tmp, versions=[
+                {"version": 1, "date": "2026-01-01", "record_ids": ["a"], "n_records": 1, "n_included": 0},
+                {"version": 2, "date": "2026-02-01", "record_ids": ["a", "b"], "n_records": 2, "n_included": 1},
+            ])
+            s = status.compute(Path(tmp))
+            self.assertIsNotNone(s["delta"])
+            buf = io.StringIO()
+            with redirect_stdout(buf):
+                status.print_full(s)
+            out = buf.getvalue()
+            self.assertIn("Living-mode delta (version 1 [2026-01-01] -> version 2 [2026-02-01])", out)
+            self.assertIn("New records since last version: 1", out)
+            self.assertIn("- b", out)
+            self.assertIn("Included count change since last version: +1", out)
 
 
 class PrintCondensedTests(unittest.TestCase):
