@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://prisma-flow.local/schemas/protocol_method.schema.json",
   "title": "protocol.json.method",
-  "description": "Which method manifest (methods/*.json) governs this review, recorded once at protocol time. Read by tools/method.py. Absence of this whole block (a legacy protocol.json predating this schema) means \"systematic_review\", recorded=false -- see docs/PLAN.md M1's migration path, not an error.",
+  "description": "Which method manifest (methods/*.json) governs this review, recorded once at protocol time. Read by tools/method.py. Absence of this whole block (a legacy protocol.json predating this schema) means \"systematic_review\", recorded=false -- see docs/PLAN.md M1's migration path, not an error. The `routing`/`signed_at`/`signed_by` fields (docs/PLAN.md M2; references/docs/design/multi-method-consensus.md §2.3) are only written once /prisma-init's Step 0.5 routing interview exists; a protocol.json written before that (or under M1) carries only `id` and, optionally, `recorded` -- every M2 field is optional for exactly that reason.",
   "type": "object",
   "required": ["id"],
   "additionalProperties": false,
@@ -16,6 +16,89 @@
       "type": "boolean",
       "default": true,
       "description": "True when a reviewer (or /prisma-init's routing, from docs/PLAN.md M2 onward) actually chose this method before the first protocol-driven run. tools/method.py sets this false only for its own defaulted resolution when the block is absent entirely -- never hand-set false in a real protocol.json."
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "description": "The methods/<id>.json manifest's own \"version\" at the moment this review recorded it -- lets label_gate.py and /prisma-status notice the manifest has moved on since routing, without forcing a re-route."
+    },
+    "synthesis_family": {
+      "type": ["string", "null"],
+      "default": null,
+      "description": "Set by routing rows R6e/R6f (tools/route.py) when the chosen method is systematic_review and the goal is an answerable comparison; null for methods that never pool (reconnaissance, scoping_review, systematic_mapping_study). Distinct from synthesis_plan.json's own synthesis_family, which review-protocol writes at G-Protocol once this value has narrowed the plan elicitation to pairwise_iv."
+    },
+    "profile_flags": {
+      "type": "array",
+      "items": {"type": "string"},
+      "default": [],
+      "description": "Profiles offered at routing (R7) and accepted by the reviewer, e.g. [\"rapid\"], [\"single_reviewer\"]. Not method choices -- label_gate.py reads these to compute e.g. the rapid label from shortcuts[], never from calendar time."
+    },
+    "modes": {
+      "type": "array",
+      "items": {"type": "string"},
+      "default": [],
+      "description": "Maintenance modes layered over the chosen method, e.g. [\"living\"] when R1 resolves to LIVING(base). A mode, unlike a method, has no manifest of its own."
+    },
+    "pack": {
+      "type": ["string", "null"],
+      "default": null,
+      "description": "R9 pack resolution result (tools/route.py resolve_pack()) -- a packs/<id>.json field pack, or null until packs ship (docs/PLAN.md M3)."
+    },
+    "output_profiles": {
+      "type": "array",
+      "items": {"type": "string"},
+      "default": [],
+      "description": "Extra deliverables the chosen method produces beyond its default output, e.g. [\"prior_work_check\", \"background_section\"] for reconnaissance (R3)."
+    },
+    "routing": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["table_version", "answers", "recommended_id", "chosen_id"],
+      "properties": {
+        "table_version": {
+          "type": "string",
+          "pattern": "^\\d+\\.\\d+\\.\\d+$",
+          "description": "methods/_routing.json's own \"table_version\" at the moment this review was routed -- the audit trail for which rule set produced this recommendation."
+        },
+        "answers": {
+          "type": "object",
+          "description": "The Q1-Q6 answers elicited by /prisma-init Step 0.5 (§2.1), verbatim, as passed to tools.route.decide(). Schema-free here -- the answer vocabulary is owned by the routing table and its reference documentation, not duplicated into this schema."
+        },
+        "q0": {
+          "type": ["object", "null"],
+          "default": null,
+          "description": "The computed-after-Q1 orienting run and its human judgement: {raw_files[], human_judgement, registry_lookup: {date, result, url} | null}. Required for the systematic_review label's PROSPERO/OSF-lookup conduct-floor check (label_gate.py); null only before Q0 has run."
+        },
+        "recommended_id": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_]*$",
+          "description": "What tools.route.decide() recommended -- a method id, or a refused target's name (e.g. \"meta_aggregation\") when the row resolved to a refusal the reviewer then routed around by hand."
+        },
+        "chosen_id": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_]*$",
+          "description": "What the reviewer actually confirmed at G-Route (the first human gate) -- equal to recommended_id unless overridden (R10)."
+        },
+        "override_reason": {
+          "type": ["string", "null"],
+          "default": null,
+          "description": "Required when chosen_id != recommended_id; null otherwise. The label is still computed from recorded conduct regardless of this override."
+        },
+        "fallback_reason": {
+          "type": ["string", "null"],
+          "default": null,
+          "description": "Set when the routing table itself fell down the claims ladder (refused, or R7's afternoon-and-answer override) rather than the reviewer overriding by hand. Printed verbatim in the manuscript's Methods -- never paraphrased."
+        }
+      }
+    },
+    "signed_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the reviewer confirmed chosen_id at G-Route. Distinct from synthesis_plan.json's own signed_at and protocol.json's overall protocol sign-off."
+    },
+    "signed_by": {
+      "type": "string",
+      "description": "Reviewer id/name confirming the routing choice, for the audit trail label_gate.py's conduct-floor checks read."
     }
   }
 }
