@@ -75,9 +75,9 @@ class LoadPackTests(unittest.TestCase):
             method.load_pack("has-a-hyphen")
 
     def test_nonexistent_pack_returns_none_not_error(self):
-        # A pack id nothing ships yet (e.g. a later-milestone imaging pack)
-        # is the expected state for that id, not an error.
-        self.assertIsNone(method.load_pack("medical_imaging_prediction"))
+        # A pack id nothing ships yet is the expected state for that id,
+        # not an error.
+        self.assertIsNone(method.load_pack("some_future_pack_not_yet_shipped"))
 
     def test_generic_pack_loads_and_validates(self):
         # docs/PLAN.md M3: the first three shipped field packs.
@@ -95,6 +95,19 @@ class LoadPackTests(unittest.TestCase):
         pack = method.load_pack("cs_se")
         self.assertEqual(pack["confidence_framework"], "none")
         self.assertIn("snowballing", pack["search"]["primary_strategies_allowed"])
+
+    def test_medical_imaging_prediction_pack_loads_and_validates(self):
+        # docs/ROADMAP.md M5: first two domain packs.
+        pack = method.load_pack("medical_imaging_prediction")
+        self.assertEqual(pack["controlled_vocab"], "none")
+        self.assertEqual(pack["appraisal_instruments_by_design"], {})
+        self.assertEqual(pack["pooling_unit_identity_proposal"], ["dataset_id", "test_split"])
+
+    def test_image_reconstruction_pack_loads_and_validates(self):
+        pack = method.load_pack("image_reconstruction")
+        self.assertEqual(pack["controlled_vocab"], "none")
+        self.assertEqual(pack["appraisal_instruments_by_design"], {})
+        self.assertIn("dataset", pack["pooling_unit_identity_proposal"])
 
     def test_pack_reachable_via_must_be_an_installed_connector(self):
         # A pack naming a connector id that doesn't exist on disk must fail
@@ -205,9 +218,9 @@ class ResolveTests(unittest.TestCase):
 
     def test_pack_override_for_unshipped_pack_id_returns_none_pack(self):
         # An override naming a pack id nothing ships yet must still resolve
-        # (never an error) with pack=None -- e.g. before M5's imaging packs land.
-        resolved = method.resolve(self.SLUG, pack_id="medical_imaging_prediction")
-        self.assertEqual(resolved["pack_id"], "medical_imaging_prediction")
+        # (never an error) with pack=None.
+        resolved = method.resolve(self.SLUG, pack_id="some_future_pack_not_yet_shipped")
+        self.assertEqual(resolved["pack_id"], "some_future_pack_not_yet_shipped")
         self.assertIsNone(resolved["pack"])
 
     def test_recorded_pack_from_protocol_is_used_as_default(self):

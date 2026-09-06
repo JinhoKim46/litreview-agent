@@ -58,7 +58,7 @@ This is a simplified stand-in for the design's full "bounded existing-review sca
 
 ### Q2: Question focus
 
-If `CLAUDE.local.md`'s field-of-research/target-venue names a shipped pack (`clinical_interventions` or `cs_se` — check `packs/*.json`'s own `label`, don't guess from the field name alone), render `packs/<id>.json`'s own `question_template` instead of the generic wording below; otherwise (nothing on file, or it names a field with no shipped pack yet) use the generic template plainly rather than pretending a pack informed it: "Can you state your question as 'does/how well A, compared with B, affect C in D'?" — **Yes** · **Roughly** · **Not yet — it's an area, not a question**. Record as `question_focus`: `"focused"` | `"rough"` | `"forming"`.
+If `CLAUDE.local.md`'s field-of-research/target-venue names a shipped pack (`clinical_interventions`, `cs_se`, `medical_imaging_prediction`, or `image_reconstruction` — check `packs/*.json`'s own `label`, don't guess from the field name alone), render `packs/<id>.json`'s own `question_template` instead of the generic wording below; otherwise (nothing on file, or it names a field with no shipped pack yet) use the generic template plainly rather than pretending a pack informed it: "Can you state your question as 'does/how well A, compared with B, affect C in D'?" — **Yes** · **Roughly** · **Not yet — it's an area, not a question**. Record as `question_focus`: `"focused"` | `"rough"` | `"forming"`.
 
 ### Q3: Evidence type
 

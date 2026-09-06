@@ -1,0 +1,28 @@
+{
+  "id": "medical_imaging_prediction",
+  "label": "Medical imaging prediction models (diagnostic/prognostic ML)",
+  "version": "1.0.0",
+  "source_expectations": [
+    {"source": "OpenAlex", "role": "bibliographic", "standard": "PRISMA 2020 Item 6 (multidisciplinary bibliographic coverage)", "reachable_via": "openalex"},
+    {"source": "Crossref", "role": "bibliographic", "standard": "PRISMA 2020 Item 6 (DOI-registered scholarly metadata)", "reachable_via": "crossref"},
+    {"source": "Semantic Scholar", "role": "bibliographic", "standard": "PRISMA 2020 Item 6 (broad ML-literature coverage)", "reachable_via": "semanticscholar"},
+    {"source": "arXiv", "role": "preprint", "standard": "TRIPOD-AI 2024 (preprint-heavy field norm for ML methods papers)", "reachable_via": "arxiv"},
+    {"source": "PubMed/MEDLINE", "role": "bibliographic", "standard": "TRIPOD-AI 2024 (clinical-validation literature)", "reachable_via": "pubmed"},
+    {"source": "A benchmark leaderboard or model registry (e.g. Papers With Code)", "role": "grey", "standard": "TRIPOD-AI 2024 (model/benchmark registry check)", "reachable_via": null}
+  ],
+  "controlled_vocab": "none",
+  "search": {"primary_strategies_allowed": ["database"]},
+  "question_template": "does prediction model A, compared with baseline/model B, achieve higher performance metric C on imaging dataset D under evaluation protocol E?",
+  "framework_glosses": {
+    "Population": "imaging modality / anatomy / patient population under study",
+    "Intervention": "prediction model or AI method",
+    "Comparison": "baseline model, radiologist reader, or prior state-of-the-art",
+    "Outcome": "predictive performance metric (e.g. AUC, sensitivity/specificity, Dice)"
+  },
+  "default_capture_fields": ["year", "modality", "anatomy_or_task", "model_architecture", "dataset_id", "test_split", "sample_size", "main_metric", "external_validation", "code_available"],
+  "appraisal_instruments_by_design": {},
+  "confidence_framework": "none",
+  "pooling_unit_identity_proposal": ["dataset_id", "test_split"],
+  "preprint_eligibility_default": true,
+  "label_rule_additions": []
+}
