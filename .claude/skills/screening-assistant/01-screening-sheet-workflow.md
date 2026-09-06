@@ -1,5 +1,5 @@
 ---
-framework_version: 1.1.0
+framework_version: 1.2.0
 ---
 
 # Screening Sheet Workflow
@@ -30,14 +30,17 @@ One JSON object per **decision event** (not per record - a record can appear mul
 
 ```json
 {"record_id": "openalex:W123456789", "stage": "title_abstract", "decision": "include",
- "reason": null, "ai_suggestion": "include", "decided_at": "2026-09-04T14:03:11Z"}
+ "reason": null, "ai_suggestion": "include", "decided_at": "2026-09-04T14:03:11Z",
+ "by": null, "role": "decision", "eligibility_version": null,
+ "prev_hash": "3f2a…", "entry_hash": "9c1b…"}
 ```
 
 - `stage`: `"title_abstract"` or `"full_text"`.
-- `decision`: `"include"` or `"exclude"`. Never any other value.
-- `reason`: optional in general — `null` when left blank — but **required**, non-empty, human-written text when `stage == "full_text" and decision == "exclude"` (PRISMA Item 16b). A reviewer may also write one at title/abstract stage (e.g. to record which gate failed, per `review-protocol/02-eligibility-criteria.md`) — that's welcomed, never required.
+- `decision`: `"include"` or `"exclude"` at either stage; **`"not_retrieved"` is additionally valid at `stage == "full_text"` only** (a report that was sought but genuinely could not be obtained — PRISMA 2020's own "Reports not retrieved" box). Never any other value.
+- `reason`: optional in general — `null` when left blank — but **required**, non-empty, human-written text when `stage == "full_text"` and `decision` is `"exclude"` **or** `"not_retrieved"` (PRISMA Item 16b covers both: why it was excluded, or why it couldn't be retrieved, are equally reportable). A reviewer may also write one at title/abstract stage (e.g. to record which gate failed, per `review-protocol/02-eligibility-criteria.md`) — that's welcomed, never required.
 - `ai_suggestion`: `"include"`, `"exclude"`, `"unclear"`, or `null` if no suggestion was computed for this record (e.g. no `protocol.json` yet). Recorded for later human/AI agreement analysis - it is never itself a decision.
 - `decided_at`: ISO 8601 UTC, generated at import time, never backdated or guessed.
+- `by`, `role`, `eligibility_version`, `prev_hash`, `entry_hash`: written by `tools/ledger.py`'s `append_decisions` (§9.5), never hand-authored. `by` names who/what recorded the line (`null` if not tracked yet); `role` is `"decision"` for every line this skill writes today (a future dual-screening `"verification"` role is reserved but not produced here); `eligibility_version` pins the `protocol.json` eligibility version in effect at import time when tracked, else `null`; `prev_hash`/`entry_hash` hash-chain this line to the one before it (`tools/ledger.py verify` walks the chain) - never edit or reorder existing lines, that breaks the chain from that point forward.
 
 **Aggregation rule (used by every reader of this file, including this workflow's own export step):** group lines by `(record_id, stage)`, keep only the **last line in file order** for each key - not the line with the latest `decided_at`. This is an append-only log; file position *is* chronological truth, and it has no resolution limit. `decided_at` is informational metadata for humans/audits, never the aggregation key: an import writes one shared timestamp for every row it appends (§9.5), so two corrections landing in the same import, or two imports within the same second, would tie on `decided_at` - file order never ties. Never average, count, or otherwise combine multiple lines for the same key.
 
@@ -158,7 +161,7 @@ record_id,decision,reason,ai_suggestion,ai_rationale,ai_keywords,title,year,auth
 
 `possible_duplicate` is empty unless `possible_duplicates.jsonl` flagged this record, in which case it holds `"<other_id> (similarity 0.93)"` - read-only/advisory, import never looks at this column.
 
-- `decision` and `reason` start **empty** - the reviewer fills them in. `decision` accepts `include` or `exclude` (case-insensitive; normalized to lowercase on import). `reason` is optional except for a full-text `exclude`.
+- `decision` and `reason` start **empty** - the reviewer fills them in. `decision` accepts `include` or `exclude` (case-insensitive; normalized to lowercase on import); at full-text stage, `not_retrieved` is also accepted (a report sought but genuinely unobtainable - not representable via the Markdown checkbox template in §7, CSV only). `reason` is optional except for a full-text `exclude` or `not_retrieved`.
 - `ai_suggestion` / `ai_rationale` / `ai_keywords` are pre-filled, read-only in spirit (the reviewer can ignore them; they're not re-derived, checked against, or written to `screening_decisions.jsonl` on import - `ai_keywords` is a sheet-only convenience column, never part of the ledger schema in §1).
 - `authors` is `; `-joined so a single CSV field survives round-tripping through a spreadsheet app without being split into extra columns.
 
@@ -240,7 +243,7 @@ import csv, pathlib
 rows = list(csv.DictReader((topic_dir / "screening" / f"{stage}_sheet.csv").open(newline="")))
 ```
 
-For each row: `decision = (row["decision"] or "").strip().lower()`. `ai_suggestion = row["ai_suggestion"] or None`, with the literal `none` (§4) also mapped to `None`. Skip the row entirely (no error, just count it as still-undecided) if `decision` is empty. If `decision` is anything other than `"include"` or `"exclude"`, that row **fails validation** (§9.4) - list it by `record_id` with the literal bad value, don't silently coerce a typo.
+For each row: `decision = (row["decision"] or "").strip().lower()`. `ai_suggestion = row["ai_suggestion"] or None`, with the literal `none` (§4) also mapped to `None`. Skip the row entirely (no error, just count it as still-undecided) if `decision` is empty. Valid values are `"include"` or `"exclude"` at either stage, plus `"not_retrieved"` at full-text stage only. If `decision` is anything else, or is `"not_retrieved"` at `title_abstract` stage, that row **fails validation** (§9.4) - list it by `record_id` with the literal bad value, don't silently coerce a typo.
 
 ### 9.3 Markdown fallback parsing
 
@@ -257,9 +260,9 @@ Split the file on `^#### ` (one chunk per record block). For each chunk:
 
 ### 9.4 Validation gate — refuse the whole import, never partial
 
-Before writing **anything**, check every parsed decided row:
+Before writing **anything**, check every parsed decided row - the same rule `tools/ledger.py`'s `gate` command enforces before `/prisma-extract` runs, checked here too so a bad import is caught at the source rather than only discovered later:
 
-> `stage == "full_text" and decision == "exclude" and not (reason and reason.strip())`
+> `stage == "full_text" and decision in ("exclude", "not_retrieved") and not (reason and reason.strip())`
 
 If any row trips this, or any row has an invalid `decision` token (§9.2/§9.3 step 3), the **entire import is refused** - zero lines get appended, even for the rows that were fine. Report exactly which `record_id`s are the problem and why, e.g.:
 
@@ -276,26 +279,30 @@ Why whole-file refusal rather than best-effort partial import: a half-imported s
 
 ### 9.5 Write decisions
 
-For every row that passed validation and had a non-empty decision:
+For every row that passed validation and had a non-empty decision, call `tools/ledger.py`'s `append_decisions` - never hand-build the JSON lines. This is what adds `prev_hash`/`entry_hash` (§1) correctly, chained onto whatever is already in the ledger:
 
 ```python
-import json
+import sys
 from datetime import datetime, timezone
+sys.path.insert(0, ".")  # repo root, so "tools" is importable
+from tools.ledger import append_decisions
 
 now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-with (topic_dir / "screening_decisions.jsonl").open("a") as f:
-    for row in decided_rows:
-        f.write(json.dumps({
-            "record_id": row["record_id"],
-            "stage": stage,
-            "decision": row["decision"],
-            "reason": row.get("reason") or None,
-            "ai_suggestion": row.get("ai_suggestion"),
-            "decided_at": now,
-        }) + "\n")
+rows = [
+    {
+        "record_id": row["record_id"],
+        "stage": stage,
+        "decision": row["decision"],
+        "reason": row.get("reason") or None,
+        "ai_suggestion": row.get("ai_suggestion"),
+        "decided_at": now,
+    }
+    for row in decided_rows
+]
+append_decisions(topic_dir, rows)
 ```
 
-Always **append** (`"a"` mode) - never read-modify-rewrite the ledger. This is what makes re-importing a corrected sheet safe: the old line is still there, but §1's last-line-in-file-order aggregation means every downstream reader sees only the correction.
+`append_decisions` fills in `by: null`, `role: "decision"`, `eligibility_version: null` when the row doesn't set them (§1) - always **appends**, never reads-modifies-rewrites the ledger. This is what makes re-importing a corrected sheet safe: the old line is still there, but §1's last-line-in-file-order aggregation means every downstream reader sees only the correction. Run `python3 tools/ledger.py --topic <TOPIC> verify` after a bulk import if you want to confirm the chain is intact - not required on every import, but a good check after hand-editing the ledger file directly (which this skill's own workflow never does, but a reviewer might).
 
 ### 9.6 Import summary (the only thing that reaches the conversation)
 
