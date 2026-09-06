@@ -283,11 +283,22 @@ def _blocker_charting_table_matches_frozen_fields(topic_dir, manifest):
     return True, None
 
 
+def _blocker_classification_table_matches_frozen_scheme(topic_dir, manifest):
+    from tools.classification_gate import load_classification_table, verify_table as verify_classification_table
+
+    table = load_classification_table(topic_dir, manifest["id"])
+    offending = verify_classification_table(table)
+    if offending:
+        return False, f"{len(offending)} coded row(s) no longer match the frozen facets[]: " + ", ".join(offending[:10])
+    return True, None
+
+
 BLOCKER_FUNCTIONS = {
     "fulltext_exclusion_reasons_complete": lambda topic_dir, manifest: _blocker_fulltext_exclusion_reasons_complete(topic_dir),
     "appraisal_complete": _blocker_appraisal_complete,
     "references_verified": lambda topic_dir, manifest: _blocker_references_verified(topic_dir),
     "charting_table_matches_frozen_fields": _blocker_charting_table_matches_frozen_fields,
+    "classification_table_matches_frozen_scheme": _blocker_classification_table_matches_frozen_scheme,
 }
 
 

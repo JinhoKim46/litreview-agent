@@ -2,7 +2,7 @@
   "id": "systematic_mapping_study",
   "label": "Systematic mapping study",
   "aliases": ["SMS", "systematic map", "mapping review"],
-  "version": "1.1.0",
+  "version": "1.2.0",
   "family": "mapping",
   "question_frameworks": ["Petersen RQs", "Wieringa research types"],
   "search": {
@@ -35,7 +35,7 @@
       "criteria_changes", "coverage_gaps"
     ]
   },
-  "report_blockers": ["fulltext_exclusion_reasons_complete", "appraisal_complete", "references_verified"],
+  "report_blockers": ["fulltext_exclusion_reasons_complete", "appraisal_complete", "references_verified", "classification_table_matches_frozen_scheme"],
   "forbidden_forms": ["exhaustive_search", "comprehensive_search", "no_prior_work", "first_to", "novelty"],
   "profiles": [],
   "living": true,
