@@ -31,83 +31,31 @@ State the resolved `<TOPIC>` back to the reviewer before proceeding.
 
 ## Step 1: Validate the Screening Ledger Before Touching Anything
 
-`/prisma-extract` must never build on an incomplete screening record. Per PRISMA Item 16b, every full-text **exclude** decision needs a reason — check this now, before any extraction work starts, not partway through.
+`/prisma-extract` must never build on an incomplete screening record. Per PRISMA Item 16b, every full-text **exclude** (or **not_retrieved**) decision needs a reason — check this now, before any extraction work starts, not partway through.
 
-Run this via a `python3` subprocess (the ledger can run to thousands of lines across a large review; never open it with the `Read` tool):
+Run this exact command via the `Bash` tool (the ledger can run to thousands of lines across a large review; never open it with the `Read` tool):
 
-```python
-import json, pathlib, sys
-
-topic_dir = pathlib.Path("results/<TOPIC>")
-decisions_path = topic_dir / "screening_decisions.jsonl"
-events = (
-    [json.loads(l) for l in decisions_path.read_text().splitlines() if l.strip()]
-    if decisions_path.exists() else []
-)
-
-latest = {}
-for e in events:  # file order = append order = truth (see screening-assistant skill §1)
-    latest[(e["record_id"], e["stage"])] = e
-
-bad = [
-    (rid, e) for (rid, stage), e in latest.items()
-    if stage == "full_text" and e["decision"] == "exclude"
-    and not (e.get("reason") and e["reason"].strip())
-]
-
-if bad:
-    print("REFUSED")
-    for rid, e in bad:
-        print(f"{rid}\t(no reason recorded)")
-    sys.exit(1)
-
-print("OK", sum(1 for (_, s), e in latest.items() if s == "full_text" and e["decision"] == "include"))
+```bash
+python3 tools/ledger.py --topic <TOPIC> gate
 ```
 
-1. If this prints `REFUSED`, **stop the entire command**. Report exactly which `record_id`s are missing a full-text-exclude reason, and tell the reviewer to fix them (re-import a corrected `full_text_sheet.csv` via `/prisma-screen import --stage full_text`, or append a corrected ledger line by hand with a `reason`). Do not proceed to Step 2 for *any* record until this is clean — a partially-gated extraction pass is worse than an extraction pass that hasn't started.
+(This exact invocation is pre-allowlisted in `.claude/settings.json` — `Bash(python3 tools/ledger.py:*)`.)
+
+1. If this prints `REFUSED`, **stop the entire command**. Report exactly which `record_id`s are missing a reason (and for which decision), and tell the reviewer to fix them (re-import a corrected `full_text_sheet.csv` via `/prisma-screen import --stage full_text`, or append a corrected ledger line by hand with a `reason`). Do not proceed to Step 2 for *any* record until this is clean — a partially-gated extraction pass is worse than an extraction pass that hasn't started.
 2. If it prints `OK <n>`, note `<n>` (the number of full-text includes) and continue.
-3. If `screening_decisions.jsonl` doesn't exist at all, tell the reviewer no full-text screening has happened yet (run `/prisma-screen export --stage full_text` first) and stop.
+3. If `screening_decisions.jsonl` doesn't exist at all, the command prints `OK 0` (an empty ledger has nothing to refuse) — but a `0` here almost always means no full-text screening has happened yet (run `/prisma-screen export --stage full_text` first); confirm with the reviewer rather than silently proceeding with zero candidates.
 
 ---
 
 ## Step 2: Compute the Candidate Set
 
-Still via a `python3` subprocess (join against `records.jsonl`, which can also be large):
+Run this exact command via the `Bash` tool (joins against `records.jsonl`, which can also be large - never open it with the `Read` tool):
 
-```python
-import json, pathlib
-
-topic_dir = pathlib.Path("results/<TOPIC>")
-records = {
-    r["record_id"]: r
-    for r in (json.loads(l) for l in (topic_dir / "records.jsonl").read_text().splitlines() if l.strip())
-    if r.get("duplicate_of") is None
-}
-
-decisions_path = topic_dir / "screening_decisions.jsonl"
-events = [json.loads(l) for l in decisions_path.read_text().splitlines() if l.strip()]
-latest = {}
-for e in events:
-    latest[(e["record_id"], e["stage"])] = e
-
-full_text_includes = [
-    rid for (rid, stage), e in latest.items()
-    if stage == "full_text" and e["decision"] == "include"
-]
-
-extraction_path = topic_dir / "extraction_table.json"
-already = set()
-if extraction_path.exists():
-    table = json.loads(extraction_path.read_text())
-    already = {s["record_id"] for s in table.get("studies", [])}
-
-pending = [rid for rid in full_text_includes if rid not in already]
-
-for rid in full_text_includes:
-    r = records.get(rid, {})
-    status = "extracted" if rid in already else "PENDING"
-    print(f"{rid}\t{status}\t{r.get('title', '(record missing from records.jsonl)')}\t{r.get('year')}\t{r.get('url')}\t{r.get('doi')}")
+```bash
+python3 tools/ledger.py --topic <TOPIC> candidates
 ```
+
+(Same pre-allowlisted invocation as Step 1 - `Bash(python3 tools/ledger.py:*)`.) Each output line is `record_id<TAB>status<TAB>title<TAB>year<TAB>url<TAB>doi`, where `status` is `extracted` (already in `extraction_table.json`) or `PENDING`. Every full-text include appears exactly once, in ledger order - this is the full `full_text_includes` set; derive `pending` yourself as every row whose `status` is `PENDING`.
 
 1. Apply the run mode:
    - **Default (no `--record`, no `--redo`):** candidates = `pending` (full-text includes not yet in `extraction_table.json`).

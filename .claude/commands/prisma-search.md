@@ -305,15 +305,30 @@ This is purely additive and advisory - it never rewrites a line in `records.json
 
 ---
 
+## Step 7c: Check search completeness and known-item recall
+
+Run this exact command via the `Bash` tool:
+
+```bash
+python3 tools/search_preflight.py --topic <TOPIC>
+```
+
+(This exact invocation is pre-allowlisted in `.claude/settings.json` - `Bash(python3 tools/search_preflight.py:*)`.) It writes `results/<TOPIC>/search_status.json` and prints the same JSON: per-source completeness status (`complete`/`truncated`/`missing`), any source left unacknowledged (not named in `protocol.json.scope.coverage_gaps`), and - if the reviewer has recorded `protocol.json.known_items` (DOIs/PMIDs already known to be relevant) - which were found in `records.jsonl` and which are still missing.
+
+- **Unacknowledged incomplete sources**: tell the reviewer which sources are `truncated` or `missing` and not yet explained in `protocol.json.scope.coverage_gaps`. This is a disclosure requirement, not necessarily a blocker - same treatment as Step 6's truncation handling: re-run uncapped, or record the gap and proceed.
+- **Unacknowledged missing known items**: tell the reviewer exactly which known items weren't found (`id_type`, `id`, and their `note` if any). Ask them to either re-check the search strategy (a string-miss - the term set didn't catch this paper, route back to `keyword-expansion`) or record why it's expected to be missing (`expected_missing_reason` on that `protocol.json.known_items` entry, e.g. "not indexed by any enabled source"). Never silently proceed with an unexplained recall gap.
+
+---
+
 ## Step 8: Report and hand off
 
-Reply with a summary built only from Step 6's per-source lines and Step 7's JSON output - nothing re-derived by opening any data file:
+Reply with a summary built only from Step 6's per-source lines and Step 7/7c's JSON output - nothing re-derived by opening any data file:
 
 > **Search complete: `results/<TOPIC>/`**
 >
 > | Source | Retrieved | Total available | Truncated | |---|---|---|---| | *(one row per enabled source, from Step 6)* |
 >
-> - **Raw files this run:** `raw/<source>-<date>.json` per enabled source - **New records added:** N canonical, M marked as duplicates (D by DOI, P by PMID, T by title+author+year) - **Total distinct records now:** X (Y total lines including duplicates) - **Possible near-duplicates flagged (advisory):** *(from Step 7b's `new_possible_duplicates_flagged`, surfaced during screening - or "none")* - **Sources skipped or failed:** *(name them, or "none")* - **Coverage gaps on record:** *(from `protocol.json.scope.coverage_gaps`, or "none")*
+> - **Raw files this run:** `raw/<source>-<date>.json` per enabled source - **New records added:** N canonical, M marked as duplicates (D by DOI, P by PMID, T by title+author+year) - **Total distinct records now:** X (Y total lines including duplicates) - **Possible near-duplicates flagged (advisory):** *(from Step 7b's `new_possible_duplicates_flagged`, surfaced during screening - or "none")* - **Sources skipped or failed:** *(name them, or "none")* - **Coverage gaps on record:** *(from `protocol.json.scope.coverage_gaps`, or "none")* - **Search completeness/recall:** *(from Step 7c - "clean" if nothing unacknowledged, else the specific sources/known items still needing attention)*
 >
 > **Next:** `/prisma-screen export` to generate the title/abstract screening sheet from these records.
 
