@@ -170,81 +170,16 @@ Every claim in Introduction/Discussion must carry an APA in-text citation (verif
 
 ## Step 8: Compute the Flow-Diagram Numbers
 
-**Never type a box count in directly or recall one from earlier in the conversation** — every number is aggregated fresh from the ledgers, so the diagram can never silently drift from `screening_decisions.jsonl`. Run this via `Bash`:
+**Never type a box count in directly or recall one from earlier in the conversation** — every number is aggregated fresh from the ledgers, so the diagram can never silently drift from `screening_decisions.jsonl`. Run this exact command via `Bash`:
 
 ```bash
-python3 -c "
-import json, glob, os
-from pathlib import Path
-
-topic = Path('results/<TOPIC>')
-
-# --- Identification ---
-latest_raw = {}
-for p in sorted(glob.glob(str(topic / 'raw' / '*.json'))):
-    source = os.path.basename(p).rsplit('-', 1)[0]
-    latest_raw[source] = p  # lexicographic date sort -> last write per source wins
-per_source = {}
-truncated_sources = []
-for s, p in latest_raw.items():
-    meta = json.load(open(p))['meta']
-    per_source[s] = {'retrieved': meta['retrieved'], 'total_available': meta['total_available'], 'truncated': meta['truncated']}
-    if meta['truncated']:
-        truncated_sources.append(s)
-identified_total = sum(v['retrieved'] for v in per_source.values())
-
-records = [json.loads(l) for l in open(topic / 'records.jsonl')]
-duplicates_removed = sum(1 for r in records if r.get('duplicate_of'))
-canonical = [r for r in records if not r.get('duplicate_of')]
-records_screened = len(canonical)
-
-# --- Screening / Included (latest decision per (record_id, stage)) ---
-decisions = [json.loads(l) for l in open(topic / 'screening_decisions.jsonl')]
-latest = {}
-for d in decisions:
-    latest[(d['record_id'], d['stage'])] = d  # append-only file -> last line wins
-
-ta = {rid: d for (rid, stage), d in latest.items() if stage == 'title_abstract'}
-excluded_ta = sum(1 for d in ta.values() if d['decision'] == 'exclude')
-sought_for_retrieval = sum(1 for d in ta.values() if d['decision'] == 'include')
-
-# A record that passed title/abstract but has no full_text-stage entry yet is still
-# awaiting full-text screening -- it is NOT the same thing as "report not retrieved"
-# (that needs an explicit reviewer-supplied count; the ledger has no field for it, since
-# decision/reason only exist once a full_text-stage decision has actually been made).
-ft = {rid: d for (rid, stage), d in latest.items() if stage == 'full_text'}
-assessed_for_eligibility = len(ft)
-pending_full_text = sought_for_retrieval - assessed_for_eligibility
-excluded_ft = [d for d in ft.values() if d['decision'] == 'exclude']
-included_final = sum(1 for d in ft.values() if d['decision'] == 'include')
-
-missing_reason = [d['record_id'] for d in excluded_ft if not d.get('reason')]
-reason_counts = {}
-for d in excluded_ft:
-    r = d.get('reason')
-    if r:
-        reason_counts[r] = reason_counts.get(r, 0) + 1
-
-print(json.dumps({
-    'per_source_identified': per_source,
-    'truncated_sources': truncated_sources,
-    'identified_total': identified_total,
-    'duplicates_removed': duplicates_removed,
-    'records_screened': records_screened,
-    'excluded_title_abstract': excluded_ta,
-    'sought_for_retrieval': sought_for_retrieval,
-    'assessed_for_eligibility': assessed_for_eligibility,
-    'pending_full_text': pending_full_text,
-    'excluded_full_text_total': len(excluded_ft),
-    'excluded_full_text_reasons': reason_counts,
-    'included_final': included_final,
-    'full_text_excludes_missing_reason': missing_reason,
-}, indent=2))
-"
+python3 tools/flow_counts.py --topic <TOPIC>
 ```
 
-1. **If `full_text_excludes_missing_reason` is non-empty, stop.** PRISMA Item 16b requires a reason on every full-text exclusion. Report the offending `record_id`s and tell the reviewer to fix them via `/prisma-screen import` (which itself refuses a full-text exclude row with no reason) before the flow diagram or Results §3.1 can be finalized. Do not draft the diagram with an unexplained exclusion.
-2. **If `pending_full_text` is non-zero, this is normal in-progress state, not a data defect — do not hard-stop on it.** Surface the count prominently and **recommend** finishing `/prisma-screen export --stage full_text` / `import` for the remaining records as the default path. If the reviewer explicitly wants a draft diagram anyway (e.g. for a supervisor meeting mid-screening), proceed with `n = ?` in the affected Screening/Included boxes — exactly the placeholder convention `prisma-manuscript/SKILL.md` Phase 3 Step 2 already documents for an incomplete pipeline — and state a caveat in Results §3.1 that the diagram reflects screening in progress as of today's date, not a final count. The invariant to enforce is "never silently present an in-progress count as final," not "never draw the diagram." Do not improvise a "reports not retrieved" figure from this count either way — that is a distinct, reviewer-supplied number (a full text that was sought but genuinely could not be obtained), which the ledger has no field for; ask the reviewer for it directly only if they separately know of unretrieved reports.
+(This exact invocation is pre-allowlisted in `.claude/settings.json` — `Bash(python3 tools/flow_counts.py:*)`. It prints the same JSON shape the old inline script did, plus a new `reports_not_retrieved` count computed from the `not_retrieved` decision value: `per_source_identified`, `truncated_sources`, `identified_total`, `duplicates_removed`, `records_screened`, `excluded_title_abstract`, `sought_for_retrieval`, `reports_not_retrieved`, `assessed_for_eligibility`, `pending_full_text`, `excluded_full_text_total`, `excluded_full_text_reasons`, `included_final`, `full_text_excludes_missing_reason` — this last one now covers both unexplained full-text excludes **and** unexplained `not_retrieved` decisions.)
+
+1. **If `full_text_excludes_missing_reason` is non-empty, stop.** PRISMA Item 16b requires a reason on every full-text exclusion or not-retrieved decision. Report the offending `record_id`s and tell the reviewer to fix them via `/prisma-screen import` (which itself refuses such a row with no reason) before the flow diagram or Results §3.1 can be finalized. Do not draft the diagram with an unexplained exclusion or not-retrieved decision.
+2. **If `pending_full_text` is non-zero, this is normal in-progress state, not a data defect — do not hard-stop on it.** Surface the count prominently and **recommend** finishing `/prisma-screen export --stage full_text` / `import` for the remaining records as the default path. If the reviewer explicitly wants a draft diagram anyway (e.g. for a supervisor meeting mid-screening), proceed with `n = ?` in the affected Screening/Included boxes — exactly the placeholder convention `prisma-manuscript/SKILL.md` Phase 3 Step 2 already documents for an incomplete pipeline — and state a caveat in Results §3.1 that the diagram reflects screening in progress as of today's date, not a final count. The invariant to enforce is "never silently present an in-progress count as final," not "never draw the diagram." `reports_not_retrieved` is the PRISMA 2020 "Reports not retrieved" box directly — a record decided `not_retrieved` at full-text stage — draw it as its own box between "sought for retrieval" and "assessed for eligibility", never folded into either.
 3. **If `truncated_sources` is non-empty, this is a disclosure requirement, not a blocker** — plan §3 treats `meta.truncated` as load-bearing: a `--limit`-capped connector run must never *silently* under-report a database's true count, but a reviewer may have a good reason to cap a run. For each truncated source, show `retrieved` vs. `total_available` and ask the reviewer to choose: re-run that source uncapped via `rerun_search.sh` before continuing, or proceed and report `total_available` (not just `retrieved`) as that source's Identification-box count, with a footnote that only `retrieved` of them were actually screened (keep `retrieved` as the number that feeds the Step 8.5 reconciliation either way). Never silently report the capped number as if it were the full count.
 4. If any pipeline file this script reads is missing (a reviewer using this skill standalone without the full pipeline — unusual for `/prisma-report` but possible after a partial `--section` run), fall back to asking the reviewer for the missing numbers directly and mark `n = ?` for whatever remains unknown, exactly as documented in `prisma-manuscript/SKILL.md` Phase 3 Step 2 — but only as a fallback, never the default.
 5. Records removed "for other reasons" before screening (e.g. a language/date filter applied at search time rather than during dedup) are not visible to this script — cross-check `search_plan.json`'s stated filters against `identified_total` vs. `records_screened + duplicates_removed`; if they don't reconcile, ask the reviewer whether a pre-screening filter accounts for the gap and record the count and reason.
