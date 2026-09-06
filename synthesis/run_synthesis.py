@@ -252,13 +252,20 @@ def flatten_rows(studies):
     entry) carry that entry's raw arm data; narrative rows (one per name in
     outcomes_measured that has no matching effect_data entry) carry none.
     Each row carries the study's risk_of_bias block verbatim -- never
-    recomputed here."""
+    recomputed here. Also carries the study-level provenance fields
+    (docs/PLAN.md PR p0-11-extraction-provenance) `reports`, `by`,
+    `verified_by` -- each `effect_data` entry's own `source` (quote/
+    locator/notes) is already inside that entry, so it needs no separate
+    threading here."""
     rows = []
     for study in studies:
         record_id = study.get("record_id") or study.get("author_year") or "UNKNOWN_STUDY"
         author_year = study.get("author_year", record_id)
         rob = study.get("risk_of_bias")
         design = study.get("study_design")
+        reports = study.get("reports")
+        by = study.get("by")
+        verified_by = study.get("verified_by")
         effect_data_list = study.get("effect_data") or []
         quantified_names = {e["outcome"] for e in effect_data_list}
 
@@ -267,6 +274,7 @@ def flatten_rows(studies):
                 "study_id": record_id, "author_year": author_year, "study_design": design,
                 "outcome": entry["outcome"], "type": "quantitative",
                 "effect_data": entry, "risk_of_bias": rob,
+                "reports": reports, "by": by, "verified_by": verified_by,
             })
 
         for name in study.get("outcomes_measured", []):
@@ -276,6 +284,7 @@ def flatten_rows(studies):
                 "study_id": record_id, "author_year": author_year, "study_design": design,
                 "outcome": name, "type": "qualitative",
                 "effect_data": None, "risk_of_bias": rob,
+                "reports": reports, "by": by, "verified_by": verified_by,
             })
     return rows
 
@@ -503,6 +512,12 @@ def process_outcome_group(outcome_name, measure, rows, out_dir, slug, model, mod
             "study_id": row["study_id"], "author_year": row["author_year"],
             "effect": effect, "variance": variance, "se": math.sqrt(variance),
             "display_estimate": display, "continuity_correction_applied": corrected,
+            # Provenance pass-through (docs/PLAN.md PR p0-11-extraction-provenance):
+            # `source` (quote/locator/notes) is per-datapoint, already inside
+            # effect_data; `reports`/`by`/`verified_by` are per-study, carried
+            # here by flatten_rows.
+            "source": row["effect_data"].get("source"),
+            "reports": row.get("reports"), "by": row.get("by"), "verified_by": row.get("verified_by"),
         })
 
     rob_entry = build_rob_entry(outcome_name, rows)
