@@ -1,0 +1,53 @@
+{
+  "title": "Digital literacy interventions for school-age youth: a scoping review",
+  "framework": "PCC",
+  "review_type": "scoping_review",
+  "pcc": {
+    "population": "School-age youth (ages 5-18) in formal primary or secondary education settings",
+    "concept": "Digital literacy interventions (curricula, programs, or tools teaching digital or media literacy skills)",
+    "context": "Primary and secondary school settings, any country"
+  },
+  "eligibility": {
+    "study_design": {"included": ["RCT", "cohort", "cross-sectional", "mixed_methods"], "excluded": ["case report"], "gate": "hard"},
+    "publication_type": {"included": ["peer-reviewed journal article"], "excluded": ["preprint-only", "conference abstract"], "gate": "hard"},
+    "date_range": {"from": "2015-01-01", "to": null, "gate": "hard"},
+    "language": {"included": ["English"], "gate": "hard", "translation_used": false}
+  },
+  "eligibility_version": 1,
+  "scope": {
+    "mode": "global",
+    "region": null,
+    "translation_used": false,
+    "translation_languages": [],
+    "coverage_gaps": [
+      {
+        "source": "A study registry (e.g. PROSPERO, OSF Registries)",
+        "gap": "expected by MECIR C39 / PRISMA 2020 Item 24a but not reachable by any connector this workspace has installed",
+        "mitigation": null
+      }
+    ]
+  },
+  "known_items": [],
+  "method": {
+    "id": "scoping_review",
+    "version": "1.2.0",
+    "synthesis_family": null,
+    "profile_flags": [],
+    "modes": [],
+    "pack": "generic",
+    "output_profiles": [],
+    "routing": {
+      "table_version": "1.0.0",
+      "answers": {"goal": ["map"], "question_focus": "rough", "evidence_type": "observational", "reviewers": 1, "time_budget": "1_3_months", "appraisal_intent": "no"},
+      "q0": {"raw_files": [], "human_judgement": "proceed", "registry_lookup": null},
+      "recommended_id": "scoping_review",
+      "chosen_id": "scoping_review",
+      "override_reason": null,
+      "fallback_reason": null
+    },
+    "signed_at": "2026-01-01T10:00:00Z",
+    "signed_by": "Dr. Reviewer"
+  },
+  "signed_at": "2026-01-01T10:00:00Z",
+  "signed_by": "Dr. Reviewer"
+}

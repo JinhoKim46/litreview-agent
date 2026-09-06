@@ -1,0 +1,6 @@
+{
+  "sources": {
+    "openalex": {"enabled": true, "query": "(\"digital literacy\" OR \"media literacy\") AND (school OR youth OR adolescent)"},
+    "crossref": {"enabled": true, "query": "(\"digital literacy\" OR \"media literacy\") AND (school OR youth OR adolescent)"}
+  }
+}

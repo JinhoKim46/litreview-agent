@@ -1,0 +1,32 @@
+{
+  "framework_version": "1.0.0",
+  "topic": "golden-scoping-pipeline-test-run",
+  "capture_mode": "charting",
+  "n_studies": 3,
+  "category_frequencies": {
+    "year": {
+      "2022": 1,
+      "2021": 1,
+      "2020": 1
+    },
+    "study_design": {
+      "cluster RCT": 1,
+      "mixed_methods": 1,
+      "cohort": 1
+    },
+    "setting": {
+      "secondary school": 1,
+      "primary school": 1,
+      "after-school program": 1
+    },
+    "intervention_type": {
+      "curriculum-based digital literacy program": 1,
+      "teacher-led media literacy instruction": 1,
+      "coding club": 1
+    },
+    "outcome_reported": {
+      "digital literacy knowledge/skill assessment": 3
+    }
+  },
+  "cross_tabs": []
+}
