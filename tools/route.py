@@ -82,10 +82,14 @@ def _match(cond: dict, context: dict) -> bool:
         return value == spec["eq"]
     if "in" in spec:
         return value in spec["in"]
+    if "not_in" in spec:
+        return value not in spec["not_in"]
     if "contains" in spec:
         return isinstance(value, (list, tuple, set)) and spec["contains"] in value
     if "intersects" in spec:
         return isinstance(value, (list, tuple, set)) and bool(set(value) & set(spec["intersects"]))
+    if "not_intersects" in spec:
+        return not (isinstance(value, (list, tuple, set)) and bool(set(value) & set(spec["not_intersects"])))
     raise RouteError(f"unknown condition operator: {spec!r}")
 
 
