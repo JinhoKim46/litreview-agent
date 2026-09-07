@@ -68,7 +68,7 @@ Before reading anything in depth, `Glob` `results/<TOPIC>/` to see what actually
 Load exactly what Step 7 onward needs, and no more than that — this is the step that keeps a 5,000-record review and a 50-record review costing the same context.
 
 1. **Read directly** (small, structured, needed verbatim): `protocol.json`, `search_plan.json`, `extraction_table.json`, and every file present under `synthesis/` except the two `.svg` plots (those are referenced by filename in the manuscript, never opened as text).
-2. **Read `rerun_search.sh`** to confirm the per-source commands it replays match `search_plan.json`'s query strings — Methods §2.4 must quote the same string the reproducibility script actually runs, never a re-typed variant.
+2. **Read `rerun_search.sh`** to confirm the per-source commands it replays match `search_plan.json`'s query strings — the Appendix's search-strategy table must quote the same string the reproducibility script actually runs, never a re-typed variant.
 3. **Extract `meta` only from each `raw/<source>-<date>.json`** — these files can carry hundreds of full result records; you need only `meta.source`, `meta.retrieved`, `meta.total_available`, `meta.truncated`, and `meta.fetched_at` from the **most recent dated file per source**. Do this with a small `python3` one-liner or `jq '.meta'`, never by reading the whole file into the conversation:
 ```bash
 python3 -c "
@@ -139,7 +139,7 @@ Work through the manuscript **one section at a time**, in academic register, fol
 - 2.1 Protocol and registration [24a–24c] — `protocol.json.registration`, plus any `protocol.json.amendments` (PRISMA Item 24c requires disclosing a deviation).
 - 2.2 Eligibility criteria [Item 5] — `protocol.json.eligibility`, as a table.
 - 2.3 Information sources [Item 6] — sources and dates from `raw/*.json` meta (Step 3.3), any `protocol.json.scope.coverage_gaps`.
-- 2.4 Search strategy [Item 7] — full Boolean string per source, quoted verbatim from `search_plan.json` (never retyped).
+- 2.4 Search strategy [Item 7] — narrative summary of the concept segments and how they combine; the full per-source Boolean strings themselves go only in the Appendix's search-strategy table (never excerpted or truncated in §2.4 itself).
 - 2.5 Selection process [Item 8] — screening stages/independence, from `screening_decisions.jsonl`'s stage structure and any `ai_suggestion` use.
 - 2.6 Data collection process [Item 9] — how `extraction_table.json` was built.
 - 2.7 Data items [10a, 10b] — the field set actually present in `extraction_table.json`.
@@ -167,7 +167,7 @@ Work through the manuscript **one section at a time**, in academic register, fol
 
 **REFERENCES** [Phase 4 / Step 10] — APA 7th Edition, verified.
 
-**APPENDICES** — full per-database search strategies (verbatim from `search_plan.json`), data extraction form, completed PRISMA checklist (Step 13, or as a separate file).
+**APPENDICES** — full search-strategy table (always included, one row per source in `search_plan.json`: database/source, full query verbatim, date last searched and records retrieved/total available from `raw/<source>-<date>.json` meta, filters/limits from `protocol.json.eligibility`; see the skill for the exact column set), data extraction form (if needed), completed PRISMA checklist (Step 13, or as a separate file).
 
 Every claim in Introduction/Discussion must carry an APA in-text citation (verified in Step 10). Tables/figures are numbered sequentially; the flow diagram is always Figure 1, the forest plot (when present) is always Figure 2, the funnel plot (when present) Figure 3. Calibrate tone per the skill's guidance: explain each section's purpose for a first-time reviewer, or draft directly and skip explanation for an experienced one — ask once, up front, which the reviewer prefers, rather than re-deciding per section.
 
@@ -266,7 +266,7 @@ Produce `manuscript/checklist_audit.md`: a three-column table, `| Item # | Check
    - Every flow-diagram count aggregated from `screening_decisions.jsonl`, never hand-typed.
    - Every full-text exclusion carries a non-empty `reason`.
    - Every cited reference independently verified via WebSearch/WebFetch.
-   - Every per-source query string in the manuscript's Methods §2.4/Appendix matches `search_plan.json` and `rerun_search.sh` exactly.
+   - Every per-source query string in the manuscript's Appendix search-strategy table matches `search_plan.json` and `rerun_search.sh` exactly.
    - Every pooled estimate/heterogeneity statistic traces to `extraction_table.json` rows (no invented numbers).
 3. State the word count and table/figure count computed in Step 11.
 4. Offer next steps: review the draft section-by-section for reviewer edits, re-run with `--section <name>` for a targeted redraft, or `--export docx|pdf` if not already done.
