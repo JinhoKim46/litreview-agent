@@ -86,7 +86,7 @@ Draft sections in this order. The PRISMA item numbers in brackets show which che
 - 2.1 Protocol and registration [Items 24a–24c] — State registration number (e.g. PROSPERO CRD...) from `protocol.json`, or declare unregistered. Note any amendments.
 - 2.2 Eligibility criteria [Item 5] — Present inclusion and exclusion criteria explicitly, ideally in a table, drawn from `protocol.json`'s eligibility record. Use the relevant framework (PICO, PICo, etc.).
 - 2.3 Information sources [Item 6] — List all databases, registers, and other sources searched, drawn from `search_plan.json`/`raw/<source>-<date>.json`. State the date of last search for each, and note any scope gap recorded in `protocol.json.scope.coverage_gaps`.
-- 2.4 Search strategy [Item 7] — Present the full Boolean search string for every source, quoted directly from `search_plan.json` (never retyped from memory). State any filters or limits used.
+- 2.4 Search strategy [Item 7] — Describe the search strategy narratively (concept segments and how they were combined), then refer the reader to the full reproducible search table in the Appendix rather than quoting one source's string inline as if it were representative — see the Appendix's Full search strategies table below, which is the actual Item 7 content. State any filters or limits used, per source if they differ.
 - 2.5 Selection process [Item 8] — Describe the screening procedure (title/abstract then full-text stages, per `screening_decisions.jsonl`), independence, disagreement resolution, and the role of AI-assisted screening suggestions if used.
 - 2.6 Data collection process [Item 9] — Describe how data were extracted into `extraction_table.json`, by how many reviewers, and how conflicts were resolved.
 - 2.7 Data items [Items 10a, 10b] — List all outcome variables and other data items sought, drawn from `extraction_table.json`'s field set.
@@ -124,9 +124,9 @@ Draft sections in this order. The PRISMA item numbers in brackets show which che
 **REFERENCES**
 - All references must be formatted in APA 7th Edition style. See Phase 4 below.
 
-**APPENDICES** (if needed)
-- Full search strategies for each database, quoted verbatim from `search_plan.json`
-- Data extraction form
+**APPENDICES**
+- **Full search strategies (always included, never conditional)** — one reproducibility table, "Table: Full search strategies by source", with one row per source present in `search_plan.json` and these columns: *Database/Source*, *Full search query* (the source's `query_string`, quoted verbatim — never truncated, never a single "e.g." example standing in for the rest), *Date last searched* (`meta.fetched_at` from that source's `raw/<source>-<date>.json`), *Records retrieved / total available* (`meta.retrieved`/`meta.total_available` from the same file), *Filters or limits applied* (date range, language, etc. from `protocol.json.eligibility`, per source if they differ). This satisfies PRISMA-S 2021 items 8 (full search strategies, copied exactly as run), 9 (limits/restrictions), 13 (date of each search), and 15 (total records per source) in one place, and is what makes the search independently reproducible end to end — the same convention as a dedicated search-strategy appendix table in published SRs (e.g., Shafieizargar et al., 2023, *Magnetic Resonance in Medicine*, Table A2). A source disabled or coverage-gapped per `protocol.json.scope.coverage_gaps` still gets a row, with the gap noted in the filters/limits column instead of being silently dropped.
+- Data extraction form (if needed)
 - Completed PRISMA 2020 checklist (see Phase 6)
 
 ### Drafting conventions for journal format

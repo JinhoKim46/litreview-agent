@@ -48,4 +48,5 @@ Before presenting `/litreview-report` output, or at any point the reviewer asks 
 - [ ] Every full-text exclusion in `screening_decisions.jsonl` carries a non-empty `reason` (PRISMA Item 16b) before `/litreview-extract` proceeds.
 - [ ] Every reference cited in the manuscript has been independently verified via WebSearch/WebFetch against a real source — never fabricated, and never trusted solely because a fetched abstract or full-text claims it exists.
 - [ ] Every per-source query string in `search_plan.json` is exactly what `rerun_search.sh` replays — no drift between the audit trail and the actual search that was run.
+- [ ] The manuscript's Appendix search-strategy table has one row per source in `search_plan.json` with the full query verbatim (never truncated to a single example) plus date searched and records retrieved/total available from that source's `raw/<source>-<date>.json` meta — this table, not manuscript body prose, is what makes the search reproducible (PRISMA-S Items 8, 9, 13, 15).
 - [ ] Pooled effect estimates and heterogeneity statistics in `synthesis/` trace back to specific rows in `extraction_table.json` — no invented numbers.
