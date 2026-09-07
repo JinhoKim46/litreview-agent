@@ -89,34 +89,62 @@ class RowResolutionTests(unittest.TestCase):
         self.assertEqual(result["matched_row"], "R4d")
         self.assertEqual(result["method_id"], "scoping_review")
 
-    def test_r5_is_currently_shadowed_by_r3s_unconditional_forming_clause(self):
-        # Spec defect, not a test bug: R3 ("... or question_focus == forming")
-        # is unconditional on goal and precedes R5 in the documented row
-        # order, so it wins first. See _routing.json's R5 "_flagged" note and
-        # the PR body -- flagged for a human to disambiguate, not silently
-        # patched by reordering rows on a guess about intent.
+    def test_r5_answer_forming_resolves_scoping_not_reconnaissance(self):
+        # merge-01.md item #1: R3's "... or question_focus == forming" clause
+        # used to be unconditional on goal, shadowing this row. Fixed by
+        # narrowing R3 to exclude goal ∋ {map, answer} -- see _routing.json's
+        # R3 "when" and R5's "_resolved_flagged" note.
         result = self.decide({"goal": ["answer"], "question_focus": "forming"})
-        self.assertEqual(result["matched_row"], "R3")
-        self.assertEqual(result["method_id"], "reconnaissance")
+        self.assertEqual(result["matched_row"], "R5")
+        self.assertEqual(result["method_id"], "scoping_review")
+        self.assertIn("map first", result["explain"])
 
-    def test_r4_map_sub_cases_also_shadowed_by_r3s_forming_clause(self):
-        # Same defect as R5, on a different row: a "map" goal with
-        # question_focus="forming" never reaches R4a-R4d's algorithm/venue
-        # logic. Documented, not silently patched -- see the _flagged note.
+    def test_r4a_map_forming_still_resolves_via_algorithm_venue_logic(self):
+        # merge-01.md item #1: a "map" goal with question_focus="forming"
+        # must still reach R4a-R4d's algorithm/venue logic, not be shadowed
+        # by R3's forming clause.
         result = self.decide({"goal": ["map"], "evidence_type": "algorithm", "venue_default": "cs_se", "question_focus": "forming"})
-        self.assertEqual(result["matched_row"], "R3")
-        self.assertEqual(result["method_id"], "reconnaissance")
+        self.assertEqual(result["matched_row"], "R4a")
+        self.assertEqual(result["method_id"], "systematic_mapping_study")
 
-    def test_r6a_qualitative_refusal_also_shadowed_by_r3s_forming_clause(self):
-        # The most consequential instance: a qualitative question that is
-        # also "forming" resolves via R3 to reconnaissance instead of
-        # hitting R6a's hard REFUSE (never systematic_review). This is a
-        # fail-closed path being silently bypassed for a subset of inputs --
-        # flagged prominently in the PR body, not patched by guessing at
-        # reordering.
+    def test_r6a_qualitative_forming_still_hard_refuses(self):
+        # merge-01.md item #1, the most consequential instance: a qualitative
+        # question that is also "forming" must still hit R6a's hard REFUSE
+        # (never systematic_review), not fall through to R3 or R5. This
+        # required narrowing R5's own condition too (see R5's
+        # "_resolved_flagged" note) -- R3 alone was not a sufficient fix,
+        # since R5 would otherwise have shadowed R6a next.
         result = self.decide({"goal": ["answer"], "evidence_type": "qualitative", "question_focus": "forming"})
-        self.assertEqual(result["matched_row"], "R3")
-        self.assertNotEqual(result["method_id"], "systematic_review")
+        self.assertEqual(result["matched_row"], "R6a")
+        self.assertEqual(result["kind"], "refuse")
+        self.assertIn("systematic_review", result["never"])
+
+    def test_r3_no_longer_shadows_more_specific_rows(self):
+        # Regression guard for the merge-01 fix to methods/_routing.json's
+        # R3/R4/R5/R6a ordering (merge-01.md item #1). Do not let a future
+        # table edit reintroduce goal-independent forming-clause precedence.
+        for answers, expected_row in [
+            ({"goal": ["answer"], "question_focus": "forming"}, "R5"),
+            ({"goal": ["map"], "evidence_type": "algorithm", "venue_default": "cs_se", "question_focus": "forming"}, "R4a"),
+            ({"goal": ["answer"], "evidence_type": "qualitative", "question_focus": "forming"}, "R6a"),
+        ]:
+            with self.subTest(answers=answers):
+                self.assertEqual(self.decide(answers)["matched_row"], expected_row)
+
+    def test_r5_evidence_type_unset_still_passes_through(self):
+        # R5's evidence_type exclusion (added alongside the R3 fix) must not
+        # break the case where a reviewer hasn't decided evidence_type yet --
+        # "map first" is still the right guidance for goal=answer+forming
+        # with no evidence_type recorded.
+        result = self.decide({"goal": ["answer"], "question_focus": "forming", "evidence_type": None})
+        self.assertEqual(result["matched_row"], "R5")
+
+    def test_r5_trials_forming_still_resolves_scoping(self):
+        # R5's evidence_type exclusion only excludes the refusal-only types
+        # (qualitative/mixed/test_accuracy_or_model); trials/observational
+        # must still resolve via R5, not get swept into the exclusion.
+        result = self.decide({"goal": ["answer"], "question_focus": "forming", "evidence_type": "trials"})
+        self.assertEqual(result["matched_row"], "R5")
 
     def test_r6a_answer_qualitative_refuses_never_sr(self):
         result = self.decide({"goal": ["answer"], "evidence_type": "qualitative"})

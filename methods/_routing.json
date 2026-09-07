@@ -1,5 +1,5 @@
 {
-  "table_version": "1.0.0",
+  "table_version": "1.1.0",
   "_comment": "Versioned decision table for tools/route.py (docs/PLAN.md M2; references/docs/design/multi-method-consensus.md §2.2). First-matching-row wins. A row whose target has no shipped methods/*.json manifest yet (checked dynamically against tools/method.list_manifests(), not hardcoded here) is evaluated as a refusal regardless of its own 'then' -- see tools/route.py's SHIPPED-only gate. Rows R4 and R6 from the consensus doc's pseudocode are flattened into ordered sub-rows (R4a-R4d, R6a-R6f) so first-match-wins is expressible as a flat, testable list instead of nested branches; the flattening preserves the original evaluation order exactly.",
   "rows": [
     {
@@ -22,8 +22,8 @@
     },
     {
       "id": "R3",
-      "source": "goal ∩ {orient, prior_work, background} ≠ ∅ or question_focus == forming -> reconnaissance",
-      "when": {"any": [{"goal": {"intersects": ["orient", "prior_work", "background"]}}, {"question_focus": {"eq": "forming"}}]},
+      "source": "goal ∩ {orient, prior_work, background} ≠ ∅ or (question_focus == forming and goal ∩ {map, answer} = ∅) -> reconnaissance",
+      "when": {"any": [{"goal": {"intersects": ["orient", "prior_work", "background"]}}, {"all": [{"question_focus": {"eq": "forming"}}, {"goal": {"not_intersects": ["map", "answer"]}}]}]},
       "then": {"kind": "resolve", "method_id": "reconnaissance", "output_profiles_from_goal": {"prior_work": "prior_work_check", "background": "background_section"}}
     },
     {
@@ -52,9 +52,9 @@
     },
     {
       "id": "R5",
-      "source": "goal ∋ answer and question_focus == forming -> scoping_review, explain(\"your question is not yet answerable; map first\")",
-      "_flagged": "As literally ordered in the consensus doc, R3's own 'or question_focus == forming' clause is unconditional on goal, so it already matches every forming case before evaluation reaches any later row -- not just this one. R5 is the most visible casualty (always shadowed), but the same clause also shadows R4's map-specific sub-cases (a 'map' goal with question_focus=forming resolves via R3 to reconnaissance, never reaching R4a-R4d's algorithm/venue logic) and, most seriously, R6a's qualitative REFUSE (an 'answer' goal with evidence_type=qualitative and question_focus=forming resolves via R3 to reconnaissance instead of hitting R6a's hard refusal, which exists specifically so a qualitative question never resolves to anything but a refusal -- see the fallback rule below: routing must never fall sideways for a question type the tool cannot report correctly). Left exactly as specified (not silently reordered on a guess about intent) since routing behaviour decides which review type a reviewer is told to run, and for the R6a case, whether a qualitative question fails closed at all; flagged in the PR body for a human to disambiguate whether R3's forming clause should exclude goal ∋ answer and/or goal ∋ map.",
-      "when": {"all": [{"goal": {"contains": "answer"}}, {"question_focus": {"eq": "forming"}}]},
+      "source": "goal ∋ answer and question_focus == forming and evidence_type not in {qualitative, mixed, test_accuracy_or_model} -> scoping_review, explain(\"your question is not yet answerable; map first\")",
+      "_resolved_flagged": "merge-01.md item #1 (references/docs/panel_discussion/): R3's 'or question_focus == forming' clause was unconditional on goal, so it shadowed this row (and R4a-R4d, and R6a) before evaluation ever reached them. Fixed by narrowing R3's forming clause to exclude goal ∋ {map, answer} (see R3's 'when' above). That alone was insufficient: once un-shadowed by R3, this row's own condition was unconditional on evidence_type, so it would in turn have shadowed R6a/R6b/R6c's evidence-type-specific hard refusals for exactly the qualitative/mixed/test-accuracy-or-model case those rows exist to catch. Resolved by adding the evidence_type exclusion above -- an unset evidence_type still passes through to this row (map-first guidance is still correct when the reviewer hasn't decided evidence_type yet), only the three refusal-only types are excluded so R6a/b/c get their turn first.",
+      "when": {"all": [{"goal": {"contains": "answer"}}, {"question_focus": {"eq": "forming"}}, {"evidence_type": {"not_in": ["qualitative", "mixed", "test_accuracy_or_model"]}}]},
       "then": {"kind": "resolve", "method_id": "scoping_review", "explain": "your question is not yet answerable; map first"}
     },
     {

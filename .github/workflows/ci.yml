@@ -15,7 +15,12 @@
 # the allowlist or weaken the results/**-ignore rule. framework-version fails
 # PRs that change the bundled PRISMA methodology files without bumping their
 # declared version, so a silent drift from the checklist this framework
-# audits against can't slip in unnoticed.
+# audits against can't slip in unnoticed. manifest-conformance fails PRs
+# that add a pack/method-manifest field (an appraisal instrument, a
+# confidence framework, a standards[].ref, a routing-table field) with no
+# real code path consuming it -- known existing instances are baselined
+# (see tools/check_manifest_conformance.py's KNOWN_UNCONSULTED_BASELINE) so
+# this only fails on a *new*, undisclosed instance of the pattern.
 
 name: CI
 
@@ -85,3 +90,14 @@ jobs:
           python-version: "3.12"
       - run: pip install -r requirements.txt
       - run: python3 tools/check_framework_version.py
+
+  manifest-conformance:
+    name: Manifest/code conformance (declared-but-unconsulted guard)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - run: python3 tools/check_manifest_conformance.py
