@@ -64,7 +64,10 @@ claude
 /litreview-extract                       # build the extraction table (characteristics, effect data, RoB1)
 /litreview-synthesize                    # pool poolable outcomes, plot, assess heterogeneity/GRADE
 /litreview-report                        # draft the manuscript, flow diagram, and checklist audit
+# optional: /litreview-add-source (add a paid/institutional connector), /litreview-reset (clear state) — USER_GUIDE.md §10
 ```
+
+Something not working? See `USER_GUIDE.md`'s [Troubleshooting](USER_GUIDE.md#11-troubleshooting) section.
 
 `/litreview-status "your review topic"` works at any point and reconstructs exactly where a review stands, since every stage's state is either append-only or fully re-derivable — close your laptop mid-screening for weeks and pick back up with nothing lost.
 
@@ -95,7 +98,7 @@ Six connectors ship out of the box, chosen to cover most disciplines with no pai
 
 A seventh connector, citation chasing (backward/forward snowballing via OpenAlex), covers PRISMA's "other methods" identification stream — see `/litreview-search --chase-citations`.
 
-Need an institutional source (Scopus, Web of Science)? Run `/litreview-add-source` — it scaffolds a new connector against the same fixed `{meta, results}` JSON contract the connectors above already use, with credentials read only from an environment variable, never a flag or a tracked file.
+**Only these sources ship — adding a paid/institutional 7th (Scopus, Web of Science, a discipline-specific index) is self-service.** Run `/litreview-add-source` — it interviews you, investigates the provider's real API live, scaffolds a new connector against the same fixed `{meta, results}` JSON contract the connectors above already use, and runs a mandatory live test before registering it. If the source needs an API key, the connector reads it **only** from an environment variable named `<SOURCE>_API_KEY` (e.g. `SCOPUS_API_KEY`) — never a CLI flag, never a committed file — and hard-fails with a `MISSING_CREDENTIALS` error if it's unset, rather than silently falling back to an unauthenticated request. Per `CONTRIBUTING.md`, a connector tied to one institution's paid subscription stays in your fork; only the generator (`/litreview-add-source` itself) is upstream-mergeable. See `USER_GUIDE.md` §10 for a worked example.
 
 ## Fork this and adapt
 

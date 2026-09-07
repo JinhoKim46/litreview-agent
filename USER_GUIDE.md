@@ -107,7 +107,7 @@ After the interview, the same `/litreview-init` call keeps going into scope sele
 
 ## 5. Run your first review, end to end
 
-These are the same nine commands from `README.md`'s pipeline diagram, with what to actually expect at each step.
+These walk through the same pipeline stages as `README.md`'s diagram, one subsection per command, with what to actually expect at each step.
 
 ### `/litreview-init "your review topic"`
 Asks: global or national/regional scope; your research question via PICO (or PICo for qualitative reviews, SPIDER for mixed-methods); explicit inclusion/exclusion criteria (population, study design, publication type, date range, language); then hands off to keyword expansion. Ends by writing `results/<topic-slug>/protocol.json` and `search_plan.json`, and tells you the next command to run.
@@ -128,7 +128,9 @@ Confirms which of the (by default, all six) free connectors actually run this ti
 /litreview-screen import
 ```
 
-appends your decisions to the append-only `screening_decisions.jsonl` ledger. Run `export`/`import` twice — once with `--stage title_abstract`, once with `--stage full_text` — since PRISMA distinguishes the two screening levels.
+appends your decisions to the append-only `screening_decisions.jsonl` ledger.
+
+**Run this twice** — once with `--stage title_abstract`, once with `--stage full_text`. PRISMA treats these as two distinct screening levels; skipping the second pass is the most common way a first-time reviewer under-reports exclusions.
 
 ### `/litreview-extract`
 For every study you included at full-text, builds `extraction_table.json`: standard characteristics, effect-size data (if the study reports something quantitative), and a risk-of-bias judgement (RoB1 for randomized studies, Newcastle-Ottawa for non-randomized). It fetches full text via URL when one is available, asks you to paste it if not, or interviews you directly as a last resort.
@@ -223,6 +225,21 @@ Set these in your shell profile or a local `.env` you source before `claude` —
 
 Interviews you for the source's basics, investigates its real API live (never guesses field mappings), scaffolds a new connector against the exact same `{meta, results}` contract the shipped six use, and runs a mandatory live test before registering it. `/litreview-add-source --list` shows every connector currently installed.
 
+**Worked example — adding Scopus (a paid, key-gated source):**
+
+```
+/litreview-add-source scopus-search
+```
+
+You'll be asked for Scopus's API base URL, whether it needs a key (yes — Elsevier calls it an API key), and a realistic test query. The command then:
+
+1. Fetches Elsevier's real, current API docs — never guesses field mappings from memory.
+2. Scaffolds `connectors/scopus.py`, `.agents/skills/scopus-search/{SKILL.md,url-reference.md}`, and `tests/test_connector_scopus.py`.
+3. Tells you to export `SCOPUS_API_KEY` in your shell before the live test. If it's unset, `connectors/scopus.py` exits with a `MISSING_CREDENTIALS` error naming that exact variable, rather than silently trying an unauthenticated request.
+4. Runs a live test against Scopus with your real key, then adds one line to `.claude/settings.json`'s Bash allowlist (`"Bash(python3 -m connectors.scopus:*)"`) — the only pipeline file registration touches.
+
+Because Scopus access is tied to one institution's paid subscription, this new connector stays in your fork — per `CONTRIBUTING.md`, only `/litreview-add-source` itself (the generator) is mergeable upstream.
+
 **Starting over, or a fresh clone from your fork** for a new review that has nothing to do with a previous one? Nothing special needed — `/litreview-init "a new topic"` just creates a new `results/<new-topic>/` directory alongside any existing ones; reviews don't interfere with each other.
 
 **Made a mistake and want to clear a review's state?**
@@ -246,7 +263,7 @@ Always shows exactly what will be deleted and asks for confirmation first — no
 Expected occasionally, especially from Semantic Scholar's unauthenticated pool. `/litreview-search` reports which source failed and offers to retry — usually clears within minutes. See Section 9 for raising the limit permanently.
 
 **A connector returns `MISSING_CREDENTIALS`**
-Only happens if you've set an API-key environment variable to an empty or malformed value, or a connector you added via `/litreview-add-source` genuinely requires one. None of the six default connectors need a key to function at all.
+Usually means you've set an API-key environment variable to an empty or malformed value, or a connector you added via `/litreview-add-source` genuinely requires one — none of the six default connectors need a key to function at all. One exception: Semantic Scholar itself can return this even keyless, if its unauthenticated pool momentarily rejects a request as unauthorized (`connectors/semanticscholar.py` maps any 401/403 to `MISSING_CREDENTIALS`) — retry; if it persists, set `S2_API_KEY` (Section 9).
 
 **`/litreview-init` didn't ask me the reviewer-profile questions**
 That's expected if `CLAUDE.local.md` has no `[PLACEHOLDER]` tokens left — either from a previous run, or because you filled it in by hand. Edit `CLAUDE.local.md` directly and put a placeholder back (or just add a new field) if you want to re-trigger it.
