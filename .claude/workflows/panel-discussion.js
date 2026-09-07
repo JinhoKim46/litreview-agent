@@ -155,4 +155,9 @@ const synthesis = await agent(
   { label: 'moderator-synthesis', phase: 'Moderator Synthesis', schema: SYNTHESIS_SCHEMA }
 )
 
-return { round: args.round, professors, discussion_rounds_run: roundNum, ...synthesis }
+// round: args.round must come AFTER the ...synthesis spread -- the
+// moderator's own structured output also has a `round` field (needed so its
+// prompt can refer to "round N"), and nothing guarantees the model echoes
+// args.round back consistently. The caller-supplied round number is the
+// only authoritative one; never let the model's copy silently win.
+return { professors, discussion_rounds_run: roundNum, ...synthesis, round: args.round }
