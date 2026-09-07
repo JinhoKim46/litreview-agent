@@ -53,6 +53,19 @@ def _load_expected(name):
         return json.load(f)
 
 
+def _redact_amendment_dates(protocol):
+    """tools/promote_reconnaissance.py's promote() stamps each amendment
+    with today's real wall-clock date -- must be redacted before an
+    actual-vs-frozen-expected comparison means anything, same reasoning as
+    tests/test_golden_living_mode_pack_pipeline.py's own _redact_dates."""
+    redacted = dict(protocol)
+    redacted["amendments"] = [
+        {**a, "date": "REDACTED-FOR-GOLDEN-TEST"} if "date" in a else a
+        for a in redacted.get("amendments", [])
+    ]
+    return redacted
+
+
 class GoldenReconnaissancePipelineTest(unittest.TestCase):
     def setUp(self):
         self.topic_dir = path_policy.RESULTS_ROOT / SLUG
@@ -133,7 +146,7 @@ class GoldenReconnaissancePipelineTest(unittest.TestCase):
         self.assertTrue((self.topic_dir / "handoff" / "disclosure.md").exists())
 
         protocol_after = json.loads((self.topic_dir / "protocol.json").read_text())
-        self.assertEqual(protocol_after, _load_expected("protocol_after_promotion.json"))
+        self.assertEqual(_redact_amendment_dates(protocol_after), _load_expected("protocol_after_promotion.json"))
         self.assertEqual(protocol_after["method"]["id"], "scoping_review")
         self.assertIsNone(protocol_after["method"]["signed_at"])
         self.assertTrue(all(i["provenance"] == "recon-db" for i in protocol_after["known_items"]))
